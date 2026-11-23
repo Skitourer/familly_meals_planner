@@ -1,0 +1,72 @@
+/* Feuille de style unique, pensée "mobile d'abord", sans framework. */
+
+:root {
+  --vert: #2f7a4d;
+  --vert-clair: #4f9d5d;
+  --fond: #f7f6f2;
+  --carte: #ffffff;
+  --texte: #2b2b28;
+  --gris: #7a7a72;
+  --bord: #e4e2da;
+  --erreur: #b3402e;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fond); color: var(--texte); }
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.05rem; }
+
+.app { max-width: 60rem; margin: 0 auto; padding: 1rem; }
+.entete { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.badge { background: var(--bord); border-radius: 99px; padding: 0.25rem 0.7rem; font-size: 0.78rem; }
+
+nav.onglets { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1.2rem; }
+nav.onglets button {
+  border: 1px solid var(--bord); background: var(--carte); color: var(--texte);
+  padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.9rem; cursor: pointer;
+}
+nav.onglets button.actif { background: var(--vert); color: #fff; border-color: var(--vert); }
+
+.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 0.8rem; padding: 1rem; margin-bottom: 0.8rem; }
+.grille { display: grid; gap: 0.8rem; }
+@media (min-width: 720px) { .grille.deux { grid-template-columns: 1fr 1fr; } .grille.famille { grid-template-columns: repeat(2, 1fr); } }
+
+label { display: block; font-size: 0.78rem; color: var(--gris); margin-bottom: 0.2rem; }
+input, select, textarea {
+  width: 100%; padding: 0.5rem; border: 1px solid var(--bord);
+  border-radius: 0.5rem; font-size: 0.95rem; background: #fff; color: var(--texte);
+}
+.ligne { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.ligne > div { flex: 1; min-width: 7rem; }
+
+button.action { background: var(--vert); color: #fff; border: 0; border-radius: 0.6rem; padding: 0.55rem 1rem; font-size: 0.92rem; cursor: pointer; }
+button.action:hover { background: var(--vert-clair); }
+button.discret { background: none; border: 1px solid var(--bord); border-radius: 0.6rem; padding: 0.4rem 0.8rem; cursor: pointer; }
+button.danger { color: var(--erreur); }
+
+.creneau { border: 1px solid var(--bord); border-radius: 0.6rem; padding: 0.6rem; }
+.creneau.absent { background: #f0efea; opacity: 0.75; }
+.creneau-titre { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+.creneau-titre .service { font-weight: 600; font-size: 0.9rem; }
+.peti { width: 4rem !important; padding: 0.25rem !important; text-align: center; }
+.mention { font-size: 0.75rem; color: var(--gris); }
+.meta { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.meta span { font-size: 0.72rem; background: var(--fond); border-radius: 99px; padding: 0.15rem 0.55rem; }
+.meta span.saison { background: #e3f2e7; color: var(--vert); }
+
+.jour { margin-bottom: 0.9rem; }
+.jour > .titre { font-weight: 600; margin-bottom: 0.4rem; text-transform: capitalize; }
+
+.liste-courses li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--bord); list-style: none; }
+.liste-courses ul { margin: 0; padding: 0; }
+.barrer { text-decoration: line-through; color: var(--gris); font-size: 0.8rem; }
+
+.etoiles button { font-size: 1.3rem; cursor: pointer; border: 0; background: none; padding: 0 0.1rem; }
+.etoiles .pleine { color: #e9b44c; }
+.etoiles .vide { color: var(--bord); }
+
+.connexion { max-width: 22rem; margin: 4rem auto; }
+.erreur { color: var(--erreur); font-size: 0.85rem; margin-top: 0.4rem; }
+
+.tabs-journees { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }

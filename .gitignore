@@ -1,0 +1,11 @@
+# Dépendances, build, base et données
+node_modules/
+dist/
+donnees/
+*.db
+*.db-*
+.env
+
+# Divers
+.DS_Store
+*.log
