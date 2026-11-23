@@ -11,8 +11,10 @@ const app = Fastify({ logger: true });
 await app.register(cookie);
 
 // Connexion / déconnexion (publiques), puis toutes les routes API protégées.
-await routesAuth(app);
-await routesApi(app);
+// Chaque groupe est encapsulé dans register() : le hook `protege` ajouté dans
+// routesApi ne s'applique alors qu'aux routes de ce plugin, pas à /api/session.
+await app.register(routesAuth);
+await app.register(routesApi);
 
 // Ce serveur ne sert QUE l'API : en production, un reverse proxy (Caddy, Nginx)
 // sert le build statique de `web/dist` et transmet /api vers le port 3000.
