@@ -1,0 +1,12 @@
+{
+  "name": "Menu Famille",
+  "short_name": "Menu",
+  "description": "Planification des repas de la semaine et liste de courses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#2f7a4d",
+  "icons": [
+    { "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
