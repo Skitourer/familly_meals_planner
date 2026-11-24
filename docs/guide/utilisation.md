@@ -88,14 +88,21 @@ L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :
   kilomètres de voiture), budget des courses et coût par repas et par personne ;
 - **nutrition dans le temps** : chaque repère ANSES/PNNS semaine par semaine (✓ atteint,
   ≈ proche, ✗ hors cible), le Nutri-Score moyen et la part de semaines conformes ;
-- **couverture des besoins** de chaque membre (énergie, protéines) par les repas pris à la
-  maison ;
+- **couverture des besoins** de chaque membre en calcium, fer, vitamine C, fibres, folates
+  et oméga-3 (EPA + DHA) : apport moyen d'un repas pris à la maison comparé à 30 % de la
+  référence journalière pour son âge et son sexe ;
 - **carbone et budget** semaine par semaine (survolez une barre pour le détail) ;
 - **goûts et variété** : plats préférés et moins aimés de chacun, part de repas
   végétariens, nombre de légumes différents, sources de protéines, plats bien notés à
   redécouvrir et plats jamais servis ;
 - **saisonnalité** et **anti-gaspillage** : part des fruits et légumes de saison, quantités
   reprises dans le placard, surplus de produits frais, produits périmés.
+
+!!! note "Repas pris à l'extérieur"
+    Les repas où un membre est absent (cantine, travail, restaurant) ne sont pas saisis : ils
+    sont **supposés équilibrés**. Ils ne comptent ni dans les repères de la semaine (ramenés
+    au nombre de repas pris à la maison), ni dans la couverture des besoins (moyenne par
+    repas pris à la maison).
 
 Le budget d'une semaine est estimé tant que les courses ne sont pas validées ; il devient
 celui de la liste réellement achetée ensuite.

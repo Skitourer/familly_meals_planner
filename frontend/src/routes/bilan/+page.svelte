@@ -175,7 +175,8 @@
 			Apport moyen d'un déjeuner ou dîner pris à la maison, comparé à 30 % de la référence
 			journalière (ANSES / EFSA) selon l'âge et le sexe. En dessous de 70 % : point d'attention (le
 			petit-déjeuner et le goûter complètent). Les repas pris dehors (cantine...) sont supposés
-			équilibrés et ne sont pas comptés.
+			équilibrés et ne sont pas comptés. Valeurs des aliments crus : la cuisson réduit la vitamine C
+			et les folates (souvent de 30 à 50 %).
 		</p>
 		<div class="membres">
 			{#each bilan.membres as m (m.id)}

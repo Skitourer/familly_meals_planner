@@ -134,6 +134,28 @@ Le poids du repas tient compte de l'eau absorbée par les féculents et légumes
 rend leur score un peu sévère. Le Nutri-Score n'entre pas dans l'optimisation : les repères
 nutritionnels, plus complets, la pilotent déjà.
 
+### Couverture des besoins par membre (onglet Bilan)
+
+Fichier : `domaine/references.py`. Pour chaque membre, l'apport moyen d'un repas pris à la
+maison (plat + dessert, multiplié par son coefficient de portion) est comparé à 30 % de sa
+référence journalière, selon l'âge et le sexe (RNP ou AS de l'EFSA, reprises par l'ANSES) :
+
+| Nutriment | Pourquoi le suivre | Exemples de références journalières |
+|---|---|---|
+| Calcium | souvent insuffisant chez les adolescents | 800 mg (4-10 ans), 1 150 mg (11-17 ans), 950 mg (adulte) |
+| Fer | souvent insuffisant chez les femmes et adolescentes | 11 mg (homme), 16 mg (femme de 18 à 49 ans), 13 mg (fille de 12 à 17 ans) |
+| Vitamine C | demandé par la famille | 45 mg (7-10 ans), 110 mg (homme), 95 mg (femme) |
+| Fibres | insuffisantes chez la plupart des Français | 14 g (4-6 ans), 30 g (adulte) |
+| Folates (B9) | importants pour les femmes en âge d'avoir des enfants | 200 µg (7-10 ans), 330 µg (adulte) |
+| Oméga-3 EPA + DHA | apportés presque uniquement par les poissons gras | 250 mg |
+
+L'énergie et les protéines ne sont pas suivies par membre : les portions étant calculées sur
+les besoins énergétiques, la couverture énergétique vaut 100 % par construction ; la part
+des protéines (10-20 % de l'énergie) est contrôlée au niveau de la famille.
+
+Limites : valeurs des aliments crus (la cuisson réduit la vitamine C et les folates) ; la
+vitamine D et l'iode, qui dépendent surtout du soleil et du sel iodé, ne sont pas suivis.
+
 ## 8. Liste de courses
 
 Fichier : `domaine/courses.py`.
