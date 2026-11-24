@@ -124,7 +124,7 @@ function FormulairePlat({ plat, onFerme, onSauve, onError }: {
       </div>
       <div className="ligne" style={{ marginTop: "0.6rem" }}>
         <div style={{ flex: 1 }}>
-          <label>Lien vers la recette (URL, optionnel)</label>
+          <label>Lien vers la recette — mettez ici VOTRE recette (par défaut : recherche Marmiton)</label>
           <input placeholder="https://…" value={lienRecette} onChange={(e) => setLienRecette(e.target.value)} />
         </div>
       </div>
