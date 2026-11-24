@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.1.0...v1.2.0) (2026-11-24)
+
+
+### Nouveautés
+
+* comptes adulte et enfant ([#21](https://github.com/Skitourer/familly_meals_planner/issues/21)) ([ec8a488](https://github.com/Skitourer/familly_meals_planner/commit/ec8a48814bf7b1a9ea7a1086d95c6db56543bc67))
+
+
+### Corrections
+
+* **ci:** nom d'image Docker en minuscules et republication manuelle ([#25](https://github.com/Skitourer/familly_meals_planner/issues/25)) ([67eab6b](https://github.com/Skitourer/familly_meals_planner/commit/67eab6b106a9c103658f2bc5efe180ec5a24a67c))
+
+
+### Documentation
+
+* consignes pour les agents de code (AGENTS.md) ([#30](https://github.com/Skitourer/familly_meals_planner/issues/30)) ([09b843c](https://github.com/Skitourer/familly_meals_planner/commit/09b843cb5ca2eaa1ec8273f94ce02fbf3792b990))
+
 ## [1.1.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.0.0...v1.1.0) (2026-11-24)
 
 
