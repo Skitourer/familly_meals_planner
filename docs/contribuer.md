@@ -36,11 +36,18 @@ gitGraph
 « chore(main): release x.y.z » qui accumule le `CHANGELOG.md`. La fusionner crée le tag, la
 release GitHub et publie l'image Docker versionnée sur `ghcr.io`.
 
-release-please utilise le secret **`RELEASE_PLEASE_TOKEN`** : un jeton d'accès personnel
-*fine-grained*, limité à ce dépôt, avec les permissions *Contents*, *Pull requests* et
-*Issues* en lecture/écriture. Il est nécessaire pour que la PR de version déclenche la CI
-(GitHub ne la lance pas pour les PR créées par le jeton automatique des Actions). Le jeton
-expire : le renouveler et mettre à jour le secret (`gh secret set RELEASE_PLEASE_TOKEN`).
+release-please s'authentifie avec une **GitHub App** personnelle (« robot de publication »)
+installée sur le dépôt, avec les permissions *Contents*, *Pull requests* et *Issues* en
+lecture/écriture. Le workflow en obtient un jeton valable une heure
+(`actions/create-github-app-token`) grâce à :
+
+- la variable de dépôt `RELEASE_APP_ID` (identifiant de l'App) ;
+- le secret `RELEASE_APP_PRIVATE_KEY` (clé privée `.pem` de l'App).
+
+Pourquoi : GitHub ne lance pas la CI sur une PR créée par le jeton automatique des
+Actions ; avec l'App, la PR de version est vérifiée normalement, et ses commits sont signés
+par le robot de l'App (aucune adresse personnelle). Sans App configurée, le workflow se replie
+sur le jeton automatique : il faut alors fermer et rouvrir la PR de version pour lancer la CI.
 
 ## Automatisations
 
