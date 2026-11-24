@@ -139,7 +139,7 @@
 {#if ecarts.length}
 	<p class="erreur">
 		Certains repères ne sont pas atteints cette semaine ({ecarts.join(', ')}) : essayez une autre
-		proposition ou ajoutez des recettes.
+		proposition ou ajoutez des plats.
 	</p>
 {/if}
 

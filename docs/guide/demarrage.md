@@ -34,6 +34,9 @@ cd frontend
 npm run dev
 ```
 
+Si le port 8000 est déjà utilisé : `uv run poe dev --port 8010` puis
+`REPAS_API=http://127.0.0.1:8010 npm run dev`.
+
 Ouvrez <http://localhost:5173>. Mot de passe par défaut en développement : `famille`
 (variable `REPAS_MOT_DE_PASSE`, voir `.env.example`).
 
@@ -45,7 +48,7 @@ Ouvrez <http://localhost:5173>. Mot de passe par défaut en développement : `fa
 
 | Commande | Rôle |
 |---|---|
-| `uv run poe dev` | API avec rechargement automatique |
+| `uv run poe dev` | API avec rechargement automatique (`--port 8010` pour changer de port) |
 | `uv run poe check` | Tout vérifier comme la CI (style, types, tests) |
 | `uv run poe format` | Corriger le style automatiquement |
 | `uv run poe test` | Tests avec couverture |

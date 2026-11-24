@@ -3,6 +3,7 @@
 
 - id: veloute-potiron
   nom: Velouté de potiron, tartines au comté
+  lien: https://www.marmiton.org/recettes/recette_veloute-de-potiron_18663.aspx
   type: plat
   temps: {preparation: 15, cuisson: 30}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -23,6 +24,7 @@
 
 - id: soupe-poireaux-pommes-de-terre
   nom: Soupe poireaux-pommes de terre, œuf mollet et pain
+  lien: https://www.marmiton.org/recettes/recette_soupe-poireaux-pommes-de-terre_33013.aspx
   type: plat
   temps: {preparation: 15, cuisson: 30}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -42,6 +44,7 @@
 
 - id: soupe-butternut-lentilles
   nom: Soupe de butternut aux lentilles corail
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=soupe%20butternut%20lentilles%20corail
   type: plat
   temps: {preparation: 15, cuisson: 25}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -61,6 +64,7 @@
 
 - id: potee-chou
   nom: Potée au chou et saucisse de Montbéliard
+  lien: https://www.marmiton.org/recettes/recette_potee-aux-saucisses-de-montbeliard_219466.aspx
   type: plat
   temps: {preparation: 20, cuisson: 60}
   lot: {repas_max: 2, conservation_jours: 3}
@@ -80,6 +84,7 @@
 
 - id: endives-jambon
   nom: Endives au jambon gratinées
+  lien: https://www.marmiton.org/recettes/recette_endives-au-jambon-gratinees-au-parmesan_35327.aspx
   type: plat
   temps: {preparation: 20, cuisson: 35}
   etiquettes: [four, enfants]
@@ -100,6 +105,7 @@
 
 - id: boeuf-carottes
   nom: Bœuf carottes
+  lien: https://www.marmiton.org/recettes/recette_boeuf-braise-aux-carottes_13296.aspx
   type: plat
   temps: {preparation: 20, cuisson: 150}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -120,6 +126,7 @@
 
 - id: gratin-chou-fleur
   nom: Gratin de chou-fleur et pommes de terre
+  lien: https://www.marmiton.org/recettes/recette_gratin-de-chou-fleur-et-pommes-de-terre_23151.aspx
   type: plat
   temps: {preparation: 20, cuisson: 35}
   etiquettes: [vegetarien, four]
@@ -139,6 +146,7 @@
 
 - id: risotto-champignons-poireaux
   nom: Risotto aux champignons et poireaux
+  lien: https://www.marmiton.org/recettes/recette_risotto-aux-poireaux_19753.aspx
   type: plat
   temps: {preparation: 15, cuisson: 30}
   etiquettes: [vegetarien]
@@ -157,6 +165,7 @@
 
 - id: cabillaud-poireaux
   nom: Cabillaud sur fondue de poireaux, riz complet
+  lien: https://www.marmiton.org/recettes/recette_cabillaud-sur-fondue-de-poireaux_20342.aspx
   type: plat
   temps: {preparation: 15, cuisson: 25}
   etiquettes: [poisson]
@@ -174,6 +183,7 @@
 
 - id: lentilles-saucisse
   nom: Petit salé aux lentilles (version légère)
+  lien: https://www.marmiton.org/recettes/recette_petit-sale-aux-lentilles_19044.aspx
   type: plat
   temps: {preparation: 15, cuisson: 40}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -191,6 +201,7 @@
 
 - id: saumon-brocoli-riz
   nom: Saumon, brocoli et riz complet
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=saumon%20brocoli%20riz
   type: plat
   temps: {preparation: 10, cuisson: 25}
   etiquettes: [poisson-gras]
@@ -207,6 +218,7 @@
 
 - id: salade-endives-betterave
   nom: Salade d'endives, betterave, lentilles et chèvre
+  lien: https://www.marmiton.org/recettes/recette_salade-d-endives-et-betterave-a-la-creme-citronnee_26162.aspx
   type: plat
   temps: {preparation: 15, cuisson: 0}
   etiquettes: [vegetarien, rapide, sans-cuisson]
@@ -225,6 +237,7 @@
 
 - id: hachis-patate-douce-lentilles
   nom: Parmentier de patate douce aux lentilles
+  lien: https://www.marmiton.org/recettes/recette_hachis-parmentier-a-patate-douce_221284.aspx
   type: plat
   temps: {preparation: 20, cuisson: 40}
   lot: {repas_max: 2, conservation_jours: 3}
@@ -245,6 +258,7 @@
 
 - id: poulet-curry-chou-fleur
   nom: Poulet au curry et chou-fleur rôti
+  lien: https://www.marmiton.org/recettes/recette_papillote-de-poulet-curry-coco-au-chou-fleur_71331.aspx
   type: plat
   temps: {preparation: 15, cuisson: 30}
   etiquettes: [four]

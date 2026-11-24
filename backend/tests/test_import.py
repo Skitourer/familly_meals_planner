@@ -10,6 +10,7 @@ RECETTE_OK = {
     "type": "plat",
     "ingredients": {"poireau": 180, "pois-chiches": 120, "riz-complet": 70},
     "etapes": ["Cuire.", "Servir."],
+    "lien": "https://exemple.fr/poelee",
 }
 
 
@@ -69,3 +70,27 @@ def test_exemple_des_instructions_est_importable(cat: Catalogue):
     exemple = texte.split("```json\n")[1].split("```")[0]
     rapport, _ = analyser_import(exemple, cat)
     assert rapport.nb_acceptees == 1, rapport
+
+
+def test_plat_sans_lien_refuse(cat: Catalogue):
+    sans_lien = {k: v for k, v in RECETTE_OK.items() if k != "lien"}
+    rapport, acceptees = analyser_import(fichier(sans_lien), cat)
+    assert not acceptees
+    assert "lien" in rapport.recettes[0].erreurs[0]
+
+
+def test_dessert_sans_lien_accepte(cat: Catalogue):
+    dessert = {"id": "poire-test", "nom": "Poire", "type": "dessert", "ingredients": {"poire": 150}}
+    _, acceptees = analyser_import(fichier(dessert), cat)
+    assert acceptees
+
+
+def test_verification_des_liens(cat: Catalogue):
+    rapport, acceptees = analyser_import(fichier(RECETTE_OK), cat, lambda _: "introuvable")
+    assert not acceptees and "404" in rapport.recettes[0].erreurs[0]
+    rapport, acceptees = analyser_import(fichier(RECETTE_OK), cat, lambda _: "injoignable")
+    assert acceptees and "non vérifié" in rapport.recettes[0].avertissements[-1]
+
+
+def test_tous_les_plats_du_catalogue_ont_un_lien(cat: Catalogue):
+    assert all(p.recette.lien for p in cat.plats())

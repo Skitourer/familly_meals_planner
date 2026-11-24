@@ -16,7 +16,7 @@
 
 	function quantite(id: string, grammes: number): string {
 		const total = grammes * portions;
-		const unite = fiche.ingredients_unites[id] === 'ml' ? 'ml' : 'g';
+		const unite = fiche.ingredients_unites?.[id] === 'ml' ? 'ml' : 'g';
 		if (total >= 1000) return `${f1(total / 1000)} ${unite === 'ml' ? 'L' : 'kg'}`;
 		return `${total < 10 ? f1(total) : Math.round(total / 5) * 5} ${unite}`;
 	}
@@ -51,7 +51,7 @@
 </h3>
 <ul>
 	{#each Object.entries(r.ingredients) as [id, grammes] (id)}
-		<li>{fiche.ingredients_noms[id]} : <strong>{quantite(id, grammes)}</strong></li>
+		<li>{fiche.ingredients_noms?.[id] ?? id} : <strong>{quantite(id, grammes)}</strong></li>
 	{/each}
 </ul>
 

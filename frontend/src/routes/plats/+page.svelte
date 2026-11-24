@@ -1,4 +1,4 @@
-<!-- Catalogue des recettes (nutrition, carbone, saison, notes) et import JSON. -->
+<!-- Catalogue des plats et desserts (nutrition, carbone, saison, notes) et import JSON. -->
 <script lang="ts">
 	import { api, messageErreur } from '#lib/api.ts';
 	import DetailRecette from '#lib/composants/DetailRecette.svelte';
@@ -65,7 +65,7 @@
 	const f1 = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 </script>
 
-<h1>Recettes</h1>
+<h1>Plats</h1>
 {#if erreur}<p class="erreur">{erreur}</p>{/if}
 
 <div class="filtres ligne">
@@ -79,7 +79,7 @@
 	</div>
 	<input type="search" placeholder="Rechercher (nom, étiquette…)" bind:value={recherche} />
 	<label class="case"><input type="checkbox" bind:checked={seulementSaison} /> De saison</label>
-	<span class="doux">{liste.length} recettes</span>
+	<span class="doux">{liste.length} {type === 'plat' ? 'plats' : 'desserts'}</span>
 </div>
 
 <div class="grille">
@@ -101,7 +101,7 @@
 </div>
 
 <section class="carte import">
-	<h2>Ajouter des recettes avec une IA</h2>
+	<h2>Ajouter des plats avec une IA</h2>
 	<ol>
 		<li>
 			Téléchargez le <a href="/api/import/instructions-ia.md" download>fichier d'instructions</a>

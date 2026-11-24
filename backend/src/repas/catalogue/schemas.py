@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, model_validator
 
 
 class Famille(StrEnum):
@@ -211,5 +211,12 @@ class Recette(BaseModel):
     lien: str | None = Field(
         default=None,
         pattern=r"^https?://\S+$",
-        description="Adresse d'une recette détaillée en ligne (facultatif).",
+        description="Adresse d'une recette détaillée en ligne (obligatoire pour un plat).",
     )
+
+    @model_validator(mode="after")
+    def _plat_avec_recette(self) -> Recette:
+        """Chaque plat doit renvoyer vers une recette détaillée en ligne."""
+        if self.type == "plat" and not self.lien:
+            raise ValueError("un plat doit avoir un « lien » vers sa recette (https://…)")
+        return self

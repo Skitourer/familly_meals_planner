@@ -126,6 +126,7 @@ def test_import_de_recettes(client: TestClient):
 
     contenu = json.dumps({"format": "menu-famille/recettes", "version": 1, "recettes": [
         {"id": "soupe-test", "nom": "Soupe test", "type": "plat", "etapes": ["Mixer."],
+         "lien": "https://exemple.fr/soupe",
          "ingredients": {"poireau": 200, "pomme-de-terre": 150, "lentilles-corail": 50,
                          "pain-complet": 60}},
     ]})  # fmt: skip
@@ -176,11 +177,13 @@ def test_lien_de_recette(client: TestClient):
          "lien": "https://exemple.fr/recette"},
         {"id": "lien-invalide", "nom": "Lien invalide", "type": "dessert",
          "ingredients": {"pomme": 150}, "lien": "javascript:alert(1)"},
+        {"id": "lien-introuvable", "nom": "Lien introuvable", "type": "dessert",
+         "ingredients": {"pomme": 150}, "lien": "https://exemple.fr/introuvable"},
     ]})  # fmt: skip
     envoi = {"fichier": ("r.json", contenu, "application/json")}
     rapport = client.post("/api/import/recettes", params={"appliquer": True}, files=envoi).json()
-    assert [r["acceptee"] for r in rapport["recettes"]] == [True, False]
+    assert [r["acceptee"] for r in rapport["recettes"]] == [True, False, False]
     recettes = {r["recette"]["id"]: r for r in client.get("/api/recettes").json()}
     assert recettes["avec-lien"]["recette"]["lien"] == "https://exemple.fr/recette"
-    assert recettes["dahl-lentilles-corail"]["recette"]["lien"] is None
+    assert recettes["dahl-lentilles-corail"]["recette"]["lien"].startswith("https://")
     assert recettes["dahl-lentilles-corail"]["ingredients_unites"]["lait-coco"] == "ml"

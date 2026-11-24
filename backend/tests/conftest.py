@@ -30,9 +30,15 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     for cache in (parametres, moteur, catalogue):
         cache.cache_clear()
 
+    from repas.api.catalogue import verificateur_lien
     from repas.application import creer_application
 
-    with TestClient(creer_application()) as c:
+    application = creer_application()
+    # Pas d'accès réseau en test : les liens « /introuvable » simulent une page 404.
+    application.dependency_overrides[verificateur_lien] = lambda: (
+        lambda url: "introuvable" if url.endswith("/introuvable") else "ok"
+    )
+    with TestClient(application) as c:
         assert c.post("/api/session", json={"mot_de_passe": "secret"}).status_code == 200
         yield c
 

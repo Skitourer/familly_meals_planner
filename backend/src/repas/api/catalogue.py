@@ -9,7 +9,12 @@ from sqlmodel import Session, select
 
 from repas.base import session
 from repas.catalogue import Catalogue, ProfilRecette, catalogue, recharger_catalogue
-from repas.catalogue.import_recettes import analyser_import, enregistrer, instructions_ia
+from repas.catalogue.import_recettes import (
+    analyser_import,
+    enregistrer,
+    instructions_ia,
+    verifier_lien_http,
+)
 from repas.catalogue.schemas import Nutriments, Recette
 from repas.config import parametres
 from repas.domaine.notes import NoteDonnee, Preferences
@@ -98,13 +103,20 @@ def telecharger_instructions() -> PlainTextResponse:
     )
 
 
+def verificateur_lien():
+    """Dépendance : vérification des liens de recettes (remplaçable dans les tests)."""
+    return verifier_lien_http
+
+
 @router.post("/import/recettes")
-async def importer(fichier: UploadFile, appliquer: bool = False) -> dict:
+async def importer(
+    fichier: UploadFile, appliquer: bool = False, verifier=Depends(verificateur_lien)
+) -> dict:
     """Valide un fichier JSON de recettes ; ``appliquer=true`` enregistre les recettes valides."""
     contenu = await fichier.read()
     if len(contenu) > 2_000_000:
         raise HTTPException(413, "Fichier trop volumineux (2 Mo maximum)")
-    rapport, acceptees = analyser_import(contenu, catalogue())
+    rapport, acceptees = analyser_import(contenu, catalogue(), verifier)
     if appliquer and acceptees:
         enregistrer(acceptees, parametres().dossier_recettes_importees)
         recharger_catalogue()

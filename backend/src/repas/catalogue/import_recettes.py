@@ -19,10 +19,12 @@ Les recettes acceptées sont enregistrées dans
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
+import httpx
 import yaml
 from pydantic import BaseModel, ValidationError
 
@@ -60,10 +62,31 @@ class RapportImport:
         return sum(r.acceptee for r in self.recettes)
 
 
+type VerificateurLien = Callable[[str], Literal["ok", "introuvable", "injoignable"]]
+
+
+def verifier_lien_http(url: str) -> Literal["ok", "introuvable", "injoignable"]:
+    """Vérifie qu'un lien de recette existe (les IA inventent parfois des adresses)."""
+    try:
+        reponse = httpx.get(url, follow_redirects=True, timeout=8,
+                            headers={"User-Agent": "Mozilla/5.0 (MenuFamille)"})  # fmt: skip
+    except httpx.HTTPError:
+        return "injoignable"
+    if reponse.status_code in (404, 410):
+        return "introuvable"
+    return "ok" if reponse.status_code < 400 else "injoignable"
+
+
 def analyser_import(
-    contenu: str | bytes, catalogue: Catalogue
+    contenu: str | bytes,
+    catalogue: Catalogue,
+    verifier_lien: VerificateurLien | None = None,
 ) -> tuple[RapportImport, list[Recette]]:
-    """Valide un fichier JSON ; renvoie le rapport et les recettes acceptées."""
+    """Valide un fichier JSON ; renvoie le rapport et les recettes acceptées.
+
+    ``verifier_lien`` (facultatif) contrôle que le lien de chaque recette existe : un
+    lien introuvable (404) est refusé, un site injoignable donne un simple avertissement.
+    """
     try:
         fichier = FichierImport.model_validate(json.loads(contenu))
     except (json.JSONDecodeError, ValidationError) as erreur:
@@ -88,10 +111,15 @@ def analyser_import(
         inconnus = sorted(set(recette.ingredients) - set(catalogue.ingredients))
         if inconnus:
             resultat.erreurs.append("Ingrédients absents du référentiel : " + ", ".join(inconnus))
+        etat_lien = verifier_lien(recette.lien) if verifier_lien and recette.lien else "ok"
+        if etat_lien == "introuvable":
+            resultat.erreurs.append(f"Le lien de la recette n'existe pas (404) : {recette.lien}")
         if resultat.erreurs:
             continue
         profil = catalogue.profiler(recette)
         resultat.avertissements = avertissements_nutrition(profil)
+        if etat_lien == "injoignable":
+            resultat.avertissements.append(f"Lien non vérifié (site injoignable) : {recette.lien}")
         resultat.acceptee = True
         vus.add(recette.id)
         if "source" not in brut:
@@ -162,24 +190,27 @@ _EXEMPLE = {
     "version": VERSION,
     "recettes": [
         {
-            "id": "poelee-poireaux-pois-chiches",
-            "nom": "Poêlée de poireaux et pois chiches, riz complet",
+            "id": "veloute-potiron-poireaux-pois-chiches",
+            "nom": "Velouté de potiron, poireaux et pois chiches",
             "type": "plat",
-            "temps": {"preparation": 15, "cuisson": 25},
-            "etiquettes": ["vegetarien", "legumineuses"],
+            "temps": {"preparation": 15, "cuisson": 30},
+            "lot": {"repas_max": 3, "conservation_jours": 3},
+            "etiquettes": ["vegetarien", "legumineuses", "soupe"],
             "ingredients": {
-                "poireau": 180,
-                "pois-chiches": 120,
-                "riz-complet": 70,
-                "huile-olive": 8,
+                "potiron": 250,
+                "poireau": 120,
+                "pois-chiches": 100,
+                "creme": 15,
+                "pain-complet": 70,
                 "cumin": 1,
             },
             "etapes": [
-                "Cuire le riz complet 25 min.",
-                "Faire fondre les poireaux émincés dans l'huile avec le cumin.",
-                "Ajouter les pois chiches égouttés, réchauffer 5 min et servir avec le riz.",
+                "Faire suer les poireaux émincés avec le cumin.",
+                "Ajouter le potiron en cubes et les pois chiches, couvrir d'eau, cuire 25 min.",
+                "Mixer avec la crème ; servir avec le pain complet grillé.",
             ],
             "source": "Proposition IA",
+            "lien": "https://www.marmiton.org/recettes/recette_veloute-de-potimarron-poireaux-pois-chiches_332929.aspx",
         }
     ],
 }
@@ -241,9 +272,13 @@ d'hiver rapides (moins de 30 min), dont 4 végétariens et 2 à base de poisson 
    conservation de 1 à 5 jours).
 8. `id` : en minuscules, mots séparés par des tirets, sans accent, unique, et
    **différent** des recettes déjà présentes (liste en fin de document).
-9. Pas de sel ni de poivre dans la liste d'ingrédients sauf s'ils sont
+9. **Chaque plat doit avoir un `"lien"`** vers une recette détaillée **qui existe
+   réellement** en ligne (Marmiton, 750g, Cuisine AZ, Ricardo...), la plus proche possible
+   du plat proposé. N'invente jamais d'adresse : l'application vérifie chaque lien et
+   refuse les pages introuvables. Le lien est facultatif pour les desserts simples.
+10. Pas de sel ni de poivre dans la liste d'ingrédients sauf s'ils sont
    caractéristiques ; 3 à 6 étapes courtes et précises.
-10. Privilégie les légumes et fruits **de saison** (mois indiqués dans la liste).
+11. Privilégie les légumes et fruits **de saison** (mois indiqués dans la liste).
 
 ## Format attendu
 
@@ -265,7 +300,7 @@ Champs d'une recette :
 | `lot` | non | plat cuisiné une fois pour plusieurs repas |
 | `plaisir` | non | `true` pour les repas joker uniquement |
 | `source` | non | ex. `"Proposition IA"` |
-| `lien` | non | adresse (https://…) d'une recette détaillée en ligne, si elle existe vraiment |
+| `lien` | **oui (plat)** | recette détaillée existant réellement en ligne (https://…) |
 
 ## Ingrédients autorisés
 

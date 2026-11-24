@@ -6,7 +6,7 @@ par l'assistant de votre choix, puis les **importer** sous forme de fichier JSON
 
 ## Étapes
 
-1. **Télécharger le fichier d'instructions** : onglet **Recettes** → « fichier
+1. **Télécharger le fichier d'instructions** : onglet **Plats** → « fichier
    d'instructions » (ou [version de la documentation](../ia/instructions-ia.md)). Il est généré
    à partir du référentiel : il contient toujours la **liste à jour des ingrédients
    autorisés**, avec leurs mois de saison.
@@ -15,10 +15,12 @@ par l'assistant de votre choix, puis les **importer** sous forme de fichier JSON
    > dont 3 végétariens, 2 à base de poisson et 2 soupes à cuisiner en lot.
 3. **Donner le fichier à l'IA** (copier-coller ou pièce jointe) et enregistrer sa réponse dans
    un fichier `recettes.json`.
-4. **Importer** : onglet Recettes → choisir le fichier → **Vérifier**. Chaque recette est
+4. **Importer** : onglet Plats → choisir le fichier → **Vérifier**. Chaque recette est
    contrôlée :
-    - ❌ **refusée** si sa structure est invalide, si son identifiant existe déjà ou si elle
-      utilise un ingrédient absent du référentiel ;
+    - ❌ **refusée** si sa structure est invalide, si son identifiant existe déjà, si elle
+      utilise un ingrédient absent du référentiel, ou s'il s'agit d'un plat **sans lien vers
+      sa recette** ou avec un lien qui n'existe pas (page 404 : les IA inventent parfois des
+      adresses) ;
     - ⚠️ **avertissements** (non bloquants) si son profil nutritionnel est inhabituel :
       énergie, peu de légumes ou de protéines, trop de sel, pas d'étapes.
 5. **Importer N recettes** pour confirmer.
@@ -44,13 +46,16 @@ recette) et peuvent être supprimées depuis leur fiche, tant qu'elles n'ont pas
       "temps": { "preparation": 15, "cuisson": 25 },
       "etiquettes": ["vegetarien", "legumineuses"],
       "ingredients": { "poireau": 180, "pois-chiches": 120, "riz-complet": 70 },
-      "etapes": ["Cuire le riz.", "Faire fondre les poireaux.", "Ajouter les pois chiches."]
+      "etapes": ["Cuire le riz.", "Faire fondre les poireaux.", "Ajouter les pois chiches."],
+      "lien": "https://www.marmiton.org/recettes/recette_…aspx"
     }
   ]
 }
 ```
 
-Les champs sont ceux du [format du catalogue](../technique/catalogue.md) ; les quantités
+Le champ `lien` est **obligatoire pour un plat** : c'est la recette détaillée qu'ouvre le
+bouton « 📖 Recette » du planning. Les champs sont ceux du
+[format du catalogue](../technique/catalogue.md) ; les quantités
 sont en grammes par portion pour un adulte de référence.
 
 !!! tip "Partager une bonne recette"

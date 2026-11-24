@@ -59,7 +59,7 @@ Chaque fichier contient une liste de recettes, regroupées par thème
     - Faire revenir l'oignon émincé avec le curry.
     - "Astuce : les guillemets sont nécessaires si la phrase contient « : »."
   source: Catalogue Menu Famille
-  lien: https://exemple.fr/dahl         # facultatif : recette détaillée en ligne
+  lien: https://exemple.fr/dahl         # obligatoire pour un plat : recette détaillée en ligne
 ```
 
 ### Règles de composition
@@ -67,6 +67,7 @@ Chaque fichier contient une liste de recettes, regroupées par thème
 - Quantités **nettes** (épluchées, égouttées), pour **un adulte à 2 000 kcal/jour**.
 - Un **plat** est complet (féculent, légumes, protéines), environ 450 à 650 kcal, avec au
   moins 75 g (idéalement 150 g) de légumes. Le dessert est choisi à part.
+- Chaque plat a un `lien` vers une recette détaillée existante (vérifié à l'import JSON).
 - Pas de sel ajouté dans la liste ; les épices et l'huile sont des produits « basiques ».
 - Les tests imposent : énergie plausible, au moins 15 g de protéines pour un plat ordinaire,
   au moins 14 plats de saison chaque mois.

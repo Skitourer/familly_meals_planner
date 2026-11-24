@@ -114,7 +114,7 @@
 				</button>
 				<a
 					class="bouton discret"
-					href={`/recettes/${creneau.plat_id}?portions=${portions}`}
+					href={`/plats/${creneau.plat_id}?portions=${portions}`}
 					title="Recette avec les quantités pour ce repas"
 				>
 					📖 Recette

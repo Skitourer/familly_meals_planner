@@ -33,9 +33,13 @@ d'hiver rapides (moins de 30 min), dont 4 végétariens et 2 à base de poisson 
    conservation de 1 à 5 jours).
 8. `id` : en minuscules, mots séparés par des tirets, sans accent, unique, et
    **différent** des recettes déjà présentes (liste en fin de document).
-9. Pas de sel ni de poivre dans la liste d'ingrédients sauf s'ils sont
+9. **Chaque plat doit avoir un `"lien"`** vers une recette détaillée **qui existe
+   réellement** en ligne (Marmiton, 750g, Cuisine AZ, Ricardo...), la plus proche possible
+   du plat proposé. N'invente jamais d'adresse : l'application vérifie chaque lien et
+   refuse les pages introuvables. Le lien est facultatif pour les desserts simples.
+10. Pas de sel ni de poivre dans la liste d'ingrédients sauf s'ils sont
    caractéristiques ; 3 à 6 étapes courtes et précises.
-10. Privilégie les légumes et fruits **de saison** (mois indiqués dans la liste).
+11. Privilégie les légumes et fruits **de saison** (mois indiqués dans la liste).
 
 ## Format attendu
 
@@ -45,30 +49,37 @@ d'hiver rapides (moins de 30 min), dont 4 végétariens et 2 à base de poisson 
   "version": 1,
   "recettes": [
     {
-      "id": "poelee-poireaux-pois-chiches",
-      "nom": "Poêlée de poireaux et pois chiches, riz complet",
+      "id": "veloute-potiron-poireaux-pois-chiches",
+      "nom": "Velouté de potiron, poireaux et pois chiches",
       "type": "plat",
       "temps": {
         "preparation": 15,
-        "cuisson": 25
+        "cuisson": 30
+      },
+      "lot": {
+        "repas_max": 3,
+        "conservation_jours": 3
       },
       "etiquettes": [
         "vegetarien",
-        "legumineuses"
+        "legumineuses",
+        "soupe"
       ],
       "ingredients": {
-        "poireau": 180,
-        "pois-chiches": 120,
-        "riz-complet": 70,
-        "huile-olive": 8,
+        "potiron": 250,
+        "poireau": 120,
+        "pois-chiches": 100,
+        "creme": 15,
+        "pain-complet": 70,
         "cumin": 1
       },
       "etapes": [
-        "Cuire le riz complet 25 min.",
-        "Faire fondre les poireaux émincés dans l'huile avec le cumin.",
-        "Ajouter les pois chiches égouttés, réchauffer 5 min et servir avec le riz."
+        "Faire suer les poireaux émincés avec le cumin.",
+        "Ajouter le potiron en cubes et les pois chiches, couvrir d'eau, cuire 25 min.",
+        "Mixer avec la crème ; servir avec le pain complet grillé."
       ],
-      "source": "Proposition IA"
+      "source": "Proposition IA",
+      "lien": "https://www.marmiton.org/recettes/recette_veloute-de-potimarron-poireaux-pois-chiches_332929.aspx"
     }
   ]
 }
@@ -88,7 +99,7 @@ Champs d'une recette :
 | `lot` | non | plat cuisiné une fois pour plusieurs repas |
 | `plaisir` | non | `true` pour les repas joker uniquement |
 | `source` | non | ex. `"Proposition IA"` |
-| `lien` | non | adresse (https://…) d'une recette détaillée en ligne, si elle existe vraiment |
+| `lien` | **oui (plat)** | recette détaillée existant réellement en ligne (https://…) |
 
 ## Ingrédients autorisés
 

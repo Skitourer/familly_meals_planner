@@ -6,6 +6,7 @@
 
 - id: spaghetti-bolognaise
   nom: Spaghetti bolognaise
+  lien: https://www.marmiton.org/recettes/recette_spaghetti-bolognaise_19840.aspx
   type: plat
   temps: {preparation: 15, cuisson: 35}
   lot: {repas_max: 2, conservation_jours: 3}
@@ -27,6 +28,7 @@
 
 - id: dahl-lentilles-corail
   nom: Dahl de lentilles corail au lait de coco
+  lien: https://www.marmiton.org/recettes/recette_dahl-de-lentilles-corail-epinards-et-lait-de-coco_534224.aspx
   type: plat
   temps: {preparation: 10, cuisson: 25}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -49,6 +51,7 @@
 
 - id: chili-sin-carne
   nom: Chili sin carne
+  lien: https://www.marmiton.org/recettes/recette_chili-sin-carne_371856.aspx
   type: plat
   temps: {preparation: 15, cuisson: 30}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -70,6 +73,7 @@
 
 - id: chili-con-carne
   nom: Chili con carne
+  lien: https://www.marmiton.org/recettes/recette_chili-con-carne_29198.aspx
   type: plat
   temps: {preparation: 15, cuisson: 40}
   lot: {repas_max: 3, conservation_jours: 3}
@@ -90,6 +94,7 @@
 
 - id: curry-pois-chiches-patate-douce
   nom: Curry de pois chiches et patate douce
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=curry%20pois%20chiches%20patate%20douce
   type: plat
   temps: {preparation: 15, cuisson: 30}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -112,6 +117,7 @@
 
 - id: lieu-papillote-riz-haricots
   nom: Lieu en papillote, riz et haricots verts
+  lien: https://www.marmiton.org/recettes/recette_lieu-noir-en-papillote_67503.aspx
   type: plat
   temps: {preparation: 10, cuisson: 20}
   etiquettes: [poisson, rapide]
@@ -129,6 +135,7 @@
 
 - id: salade-lentilles-maquereau
   nom: Salade tiède de lentilles au maquereau fumé
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=salade%20lentilles%20maquereau%20fum%C3%A9
   type: plat
   temps: {preparation: 10, cuisson: 25}
   etiquettes: [poisson-gras, legumineuses]
@@ -148,6 +155,7 @@
 
 - id: omelette-champignons
   nom: Omelette aux champignons, pommes de terre sautées
+  lien: https://www.marmiton.org/recettes/recette_omelette-aux-champignons-et-courgettes_49852.aspx
   type: plat
   temps: {preparation: 10, cuisson: 20}
   etiquettes: [vegetarien, rapide, oeufs]
@@ -165,6 +173,7 @@
 
 - id: riz-cantonais
   nom: Riz cantonais aux petits pois
+  lien: https://www.marmiton.org/recettes/recette_riz-cantonais_84068.aspx
   type: plat
   temps: {preparation: 15, cuisson: 20}
   etiquettes: [enfants, rapide]
@@ -185,6 +194,7 @@
 
 - id: hachis-parmentier
   nom: Hachis parmentier
+  lien: https://www.marmiton.org/recettes/recette_hachis-parmentier_17639.aspx
   type: plat
   temps: {preparation: 25, cuisson: 30}
   lot: {repas_max: 2, conservation_jours: 3}
@@ -206,6 +216,7 @@
 
 - id: lasagnes-epinards-ricotta
   nom: Lasagnes épinards-ricotta
+  lien: https://www.marmiton.org/recettes/recette_lasagnes-ricotta-epinards_80435.aspx
   type: plat
   temps: {preparation: 25, cuisson: 40}
   lot: {repas_max: 2, conservation_jours: 3}
@@ -227,6 +238,7 @@
 
 - id: galettes-sarrasin-completes
   nom: Galettes de sarrasin complètes
+  lien: https://www.marmiton.org/recettes/recette_galettes-de-sarrasin_60273.aspx
   type: plat
   temps: {preparation: 15, cuisson: 20}
   etiquettes: [enfants]
@@ -245,6 +257,7 @@
 
 - id: pates-pesto-haricots
   nom: Pâtes complètes au pesto et haricots verts
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=p%C3%A2tes%20pesto%20haricots%20verts
   type: plat
   temps: {preparation: 5, cuisson: 15}
   etiquettes: [vegetarien, rapide, pates]
@@ -260,6 +273,7 @@
 
 - id: tofu-saute-legumes
   nom: Tofu sauté aux légumes et riz
+  lien: https://www.marmiton.org/recettes/recette_riz-saute-aux-legumes-et-au-tofu_528167.aspx
   type: plat
   temps: {preparation: 15, cuisson: 15}
   etiquettes: [vegetarien, rapide]
@@ -279,6 +293,7 @@
 
 - id: poulet-roti-legumes
   nom: Poulet rôti, pommes de terre et haricots verts
+  lien: https://www.marmiton.org/recettes/recette_poulet-roti-et-ses-pommes-de-terre_43958.aspx
   type: plat
   temps: {preparation: 10, cuisson: 45}
   etiquettes: [enfants, four]
@@ -296,6 +311,7 @@
 
 - id: dinde-moutarde-boulgour
   nom: Escalope de dinde à la moutarde, boulgour et carottes
+  lien: https://www.marmiton.org/recettes/recette_escalope-de-dinde-a-la-moutarde_64617.aspx
   type: plat
   temps: {preparation: 10, cuisson: 20}
   etiquettes: [rapide]
@@ -313,6 +329,7 @@
 
 - id: sardines-pommes-de-terre
   nom: Pommes de terre, sardines et salade de carottes
+  lien: https://www.marmiton.org/recettes/recette_ecrasee-de-pommes-de-terre-aux-sardines_34547.aspx
   type: plat
   temps: {preparation: 15, cuisson: 20}
   etiquettes: [poisson-gras, rapide]
@@ -330,6 +347,7 @@
 
 - id: saumon-quinoa-epinards
   nom: Pavé de saumon, quinoa et épinards
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=saumon%20quinoa%20%C3%A9pinards
   type: plat
   temps: {preparation: 10, cuisson: 20}
   etiquettes: [poisson-gras, rapide]
@@ -346,6 +364,7 @@
 
 - id: soupe-haricots-blancs
   nom: Soupe de haricots blancs, carottes et pain grillé
+  lien: https://www.marmiton.org/recettes/recette_soupe-de-haricots-blancs-a-la-tomate_22267.aspx
   type: plat
   temps: {preparation: 10, cuisson: 25}
   lot: {repas_max: 3, conservation_jours: 4}
@@ -366,6 +385,7 @@
 
 - id: couscous-legumes-pois-chiches
   nom: Couscous végétarien aux pois chiches
+  lien: https://www.marmiton.org/recettes/recette_couscous-vegetarien-facile_62233.aspx
   type: plat
   temps: {preparation: 20, cuisson: 40}
   lot: {repas_max: 3, conservation_jours: 4}

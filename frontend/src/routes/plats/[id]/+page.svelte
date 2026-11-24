@@ -1,5 +1,5 @@
 <!--
-	Page d'une recette : /recettes/<id>?portions=3.4
+	Fiche d'un plat : /plats/<id>?portions=3.4
 	Depuis le planning, `portions` est la somme des portions des convives du repas.
 -->
 <script lang="ts">
@@ -22,7 +22,7 @@
 </script>
 
 <p>
-	<a href="/recettes" onclick={(e) => history.length > 1 && (e.preventDefault(), history.back())}>
+	<a href="/plats" onclick={(e) => history.length > 1 && (e.preventDefault(), history.back())}>
 		← Retour
 	</a>
 </p>

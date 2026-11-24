@@ -4,6 +4,7 @@
 
 - id: pizza-maison
   nom: Pizza maison jambon-champignons
+  lien: https://www.marmiton.org/recettes/recette_pizza-maison_313213.aspx
   type: plat
   plaisir: true
   temps: {preparation: 15, cuisson: 15}
@@ -22,6 +23,7 @@
 
 - id: burger-maison
   nom: Burger maison et frites au four
+  lien: https://www.marmiton.org/recettes/recette_home-burger_93645.aspx
   type: plat
   plaisir: true
   temps: {preparation: 15, cuisson: 25}
@@ -40,6 +42,7 @@
 
 - id: tartiflette
   nom: Tartiflette et salade verte
+  lien: https://www.marmiton.org/recettes/recette_tartiflette_10514.aspx
   type: plat
   plaisir: true
   temps: {preparation: 20, cuisson: 40}
@@ -59,6 +62,7 @@
 
 - id: raclette
   nom: Raclette, charcuterie légère et salade
+  lien: https://www.marmiton.org/recettes/recette_raclette-a-la-poele_86649.aspx
   type: plat
   plaisir: true
   temps: {preparation: 10, cuisson: 25}
@@ -76,6 +80,7 @@
 
 - id: croque-monsieur
   nom: Croque-monsieur et salade
+  lien: https://www.marmiton.org/recettes/recette_croque-monsieur-hivernal_528745.aspx
   type: plat
   plaisir: true
   temps: {preparation: 10, cuisson: 10}
@@ -93,6 +98,7 @@
 
 - id: moules-frites
   nom: Moules marinières et frites au four
+  lien: https://www.marmiton.org/recettes/recette_moules-marinieres_13214.aspx
   type: plat
   plaisir: true
   temps: {preparation: 20, cuisson: 25}
@@ -111,6 +117,7 @@
 
 - id: crepes-jambon-fromage
   nom: Crêpes salées jambon-fromage
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=cr%C3%AApes%20jambon%20fromage
   type: plat
   plaisir: true
   temps: {preparation: 15, cuisson: 20}

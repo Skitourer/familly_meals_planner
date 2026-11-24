@@ -46,8 +46,7 @@ La nutrition reste toujours prioritaire : ces réglages départagent les plats �
 4. Cliquez sur un plat pour voir **pourquoi** il a été choisi (de saison, apprécié, poisson
    gras, utilise le placard...).
 5. **📖 Recette** ouvre la fiche du plat avec les **quantités calculées pour les convives de
-   ce repas**, les étapes et un lien vers la recette en ligne (ou, à défaut, une recherche sur
-   Marmiton).
+   ce repas**, les étapes et le lien vers la recette détaillée en ligne.
 6. **Changer** un repas : l'application calcule les meilleures alternatives compte tenu du
    reste de la semaine, ou vous laisse choisir dans tout le catalogue. Un plat choisi à la main
    est **verrouillé** 🔒 : il est conservé si vous demandez **Autre proposition**.
@@ -92,8 +91,8 @@ L'onglet **Notes** liste les repas des deux dernières semaines. Chaque convive 
 un plat adoré par les enfants sera proposé plus volontiers quand ils sont là. Les plats déjà
 servis les trois semaines précédentes sont aussi évités pour limiter la répétition.
 
-## Le catalogue de recettes
+## Le catalogue des plats
 
-L'onglet **Recettes** présente toutes les recettes avec leurs valeurs nutritionnelles, leur
+L'onglet **Plats** présente toutes les recettes avec leurs valeurs nutritionnelles, leur
 empreinte carbone, leur coût estimé, leur saisonnalité et la note de la famille. On peut en
 ajouter grâce à une IA : voir [Ajouter des recettes avec une IA](recettes-ia.md).

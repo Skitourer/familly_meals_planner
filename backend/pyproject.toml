@@ -72,7 +72,7 @@ omit = ["*/import_donnees/*"]
 
 # --- Tâches (uv run poe <tâche>) -------------------------------------------------
 [tool.poe.tasks]
-dev = { cmd = "uvicorn repas.application:creer_application --factory --reload --port 8000", help = "Lance l'API en mode développement" }
+dev = { cmd = "uvicorn repas.application:creer_application --factory --reload --port ${port}", args = [{ name = "port", default = "8000", help = "Port de l'API" }], help = "Lance l'API en mode développement" }
 lint = { sequence = [{ cmd = "ruff check ." }, { cmd = "ruff format --check ." }], help = "Vérifie le style" }
 format = { sequence = [{ cmd = "ruff check --fix ." }, { cmd = "ruff format ." }], help = "Corrige le style" }
 types = { cmd = "pyright", help = "Vérifie les types" }
