@@ -19,13 +19,21 @@ jobs:
       cree: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      # Jeton temporaire (1 h) de la GitHub App de publication : la PR de version qu'elle
+      # crée déclenche la CI, contrairement au jeton automatique GITHUB_TOKEN, et ses
+      # commits sont signés par le robot de l'App. Variable RELEASE_APP_ID et secret
+      # RELEASE_APP_PRIVATE_KEY : voir docs/contribuer.md.
+      - id: app
+        if: vars.RELEASE_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - id: release
         uses: googleapis/release-please-action@v5
         with:
-          # Jeton personnel (secret RELEASE_PLEASE_TOKEN) : la PR de version qu'il crée
-          # déclenche la CI, contrairement au jeton automatique GITHUB_TOKEN.
-          # Sans ce secret, repli sur GITHUB_TOKEN (fermer/rouvrir la PR pour lancer la CI).
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          # Sans App configurée : repli sur GITHUB_TOKEN (fermer/rouvrir la PR pour lancer la CI).
+          token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
