@@ -1,6 +1,7 @@
 // Compte connecté (adulte ou enfant), partagé par toutes les pages.
 
 import { api } from './api.ts';
+import { CACHE_DONNEES } from './hors-ligne.ts';
 
 export interface EtatSession {
 	connecte: boolean;
@@ -34,6 +35,8 @@ class Session {
 	async deconnecter(): Promise<void> {
 		await api.supprimer('/session');
 		this.etat = null;
+		// Les données gardées pour le hors-ligne ne doivent pas survivre à la déconnexion.
+		if ('caches' in window) await caches.delete(CACHE_DONNEES);
 	}
 
 	/** Le compte connecté peut-il ouvrir cette page ? */

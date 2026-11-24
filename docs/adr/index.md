@@ -10,3 +10,4 @@ conséquences. Une décision remplacée n'est pas supprimée mais marquée « re
 | 3 | [Catalogue en fichiers versionnés, données familiales en SQLite](0003-catalogue-en-fichiers.md) | Acceptée |
 | 4 | [Pas d'IA à l'exécution, import JSON à la place](0004-pas-d-ia-a-l-execution.md) | Acceptée |
 | 5 | [Comptes adulte et enfant](0005-comptes-adulte-enfant.md) | Acceptée |
+| 6 | [Liste de courses hors ligne (service worker)](0006-hors-ligne.md) | Acceptée |

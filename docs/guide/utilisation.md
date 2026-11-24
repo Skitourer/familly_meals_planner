@@ -90,6 +90,22 @@ dès le retour de la connexion ; pour un même article, la plus récente l'empor
 faites** demande le réseau. Le bouton **Imprimer (PDF)** produit une liste à cocher. Le **Menu PDF** (onglet Semaine) s'affiche
 sur le frigo.
 
+### Au magasin sans réseau
+
+La liste de courses s'ouvre même sans réseau, telle qu'elle était à la dernière connexion :
+
+1. **Installer l'application** sur le téléphone, une fois : sur Android (Chrome), menu ⋮ puis
+   **Installer l'application** ; sur iPhone (Safari), bouton Partager puis **Sur l'écran
+   d'accueil**. Elle s'ouvre alors comme une application, depuis son icône.
+2. Avant de partir, **ouvrir la liste de la semaine avec le réseau** : c'est cette version qui
+   est gardée sur le téléphone, pour chaque semaine ouverte.
+3. Au magasin, ouvrir l'application : la liste s'affiche avec un bandeau « Hors ligne » et se
+   coche normalement ; les coches partent au retour du réseau.
+
+Les autres onglets demandent le réseau. La **déconnexion** efface la liste gardée sur le
+téléphone. Hors ligne, l'application nécessite HTTPS (c'est le cas avec Tailscale) ; une
+nouvelle version est prise en compte quand l'application a été complètement fermée.
+
 Une fois les courses faites, **Courses faites** met à jour le placard : les restes des paquets
 entamés (si le produit se conserve au moins 7 jours) y sont ajoutés avec une date limite.
 
