@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { api, messageErreur } from '#lib/api.ts';
+	import { messageErreur } from '#lib/api.ts';
+	import { session } from '#lib/session.svelte.ts';
 
+	let identifiant = $state('');
 	let motDePasse = $state('');
 	let erreur = $state('');
 	let enCours = $state(false);
@@ -11,7 +13,7 @@
 		enCours = true;
 		erreur = '';
 		try {
-			await api.creer('/session', { mot_de_passe: motDePasse });
+			await session.connecter(identifiant, motDePasse);
 			await goto('/');
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -27,12 +29,21 @@
 		<h1>Menu Famille</h1>
 		<p class="doux">Des repas équilibrés, de saison et bas carbone.</p>
 		<label>
-			Mot de passe de la famille
+			Identifiant
+			<input
+				bind:value={identifiant}
+				autocomplete="username"
+				autocapitalize="none"
+				placeholder="famille"
+			/>
+		</label>
+		<label>
+			Mot de passe
 			<!-- svelte-ignore a11y_autofocus -->
 			<input type="password" bind:value={motDePasse} autocomplete="current-password" autofocus />
 		</label>
 		{#if erreur}<p class="erreur" role="alert">{erreur}</p>{/if}
-		<button class="principal" disabled={enCours || !motDePasse}>Entrer</button>
+		<button class="principal" disabled={enCours || !motDePasse || !identifiant}>Entrer</button>
 	</form>
 </div>
 

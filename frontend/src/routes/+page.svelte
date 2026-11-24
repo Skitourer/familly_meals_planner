@@ -14,6 +14,7 @@
 	import { ajouterJours, dateCourte, depuisIso, JOURS } from '#lib/dates.ts';
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
+	import { session } from '#lib/session.svelte.ts';
 	import type { Bilan, Creneau, Semaine } from '#lib/types.ts';
 
 	const lundi = $derived(lundiDepuisUrl(page.url));
@@ -55,7 +56,11 @@
 	}
 
 	async function chargerBilan() {
-		bilan = semaine?.generee_le ? await api.lire<Bilan>(`/semaines/${lundi}/bilan`) : null;
+		// Le bilan nutritionnel et les courses sont réservés aux adultes.
+		bilan =
+			semaine?.generee_le && session.estAdulte
+				? await api.lire<Bilan>(`/semaines/${lundi}/bilan`)
+				: null;
 	}
 
 	async function generer(varier: boolean) {
@@ -104,11 +109,13 @@
 
 <div class="entete">
 	<div>
-		<h1>Les repas de la semaine</h1>
+		<h1>{session.estEnfant ? 'Le menu de la semaine' : 'Les repas de la semaine'}</h1>
 		<ChoixSemaine {lundi} />
 	</div>
 	<div class="ligne">
-		{#if semaine?.generee_le}
+		{#if session.estEnfant}
+			<a class="bouton principal" href="/notes">⭐ Donner mon avis</a>
+		{:else if semaine?.generee_le}
 			<button onclick={() => generer(true)} disabled={enCours}>🎲 Autre proposition</button>
 			<a class="bouton" href={`/api/semaines/${lundi}/menu.pdf`} target="_blank" rel="noopener">
 				🖨 Menu PDF
@@ -122,17 +129,24 @@
 	</div>
 </div>
 
-{#if !donnees.membresActifs.length && semaine}
+{#if session.estEnfant}
+	<p class="doux aide">
+		Clique sur un plat pour voir ce qu'il y a dedans, et sur « Donner mon avis » pour dire si tu as
+		aimé les repas ou si tu as envie de ceux qui arrivent.
+	</p>
+{:else if !donnees.membresActifs.length && semaine}
 	<p class="carte">
 		👋 Commencez par <a href="/famille">ajouter les membres de la famille</a> : leurs besoins servent
 		à calculer les portions.
 	</p>
 {/if}
 
-<p class="doux aide">
-	Cliquez sur les initiales pour indiquer qui mange à la maison, « + » pour des invités, et 🎉 pour
-	un repas joker. Les plats verrouillés 🔒 sont conservés quand vous régénérez.
-</p>
+{#if session.estAdulte}
+	<p class="doux aide">
+		Cliquez sur les initiales pour indiquer qui mange à la maison, « + » pour des invités, et 🎉
+		pour un repas joker. Les plats verrouillés 🔒 sont conservés quand vous régénérez.
+	</p>
+{/if}
 
 {#if erreur}<p class="erreur" role="alert">{erreur}</p>{/if}
 {#if enCours}<p class="doux">Recherche de la meilleure combinaison de repas…</p>{/if}
@@ -151,6 +165,7 @@
 				{#each jour.creneaux as creneau (creneau.id)}
 					<CarteCreneau
 						{creneau}
+						lectureSeule={!session.estAdulte}
 						onmodifier={(m) => modifier(creneau, m)}
 						onchanger={() => ouvrirChoix(creneau)}
 					/>

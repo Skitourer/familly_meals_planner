@@ -1,6 +1,7 @@
 <!-- Membres de la famille (besoins énergétiques) et réglages de l'algorithme. -->
 <script lang="ts">
 	import { api, messageErreur } from '#lib/api.ts';
+	import GestionComptes from '#lib/composants/GestionComptes.svelte';
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import type { Membre, MembreEntree, Reglages } from '#lib/types.ts';
 
@@ -154,6 +155,8 @@ Pour garder son historique, décochez plutôt ` +
 		</div>
 	</form>
 {/if}
+
+<GestionComptes />
 
 {#if reglages}
 	<section class="carte reglages">

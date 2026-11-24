@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from repas import services
+from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
@@ -17,6 +18,7 @@ from repas.modeles import Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
+ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
 
 
 # --- Schémas -------------------------------------------------------------------------
@@ -175,7 +177,7 @@ def lire(lundi: date, s: Session = Depends(session)) -> SemaineSortie:
     return _sortie(s, _semaine(s, lundi))
 
 
-@router.put("/{lundi}/creneaux/{jour}/{moment}")
+@router.put("/{lundi}/creneaux/{jour}/{moment}", dependencies=ADULTE)
 def modifier_creneau(
     lundi: date,
     jour: int,
@@ -200,7 +202,7 @@ def modifier_creneau(
     return _sortie(s, semaine)
 
 
-@router.post("/{lundi}/generer")
+@router.post("/{lundi}/generer", dependencies=ADULTE)
 def generer(lundi: date, varier: bool = False, s: Session = Depends(session)) -> SemaineSortie:
     """Génère les repas non verrouillés. ``varier=true`` propose une autre combinaison."""
     try:
@@ -210,7 +212,7 @@ def generer(lundi: date, varier: bool = False, s: Session = Depends(session)) ->
     return _sortie(s, semaine)
 
 
-@router.get("/{lundi}/creneaux/{jour}/{moment}/alternatives")
+@router.get("/{lundi}/creneaux/{jour}/{moment}/alternatives", dependencies=ADULTE)
 def alternatives(
     lundi: date, jour: int, moment: Literal["midi", "soir"], s: Session = Depends(session)
 ) -> list[Alternative]:
@@ -223,19 +225,19 @@ def alternatives(
     return [Alternative(plat_id=p, perte_score=perte) for p, perte in resultats]
 
 
-@router.get("/{lundi}/bilan")
+@router.get("/{lundi}/bilan", dependencies=ADULTE)
 def bilan(lundi: date, s: Session = Depends(session)) -> Bilan:
     return services.bilan(s, _semaine(s, lundi), catalogue())
 
 
-@router.get("/{lundi}/courses")
+@router.get("/{lundi}/courses", dependencies=ADULTE)
 def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
     semaine = _semaine(s, lundi)
     liste = services.courses(s, semaine, catalogue())
     return _courses_sortie(liste, semaine.courses_validees_le is not None)
 
 
-@router.post("/{lundi}/courses/valider", status_code=204)
+@router.post("/{lundi}/courses/valider", status_code=204, dependencies=ADULTE)
 def valider_courses(lundi: date, s: Session = Depends(session)) -> None:
     try:
         services.valider_courses(s, _semaine(s, lundi), catalogue())
@@ -243,7 +245,7 @@ def valider_courses(lundi: date, s: Session = Depends(session)) -> None:
         raise HTTPException(409, str(erreur)) from erreur
 
 
-@router.get("/{lundi}/courses.pdf")
+@router.get("/{lundi}/courses.pdf", dependencies=ADULTE)
 def courses_pdf(lundi: date, s: Session = Depends(session)) -> Response:
     liste = services.courses(s, _semaine(s, lundi), catalogue())
     return Response(
