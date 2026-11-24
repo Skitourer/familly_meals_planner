@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.2.0...v1.3.0) (2026-11-24)
+
+
+### Nouveautés
+
+* coches de la liste de courses partagées entre appareils, hors ligne ([#34](https://github.com/Skitourer/familly_meals_planner/issues/34)) ([11a02e4](https://github.com/Skitourer/familly_meals_planner/commit/11a02e47285611bb7b812aef99ca3d0aa8004410))
+* frigo à vider (placard prioritaire et réajustement de la semaine) ([#31](https://github.com/Skitourer/familly_meals_planner/issues/31)) ([d564d2a](https://github.com/Skitourer/familly_meals_planner/commit/d564d2a69a13dfb03d091daa65220ef12418fdf4))
+* liste de courses hors ligne, application installable et icône « bol rigolo » ([#36](https://github.com/Skitourer/familly_meals_planner/issues/36)) ([0bd28ef](https://github.com/Skitourer/familly_meals_planner/commit/0bd28efb0f8766fcee66723386eeb22dee23ce03))
+* thème « bol rigolo » (tomate, moutarde, basilic) et polices Fredoka et Nunito ([#37](https://github.com/Skitourer/familly_meals_planner/issues/37)) ([9c1332d](https://github.com/Skitourer/familly_meals_planner/commit/9c1332d07537b175b08aa62f81e757b5aef36e30))
+
+
+### Corrections
+
+* quantités du placard refusées par le navigateur ([#32](https://github.com/Skitourer/familly_meals_planner/issues/32)) ([e285d92](https://github.com/Skitourer/familly_meals_planner/commit/e285d92a1918b4786e1235b6bf4332288ca03787))
+
+
+### Documentation
+
+* hébergement retenu (Raspberry Pi avec Tailscale, VPS possible) ([#35](https://github.com/Skitourer/familly_meals_planner/issues/35)) ([235b760](https://github.com/Skitourer/familly_meals_planner/commit/235b7601865ef4d4420a01084153d37995645840))
+
 ## [1.2.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.1.0...v1.2.0) (2026-11-24)
 
 
