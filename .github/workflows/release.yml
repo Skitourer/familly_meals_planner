@@ -22,6 +22,10 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v5
         with:
+          # Jeton personnel (secret RELEASE_PLEASE_TOKEN) : la PR de version qu'il crée
+          # déclenche la CI, contrairement au jeton automatique GITHUB_TOKEN.
+          # Sans ce secret, repli sur GITHUB_TOKEN (fermer/rouvrir la PR pour lancer la CI).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
