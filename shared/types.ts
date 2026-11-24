@@ -51,6 +51,8 @@ export interface Plat {
   /** mois (1-12) où le plat est optimal */
   saison: number[];
   ingredients: Ingredient[];
+  /** lien vers la recette détaillée (Marmiton, 750g, blog…), optionnel */
+  lienRecette?: string;
 }
 
 export type Service = "midi" | "soir";

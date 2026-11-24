@@ -14,9 +14,13 @@ export function lundiDe(date: Date): Date {
   return d;
 }
 
-/** Identifiant de semaine : date du lundi au format "2026-11-23". */
+/** Identifiant de semaine : date du lundi au format "2026-11-23" (heure locale,
+ *  PAS toISOString() qui convertit en UTC et décale d'un jour selon le fuseau). */
 export function idSemaine(date: Date): string {
-  return lundiDe(date).toISOString().slice(0, 10);
+  const l = lundiDe(date);
+  const m = String(l.getMonth() + 1).padStart(2, "0");
+  const j = String(l.getDate()).padStart(2, "0");
+  return `${l.getFullYear()}-${m}-${j}`;
 }
 
 /** Liste des jours (Date) d'une semaine à partir de son identifiant. */
