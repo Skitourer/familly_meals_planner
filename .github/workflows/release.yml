@@ -6,6 +6,13 @@ name: Release
 on:
   push:
     branches: [main]
+  # Republier l'image d'une version existante (ex. après un échec) : Actions → Release →
+  # Run workflow, avec le numéro de version.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version à republier (ex. 1.1.0)"
+        required: true
 
 permissions:
   contents: write
@@ -14,23 +21,45 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       cree: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      # Jeton temporaire (1 h) de la GitHub App de publication : la PR de version qu'elle
+      # crée déclenche la CI, contrairement au jeton automatique GITHUB_TOKEN, et ses
+      # commits sont signés par le robot de l'App. Variable RELEASE_APP_ID et secret
+      # RELEASE_APP_PRIVATE_KEY : voir docs/contribuer.md.
+      - id: app
+        if: vars.RELEASE_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - id: release
         uses: googleapis/release-please-action@v5
         with:
+          # Sans App configurée : repli sur GITHUB_TOKEN (fermer/rouvrir la PR pour lancer la CI).
+          token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
   image-versionnee:
     needs: release-please
-    if: needs.release-please.outputs.cree == 'true'
+    # Après une nouvelle release, ou sur demande manuelle (release-please est alors ignoré).
+    if: >-
+      always() && (needs.release-please.outputs.cree == 'true'
+      || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.release-please.outputs.version || inputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: v${{ env.VERSION }}
+      # Les noms d'images Docker doivent être en minuscules (Skitourer -> skitourer).
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
@@ -43,4 +72,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ needs.release-please.outputs.version }}
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}

@@ -25,9 +25,13 @@ gitGraph
     - `docs:`, `test:`, `refactor:`, `chore:`, `ci:` → pas de nouvelle version ;
     - `feat!:` ou `BREAKING CHANGE:` → version majeure.
 3. Vérifier localement : `uv run poe check` (backend) et
-   `npm run lint && npm run check && npm test` (interface).
+   `npm run lint && npm run check && npm test` (interface). Les hooks
+   `uvx pre-commit install` font une partie de ces contrôles à chaque commit, et
+   [gitleaks](https://github.com/gitleaks/gitleaks) y refuse tout commit contenant un
+   secret (jeton, clé privée, mot de passe).
 4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 85 %,
-   compilation de l'interface, de la documentation et de l'image Docker).
+   compilation de l'interface, de la documentation et de l'image Docker, absence de
+   secret dans tout l'historique).
 5. **Fusion en squash** : le titre de la PR devient le message de commit sur `main`.
 
 ## Versions
@@ -35,6 +39,19 @@ gitGraph
 [release-please](https://github.com/googleapis/release-please) tient à jour une PR
 « chore(main): release x.y.z » qui accumule le `CHANGELOG.md`. La fusionner crée le tag, la
 release GitHub et publie l'image Docker versionnée sur `ghcr.io`.
+
+release-please s'authentifie avec une **GitHub App** personnelle (« robot de publication »)
+installée sur le dépôt, avec les permissions *Contents*, *Pull requests* et *Issues* en
+lecture/écriture. Le workflow en obtient un jeton valable une heure
+(`actions/create-github-app-token`) grâce à :
+
+- la variable de dépôt `RELEASE_APP_ID` (identifiant de l'App) ;
+- le secret `RELEASE_APP_PRIVATE_KEY` (clé privée `.pem` de l'App).
+
+Pourquoi : GitHub ne lance pas la CI sur une PR créée par le jeton automatique des
+Actions ; avec l'App, la PR de version est vérifiée normalement, et ses commits sont signés
+par le robot de l'App (aucune adresse personnelle). Sans App configurée, le workflow se replie
+sur le jeton automatique : il faut alors fermer et rouvrir la PR de version pour lancer la CI.
 
 ## Automatisations
 
