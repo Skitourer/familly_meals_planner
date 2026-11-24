@@ -69,6 +69,7 @@ export interface Recette {
 	ingredients: Record<string, number>;
 	etapes: string[];
 	source: string;
+	lien: string | null;
 }
 
 export interface FicheRecette {
@@ -84,6 +85,7 @@ export interface FicheRecette {
 	nombre_notes: number;
 	importee: boolean;
 	ingredients_noms: Record<string, string>;
+	ingredients_unites: Record<string, string>;
 }
 
 export interface Indicateur {

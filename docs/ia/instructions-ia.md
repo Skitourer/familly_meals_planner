@@ -88,6 +88,7 @@ Champs d'une recette :
 | `lot` | non | plat cuisiné une fois pour plusieurs repas |
 | `plaisir` | non | `true` pour les repas joker uniquement |
 | `source` | non | ex. `"Proposition IA"` |
+| `lien` | non | adresse (https://…) d'une recette détaillée en ligne, si elle existe vraiment |
 
 ## Ingrédients autorisés
 

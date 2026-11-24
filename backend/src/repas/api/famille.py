@@ -15,7 +15,7 @@ from repas.domaine.besoins import (
     besoin_energetique_kcal,
     coefficient_portion,
 )
-from repas.modeles import Membre, Reglages
+from repas.modeles import Creneau, Membre, Note, Reglages
 
 router = APIRouter(tags=["famille"])
 
@@ -83,13 +83,22 @@ def modifier(membre_id: int, entree: MembreEntree, s: Session = Depends(session)
 
 
 @router.delete("/membres/{membre_id}", status_code=204)
-def retirer(membre_id: int, s: Session = Depends(session)) -> None:
-    """Désactive le membre (son historique de notes est conservé)."""
+def supprimer(membre_id: int, s: Session = Depends(session)) -> None:
+    """Supprime définitivement un membre, ses notes et sa présence aux repas planifiés.
+
+    Pour garder son historique (un enfant parti étudier...), il suffit plutôt de le
+    marquer comme « ne mange plus à la maison » (``actif = false``).
+    """
     membre = s.get(Membre, membre_id)
     if membre is None:
         raise HTTPException(404, "Membre introuvable")
-    membre.actif = False
-    s.add(membre)
+    for note in s.exec(select(Note).where(Note.membre_id == membre_id)).all():
+        s.delete(note)
+    for creneau in s.exec(select(Creneau)).all():
+        if membre_id in creneau.convives:
+            creneau.convives = [m for m in creneau.convives if m != membre_id]
+            s.add(creneau)
+    s.delete(membre)
     s.commit()
 
 

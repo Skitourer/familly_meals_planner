@@ -19,7 +19,8 @@ adulte de référence à 2 000 kcal/jour). Un adolescent sportif peut avoir 1,4 
 6 ans environ 0,7. La liste de courses en tient compte.
 
 Un membre qui ne mange plus à la maison (études...) peut être marqué « ne mange plus à la
-maison » : ses notes restent dans l'historique.
+maison » : ses notes restent dans l'historique. Le bouton **Supprimer** du formulaire efface
+au contraire définitivement le membre, ses notes et sa présence aux repas planifiés.
 
 ### Réglages de l'algorithme
 
@@ -44,10 +45,13 @@ La nutrition reste toujours prioritaire : ces réglages départagent les plats �
    par repas.
 4. Cliquez sur un plat pour voir **pourquoi** il a été choisi (de saison, apprécié, poisson
    gras, utilise le placard...).
-5. **Changer** un repas : l'application calcule les meilleures alternatives compte tenu du
+5. **📖 Recette** ouvre la fiche du plat avec les **quantités calculées pour les convives de
+   ce repas**, les étapes et un lien vers la recette en ligne (ou, à défaut, une recherche sur
+   Marmiton).
+6. **Changer** un repas : l'application calcule les meilleures alternatives compte tenu du
    reste de la semaine, ou vous laisse choisir dans tout le catalogue. Un plat choisi à la main
    est **verrouillé** 🔒 : il est conservé si vous demandez **Autre proposition**.
-6. Le **bilan de la semaine** indique, pour chaque repère, si la cible est atteinte (✓), proche
+7. Le **bilan de la semaine** indique, pour chaque repère, si la cible est atteinte (✓), proche
    (≈) ou manquée (✗), ainsi que l'empreinte carbone comparée à des repas moyens.
 
 ### Restes et cuisine en lot

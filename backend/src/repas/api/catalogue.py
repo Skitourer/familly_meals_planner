@@ -31,6 +31,7 @@ class RecetteSortie(BaseModel):
     nombre_notes: int
     importee: bool
     ingredients_noms: dict[str, str]
+    ingredients_unites: dict[str, str]
 
 
 def _sortie(p: ProfilRecette, cat: Catalogue, prefs: Preferences, mois: int) -> RecetteSortie:
@@ -48,6 +49,7 @@ def _sortie(p: ProfilRecette, cat: Catalogue, prefs: Preferences, mois: int) -> 
         nombre_notes=prefs.nombre_notes(p.id),
         importee=p.id in cat.importees,
         ingredients_noms={i: cat.ingredients[i].nom for i in p.recette.ingredients},
+        ingredients_unites={i: cat.ingredients[i].unite for i in p.recette.ingredients},
     )
 
 

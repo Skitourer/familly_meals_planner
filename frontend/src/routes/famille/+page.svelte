@@ -55,6 +55,24 @@
 		}
 	}
 
+	async function supprimer() {
+		if (!edition?.id) return;
+		const message =
+			`Supprimer définitivement ${edition.prenom} ? Ses notes seront effacées et il ou elle ` +
+			`sera retiré(e) des repas planifiés.
+
+Pour garder son historique, décochez plutôt ` +
+			`« Mange à la maison ».`;
+		if (!confirm(message)) return;
+		try {
+			await api.supprimer(`/membres/${edition.id}`);
+			edition = null;
+			await donnees.chargerMembres();
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
 	async function enregistrerReglages() {
 		if (!reglages) return;
 		reglages = await api.modifier<Reglages>('/reglages', reglages);
@@ -130,6 +148,9 @@
 		<div class="ligne">
 			<button class="principal">Enregistrer</button>
 			<button type="button" onclick={() => (edition = null)}>Annuler</button>
+			{#if edition.id}
+				<button type="button" class="supprimer" onclick={supprimer}>🗑 Supprimer</button>
+			{/if}
 		</div>
 	</form>
 {/if}
@@ -229,6 +250,12 @@
 		gap: 0.7rem;
 		max-width: 520px;
 		margin-bottom: 1rem;
+	}
+
+	.supprimer {
+		margin-left: auto;
+		color: var(--alerte);
+		border-color: var(--alerte);
 	}
 
 	.case {

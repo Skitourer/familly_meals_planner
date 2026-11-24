@@ -149,3 +149,38 @@ def test_reglages(client: TestClient):
     assert client.put("/api/reglages", json=reglages).json()["priorite_budget"] == 3
     assert client.get(f"/api/semaines/{LUNDI}").status_code == 200
     assert client.get("/api/semaines/2026-12-01").status_code == 400  # pas un lundi
+
+
+def test_suppression_definitive_d_un_membre(client: TestClient):
+    alex, sam, leo = ajouter_famille(client)
+    lundi = date.today() - timedelta(days=date.today().weekday() + 7)
+    client.get(f"/api/semaines/{lundi}")
+    client.post(f"/api/semaines/{lundi}/generer")
+    repas = client.get("/api/notes/a-noter").json()[0]
+    client.put("/api/notes", json={"membre_id": leo, "valeur": 5, "creneau_id": repas["creneau_id"],
+                                  "recette_id": repas["recette_id"]})  # fmt: skip
+
+    assert client.delete(f"/api/membres/{leo}").status_code == 204
+    assert [m["id"] for m in client.get("/api/membres").json()] == [alex, sam]
+    semaine = client.get(f"/api/semaines/{lundi}").json()
+    assert all(leo not in c["convives"] for c in semaine["creneaux"])
+    notes = next(r for r in client.get("/api/notes/a-noter").json()
+                 if r["creneau_id"] == repas["creneau_id"])["notes"]  # fmt: skip
+    assert str(leo) not in notes
+    assert client.delete(f"/api/membres/{leo}").status_code == 404
+
+
+def test_lien_de_recette(client: TestClient):
+    contenu = json.dumps({"format": "menu-famille/recettes", "version": 1, "recettes": [
+        {"id": "avec-lien", "nom": "Avec lien", "type": "dessert", "ingredients": {"pomme": 150},
+         "lien": "https://exemple.fr/recette"},
+        {"id": "lien-invalide", "nom": "Lien invalide", "type": "dessert",
+         "ingredients": {"pomme": 150}, "lien": "javascript:alert(1)"},
+    ]})  # fmt: skip
+    envoi = {"fichier": ("r.json", contenu, "application/json")}
+    rapport = client.post("/api/import/recettes", params={"appliquer": True}, files=envoi).json()
+    assert [r["acceptee"] for r in rapport["recettes"]] == [True, False]
+    recettes = {r["recette"]["id"]: r for r in client.get("/api/recettes").json()}
+    assert recettes["avec-lien"]["recette"]["lien"] == "https://exemple.fr/recette"
+    assert recettes["dahl-lentilles-corail"]["recette"]["lien"] is None
+    assert recettes["dahl-lentilles-corail"]["ingredients_unites"]["lait-coco"] == "ml"

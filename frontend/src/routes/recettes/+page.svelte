@@ -1,6 +1,7 @@
 <!-- Catalogue des recettes (nutrition, carbone, saison, notes) et import JSON. -->
 <script lang="ts">
 	import { api, messageErreur } from '#lib/api.ts';
+	import DetailRecette from '#lib/composants/DetailRecette.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import type { FicheRecette, RapportImport } from '#lib/types.ts';
@@ -147,37 +148,7 @@
 
 <Modale titre={fiche?.recette.nom ?? ''} bind:ouverte={ficheOuverte}>
 	{#if fiche}
-		{@const r = fiche.recette}
-		<p class="doux">
-			Préparation {r.temps.preparation} min · cuisson {r.temps.cuisson} min
-			{#if r.lot}· se cuisine en lot pour {r.lot.repas_max} repas ({r.lot.conservation_jours} j au frais){/if}
-		</p>
-		<div class="chiffres">
-			<div><strong>{fiche.nutriments.energie_kcal.toFixed(0)}</strong><span>kcal</span></div>
-			<div><strong>{f1(fiche.nutriments.proteines_g)} g</strong><span>protéines</span></div>
-			<div><strong>{f1(fiche.nutriments.fibres_g)} g</strong><span>fibres</span></div>
-			<div><strong>{f1(fiche.nutriments.sel_g)} g</strong><span>sel</span></div>
-			<div><strong>{fiche.fruits_legumes_g} g</strong><span>fruits et légumes</span></div>
-			<div><strong>{f1(fiche.co2_kg)} kg</strong><span>CO₂e</span></div>
-		</div>
-		{#if fiche.hors_saison.length}
-			<p class="badge alerte">Hors saison ce mois-ci : {fiche.hors_saison.join(', ')}</p>
-		{/if}
-		<h3>Ingrédients (1 portion adulte)</h3>
-		<ul>
-			{#each Object.entries(r.ingredients) as [id, grammes] (id)}
-				<li>{fiche.ingredients_noms[id]} : {grammes} g</li>
-			{/each}
-		</ul>
-		{#if r.etapes.length}
-			<h3>Préparation</h3>
-			<ol>
-				{#each r.etapes as etape, i (i)}<li>{etape}</li>{/each}
-			</ol>
-		{/if}
-		<p class="doux">
-			Source : {r.source}. Valeurs nutritionnelles : CIQUAL (ANSES) ; carbone : Agribalyse (ADEME).
-		</p>
+		<DetailRecette {fiche} />
 		{#if fiche.importee}
 			<button onclick={() => fiche && supprimer(fiche)}>🗑 Supprimer cette recette importée</button>
 		{/if}
@@ -234,30 +205,5 @@
 		padding: 0;
 		display: grid;
 		gap: 0.5rem;
-	}
-
-	.chiffres {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-		gap: 0.5rem;
-		margin: 0.75rem 0;
-	}
-
-	.chiffres div {
-		display: grid;
-		text-align: center;
-		background: var(--surface-2);
-		border-radius: 8px;
-		padding: 0.4rem;
-	}
-
-	.chiffres span {
-		font-size: 0.75rem;
-		color: var(--texte-doux);
-	}
-
-	h3 {
-		font-size: 1rem;
-		margin-top: 1rem;
 	}
 </style>

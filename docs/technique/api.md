@@ -8,7 +8,7 @@ Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connect�
 | `GET` / `POST` / `DELETE` | `/api/session` | État, connexion (`{"mot_de_passe": "..."}`), déconnexion |
 | `GET` | `/api/sante` | Santé et version |
 | `GET` / `POST` | `/api/membres` | Lister, ajouter un membre |
-| `PUT` / `DELETE` | `/api/membres/{id}` | Modifier, désactiver |
+| `PUT` / `DELETE` | `/api/membres/{id}` | Modifier ; supprimer définitivement (avec ses notes) |
 | `GET` / `PUT` | `/api/reglages` | Réglages de l'algorithme |
 | `GET` | `/api/recettes` | Catalogue avec profils (nutrition, CO₂, prix, saison, notes) |
 | `DELETE` | `/api/recettes/{id}` | Supprimer une recette importée |

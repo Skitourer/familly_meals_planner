@@ -59,6 +59,7 @@ Chaque fichier contient une liste de recettes, regroupées par thème
     - Faire revenir l'oignon émincé avec le curry.
     - "Astuce : les guillemets sont nécessaires si la phrase contient « : »."
   source: Catalogue Menu Famille
+  lien: https://exemple.fr/dahl         # facultatif : recette détaillée en ligne
 ```
 
 ### Règles de composition

@@ -208,3 +208,8 @@ class Recette(BaseModel):
     )
     etapes: list[str] = []
     source: str = "Catalogue Menu Famille"
+    lien: str | None = Field(
+        default=None,
+        pattern=r"^https?://\S+$",
+        description="Adresse d'une recette détaillée en ligne (facultatif).",
+    )

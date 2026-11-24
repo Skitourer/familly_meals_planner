@@ -20,6 +20,15 @@
 	const fiche = $derived(creneau.plat_id ? donnees.parId.get(creneau.plat_id) : undefined);
 	let details = $state(false);
 
+	// Portions du repas : somme des portions des convives (un invité compte pour un adulte).
+	const portions = $derived(
+		Math.round(
+			(creneau.convives.reduce((s, id) => s + (donnees.membre(id)?.coefficient_portion ?? 1), 0) +
+				creneau.invites) *
+				100
+		) / 100
+	);
+
 	function basculer(id: number) {
 		const convives = creneau.convives.includes(id)
 			? creneau.convives.filter((c) => c !== id)
@@ -103,6 +112,13 @@
 				>
 					{creneau.verrouille ? '🔓' : '🔒'}
 				</button>
+				<a
+					class="bouton discret"
+					href={`/recettes/${creneau.plat_id}?portions=${portions}`}
+					title="Recette avec les quantités pour ce repas"
+				>
+					📖 Recette
+				</a>
 				<button class="discret" onclick={onchanger}>🔄 Changer</button>
 			{/if}
 		</div>
@@ -182,7 +198,8 @@
 		margin-top: auto;
 	}
 
-	.actions button {
+	.actions button,
+	.actions a {
 		font-size: 0.8rem;
 	}
 

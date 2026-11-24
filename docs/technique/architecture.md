@@ -59,7 +59,7 @@ flowchart TB
 
 | Dossier | Rôle |
 |---|---|
-| `routes/` | Pages : semaine (`+page.svelte`), courses, notes, placard, recettes, famille, connexion |
+| `routes/` | Pages : semaine (`+page.svelte`), courses, notes, placard, recettes (et fiche `recettes/[id]`), famille, connexion |
 | `lib/composants/` | Composants réutilisables (créneau, bilan, modale, étoiles...) |
 | `lib/api.ts` | Client HTTP ; redirection vers la connexion en cas de 401 |
 | `lib/types.ts` | Types des réponses de l'API |
