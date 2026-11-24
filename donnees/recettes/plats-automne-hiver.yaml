@@ -1,0 +1,262 @@
+# Plats d'automne et d'hiver : légumes de garde, courges, choux, poireaux.
+# Quantités par portion adulte de référence (voir docs/catalogue.md).
+
+- id: veloute-potiron
+  nom: Velouté de potiron, tartines au comté
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, soupe]
+  ingredients:
+    potiron: 300
+    pomme-de-terre: 80
+    oignon: 40
+    creme: 15
+    pain-complet: 70
+    comte: 30
+    bouillon: 2
+  etapes:
+    - Éplucher et couper le potiron et la pomme de terre en cubes.
+    - Faire suer l'oignon, ajouter les légumes, couvrir d'eau avec le bouillon ; cuire 25 min.
+    - Mixer avec la crème.
+    - Servir avec des tartines de pain complet grillées au comté.
+
+- id: soupe-poireaux-pommes-de-terre
+  nom: Soupe poireaux-pommes de terre, œuf mollet et pain
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, soupe]
+  ingredients:
+    poireau: 180
+    pomme-de-terre: 150
+    carotte: 60
+    oeuf: 60
+    pain-complet: 60
+    beurre: 5
+    bouillon: 2
+  etapes:
+    - Émincer les poireaux et les faire fondre dans le beurre.
+    - Ajouter pommes de terre et carottes en dés, couvrir d'eau avec le bouillon ; cuire 25 min.
+    - Mixer grossièrement. Servir avec un œuf mollet (6 min) et du pain.
+
+- id: soupe-butternut-lentilles
+  nom: Soupe de butternut aux lentilles corail
+  type: plat
+  temps: {preparation: 15, cuisson: 25}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, soupe, legumineuses]
+  ingredients:
+    courge-butternut: 250
+    lentilles-corail: 50
+    carotte: 60
+    oignon: 30
+    lait-coco: 30
+    pain-complet: 60
+    curry: 1
+  etapes:
+    - Faire revenir l'oignon avec le curry.
+    - Ajouter la courge et la carotte en cubes, les lentilles rincées et de l'eau à hauteur.
+    - Cuire 20 min, mixer avec le lait de coco. Servir avec le pain.
+
+- id: potee-chou
+  nom: Potée au chou et saucisse de Montbéliard
+  type: plat
+  temps: {preparation: 20, cuisson: 60}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [mijote]
+  ingredients:
+    chou-vert: 200
+    pomme-de-terre: 180
+    carotte: 100
+    navet: 60
+    saucisse-montbeliard: 75
+    oignon: 30
+    bouillon: 2
+  etapes:
+    - Blanchir le chou coupé en quartiers 5 min.
+    - Dans une cocotte, mettre légumes, saucisse et bouillon ; couvrir d'eau.
+    - Mijoter 1 h à petit feu.
+
+- id: endives-jambon
+  nom: Endives au jambon gratinées
+  type: plat
+  temps: {preparation: 20, cuisson: 35}
+  etiquettes: [four, enfants]
+  ingredients:
+    endive: 250
+    jambon: 50
+    lait: 100
+    farine: 10
+    beurre: 10
+    emmental: 20
+    pomme-de-terre: 150
+    muscade: 0.5
+  etapes:
+    - Cuire les endives 15 min à la vapeur et bien les égoutter.
+    - Préparer une béchamel (beurre, farine, lait, muscade).
+    - Rouler chaque endive dans une tranche de jambon, napper de béchamel et d'emmental.
+    - Gratiner 20 min à 200 °C ; servir avec des pommes de terre vapeur.
+
+- id: boeuf-carottes
+  nom: Bœuf carottes
+  type: plat
+  temps: {preparation: 20, cuisson: 150}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [mijote]
+  ingredients:
+    boeuf-mijoter: 110
+    carotte: 200
+    oignon: 40
+    pomme-de-terre: 180
+    tomates-concassees: 50
+    huile-colza: 5
+    herbes-provence: 1
+  etapes:
+    - Faire dorer la viande en morceaux puis l'oignon dans une cocotte.
+    - Ajouter tomates, herbes et 30 cl d'eau par portion ; mijoter 1 h 30.
+    - Ajouter les carottes en rondelles, poursuivre 45 min.
+    - Servir avec des pommes de terre vapeur.
+
+- id: gratin-chou-fleur
+  nom: Gratin de chou-fleur et pommes de terre
+  type: plat
+  temps: {preparation: 20, cuisson: 35}
+  etiquettes: [vegetarien, four]
+  ingredients:
+    chou-fleur: 250
+    pomme-de-terre: 150
+    oeuf: 50
+    lait: 100
+    farine: 10
+    beurre: 8
+    emmental: 30
+    muscade: 0.5
+  etapes:
+    - Cuire le chou-fleur et les pommes de terre 12 min à la vapeur.
+    - Préparer une béchamel, hors du feu ajouter l'œuf battu.
+    - Napper les légumes, couvrir d'emmental et gratiner 25 min à 200 °C.
+
+- id: risotto-champignons-poireaux
+  nom: Risotto aux champignons et poireaux
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  etiquettes: [vegetarien]
+  ingredients:
+    riz-arborio: 80
+    champignons: 120
+    poireau: 100
+    parmesan: 20
+    echalote: 15
+    huile-olive: 8
+    bouillon: 2
+  etapes:
+    - Faire revenir l'échalote et le poireau émincé, ajouter le riz et le nacrer.
+    - Ajouter le bouillon chaud louche par louche pendant 18 min.
+    - Incorporer les champignons poêlés et le parmesan.
+
+- id: cabillaud-poireaux
+  nom: Cabillaud sur fondue de poireaux, riz complet
+  type: plat
+  temps: {preparation: 15, cuisson: 25}
+  etiquettes: [poisson]
+  ingredients:
+    cabillaud: 130
+    poireau: 200
+    riz-complet: 70
+    creme: 20
+    beurre: 5
+    citron: 10
+  etapes:
+    - Faire fondre les poireaux émincés dans le beurre 15 min, ajouter la crème.
+    - Cuire le cabillaud 10 min sur les poireaux à couvert.
+    - Servir avec le riz complet et un trait de citron.
+
+- id: lentilles-saucisse
+  nom: Petit salé aux lentilles (version légère)
+  type: plat
+  temps: {preparation: 15, cuisson: 40}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [legumineuses, mijote]
+  ingredients:
+    lentilles-vertes: 80
+    saucisse-montbeliard: 60
+    carotte: 100
+    oignon: 40
+    bouillon: 2
+    herbes-provence: 1
+  etapes:
+    - Faire revenir l'oignon, ajouter les lentilles, les carottes en rondelles et la saucisse.
+    - Couvrir d'eau avec le bouillon et les herbes, cuire 35 min.
+
+- id: saumon-brocoli-riz
+  nom: Saumon, brocoli et riz complet
+  type: plat
+  temps: {preparation: 10, cuisson: 25}
+  etiquettes: [poisson-gras]
+  ingredients:
+    saumon: 120
+    brocoli: 180
+    riz-complet: 70
+    citron: 15
+    huile-olive: 5
+  etapes:
+    - Cuire le riz complet 25 min.
+    - Cuire le brocoli en fleurettes 8 min à la vapeur.
+    - Rôtir le saumon 12 min à 200 °C, arroser de citron.
+
+- id: salade-endives-betterave
+  nom: Salade d'endives, betterave, lentilles et chèvre
+  type: plat
+  temps: {preparation: 15, cuisson: 0}
+  etiquettes: [vegetarien, rapide, sans-cuisson]
+  ingredients:
+    endive: 150
+    betterave: 120
+    chevre: 50
+    lentilles-vertes: 50
+    pain-complet: 70
+    huile-colza: 10
+    vinaigre: 5
+  etapes:
+    - Cuire les lentilles 25 min (ou utiliser un reste) et les refroidir.
+    - Émincer les endives, couper la betterave en dés, émietter le chèvre.
+    - Assaisonner de vinaigrette au colza, servir avec le pain.
+
+- id: hachis-patate-douce-lentilles
+  nom: Parmentier de patate douce aux lentilles
+  type: plat
+  temps: {preparation: 20, cuisson: 40}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [vegetarien, legumineuses, four]
+  ingredients:
+    patate-douce: 250
+    lentilles-vertes: 70
+    carotte: 80
+    oignon: 40
+    tomates-concassees: 80
+    emmental: 20
+    lait: 40
+    mache: 40
+  etapes:
+    - Cuire les lentilles avec carottes et oignon, ajouter les tomates.
+    - Cuire la patate douce et l'écraser avec le lait.
+    - Monter le parmentier, parsemer d'emmental, gratiner 20 min à 200 °C. Servir avec la mâche.
+
+- id: poulet-curry-chou-fleur
+  nom: Poulet au curry et chou-fleur rôti
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  etiquettes: [four]
+  ingredients:
+    poulet-filet: 110
+    chou-fleur: 200
+    riz: 70
+    lait-coco: 40
+    oignon: 30
+    curry: 2
+    huile-colza: 8
+  etapes:
+    - Rôtir le chou-fleur en fleurettes avec la moitié du curry et l'huile, 25 min à 200 °C.
+    - Faire revenir oignon et poulet en dés, ajouter le reste du curry et le lait de coco.
+    - Servir avec le riz.

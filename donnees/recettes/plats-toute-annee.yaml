@@ -1,0 +1,385 @@
+# Plats réalisables toute l'année (produits secs, conserves, surgelés,
+# légumes de garde). Format décrit dans docs/catalogue.md.
+#
+# Les quantités sont en grammes (ou ml) PAR PORTION pour un adulte de
+# référence (2 000 kcal/jour). L'application les ajuste à chaque convive.
+
+- id: spaghetti-bolognaise
+  nom: Spaghetti bolognaise
+  type: plat
+  temps: {preparation: 15, cuisson: 35}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [pates, enfants]
+  ingredients:
+    pates: 90
+    boeuf-hache: 70
+    tomates-concassees: 150
+    oignon: 40
+    carotte: 60
+    huile-olive: 5
+    parmesan: 10
+    herbes-provence: 1
+  etapes:
+    - Émincer l'oignon et râper la carotte, les faire revenir 5 min dans l'huile.
+    - Ajouter le bœuf haché, laisser dorer puis verser les tomates et les herbes.
+    - Mijoter 30 min à feu doux à couvert.
+    - Cuire les pâtes, servir avec la sauce et le parmesan.
+
+- id: dahl-lentilles-corail
+  nom: Dahl de lentilles corail au lait de coco
+  type: plat
+  temps: {preparation: 10, cuisson: 25}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, legumineuses]
+  ingredients:
+    lentilles-corail: 70
+    lait-coco: 50
+    tomates-concassees: 100
+    oignon: 40
+    epinards-surgeles: 80
+    riz: 50
+    curry: 2
+    gingembre: 1
+    huile-colza: 5
+  etapes:
+    - Faire revenir l'oignon émincé avec le curry et le gingembre.
+    - Ajouter les lentilles rincées, les tomates, le lait de coco et 2 fois leur volume d'eau.
+    - Cuire 20 min en remuant ; ajouter les épinards 5 min avant la fin.
+    - Servir avec le riz.
+
+- id: chili-sin-carne
+  nom: Chili sin carne
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, legumineuses]
+  ingredients:
+    haricots-rouges: 150
+    mais: 50
+    tomates-concassees: 150
+    oignon: 40
+    carotte: 50
+    riz: 60
+    cumin: 1
+    paprika: 1
+    huile-olive: 5
+  etapes:
+    - Faire revenir l'oignon et la carotte en dés avec les épices.
+    - Ajouter les tomates, les haricots rouges égouttés et le maïs.
+    - Mijoter 25 min, servir avec le riz.
+
+- id: chili-con-carne
+  nom: Chili con carne
+  type: plat
+  temps: {preparation: 15, cuisson: 40}
+  lot: {repas_max: 3, conservation_jours: 3}
+  etiquettes: [legumineuses]
+  ingredients:
+    boeuf-hache: 60
+    haricots-rouges: 120
+    tomates-concassees: 150
+    oignon: 40
+    riz: 60
+    cumin: 1
+    paprika: 1
+    huile-olive: 5
+  etapes:
+    - Faire dorer l'oignon puis le bœuf avec les épices.
+    - Ajouter les tomates et les haricots rouges égouttés.
+    - Mijoter 35 min, servir avec le riz.
+
+- id: curry-pois-chiches-patate-douce
+  nom: Curry de pois chiches et patate douce
+  type: plat
+  temps: {preparation: 15, cuisson: 30}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, legumineuses]
+  ingredients:
+    pois-chiches: 130
+    patate-douce: 150
+    lait-coco: 40
+    tomates-concassees: 100
+    epinards-surgeles: 60
+    oignon: 30
+    riz: 50
+    curry: 2
+    huile-colza: 5
+  etapes:
+    - Faire revenir l'oignon avec le curry.
+    - Ajouter la patate douce en cubes, les tomates et le lait de coco ; cuire 20 min.
+    - Ajouter les pois chiches égouttés et les épinards, cuire 10 min.
+    - Servir avec le riz.
+
+- id: lieu-papillote-riz-haricots
+  nom: Lieu en papillote, riz et haricots verts
+  type: plat
+  temps: {preparation: 10, cuisson: 20}
+  etiquettes: [poisson, rapide]
+  ingredients:
+    lieu-surgele: 130
+    riz-complet: 70
+    haricots-verts-surgeles: 150
+    citron: 15
+    huile-olive: 8
+    herbes-provence: 1
+  etapes:
+    - Déposer chaque filet sur du papier cuisson avec citron, herbes et un filet d'huile.
+    - Fermer les papillotes, enfourner 20 min à 200 °C.
+    - Cuire le riz et les haricots verts à la vapeur.
+
+- id: salade-lentilles-maquereau
+  nom: Salade tiède de lentilles au maquereau fumé
+  type: plat
+  temps: {preparation: 10, cuisson: 25}
+  etiquettes: [poisson-gras, legumineuses]
+  ingredients:
+    lentilles-vertes: 70
+    maquereau-fume: 70
+    carotte: 60
+    echalote: 15
+    pain-complet: 50
+    huile-colza: 10
+    vinaigre: 5
+    moutarde: 3
+  etapes:
+    - Cuire les lentilles 25 min avec la carotte en dés.
+    - Préparer une vinaigrette moutarde-colza avec l'échalote ciselée.
+    - Mélanger les lentilles tièdes, émietter le maquereau par-dessus, servir avec le pain.
+
+- id: omelette-champignons
+  nom: Omelette aux champignons, pommes de terre sautées
+  type: plat
+  temps: {preparation: 10, cuisson: 20}
+  etiquettes: [vegetarien, rapide, oeufs]
+  ingredients:
+    oeuf: 120
+    champignons: 120
+    pomme-de-terre: 200
+    persil: 5
+    huile-olive: 8
+    emmental: 15
+  etapes:
+    - Faire sauter les pommes de terre en dés 15 min.
+    - Poêler les champignons émincés.
+    - Battre les œufs avec le persil et l'emmental, cuire l'omelette sur les champignons.
+
+- id: riz-cantonais
+  nom: Riz cantonais aux petits pois
+  type: plat
+  temps: {preparation: 15, cuisson: 20}
+  etiquettes: [enfants, rapide]
+  ingredients:
+    riz: 80
+    oeuf: 50
+    petits-pois-surgeles: 80
+    jambon: 30
+    carotte: 60
+    oignon: 30
+    sauce-soja: 8
+    huile-colza: 8
+  etapes:
+    - Cuire le riz la veille ou 15 min avant et le laisser refroidir.
+    - Faire sauter oignon, carotte en dés et petits pois dans l'huile.
+    - Ajouter le riz, le jambon en dés, puis les œufs battus ; remuer jusqu'à cuisson.
+    - Assaisonner de sauce soja.
+
+- id: hachis-parmentier
+  nom: Hachis parmentier
+  type: plat
+  temps: {preparation: 25, cuisson: 30}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [enfants, four]
+  ingredients:
+    boeuf-hache: 80
+    pomme-de-terre: 250
+    lait: 60
+    beurre: 8
+    oignon: 40
+    carotte: 50
+    emmental: 15
+    mache: 40
+  etapes:
+    - Cuire les pommes de terre à l'eau et les écraser en purée avec lait et beurre.
+    - Faire revenir l'oignon et la carotte râpée, puis le bœuf.
+    - "Monter le plat : viande, purée, emmental ; gratiner 25 min à 200 °C."
+    - Servir avec une salade.
+
+- id: lasagnes-epinards-ricotta
+  nom: Lasagnes épinards-ricotta
+  type: plat
+  temps: {preparation: 25, cuisson: 40}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [vegetarien, four]
+  ingredients:
+    feuilles-lasagne: 70
+    epinards-surgeles: 150
+    ricotta: 60
+    tomates-concassees: 150
+    mozzarella: 30
+    oignon: 30
+    huile-olive: 5
+    muscade: 0.5
+  etapes:
+    - Préparer une sauce tomate avec l'oignon.
+    - Mélanger les épinards décongelés et égouttés avec la ricotta et la muscade.
+    - Alterner feuilles, épinards-ricotta et sauce ; finir par la mozzarella.
+    - Cuire 40 min à 180 °C.
+
+- id: galettes-sarrasin-completes
+  nom: Galettes de sarrasin complètes
+  type: plat
+  temps: {preparation: 15, cuisson: 20}
+  etiquettes: [enfants]
+  ingredients:
+    farine-sarrasin: 70
+    oeuf: 60
+    jambon: 40
+    emmental: 25
+    champignons: 60
+    mache: 40
+    beurre: 5
+  etapes:
+    - Préparer la pâte avec la farine, un œuf pour quatre et de l'eau ; laisser reposer.
+    - Cuire les galettes, garnir de jambon, emmental, champignons poêlés et un œuf.
+    - Servir avec la salade.
+
+- id: pates-pesto-haricots
+  nom: Pâtes complètes au pesto et haricots verts
+  type: plat
+  temps: {preparation: 5, cuisson: 15}
+  etiquettes: [vegetarien, rapide, pates]
+  ingredients:
+    pates-completes: 90
+    pesto: 25
+    haricots-verts-surgeles: 120
+    parmesan: 10
+    tomates-concassees: 60
+  etapes:
+    - Cuire les pâtes et les haricots verts ensemble (ajouter les haricots 8 min avant la fin).
+    - Égoutter, mélanger avec le pesto et les tomates chaudes, parsemer de parmesan.
+
+- id: tofu-saute-legumes
+  nom: Tofu sauté aux légumes et riz
+  type: plat
+  temps: {preparation: 15, cuisson: 15}
+  etiquettes: [vegetarien, rapide]
+  ingredients:
+    tofu: 120
+    riz: 70
+    carotte: 80
+    brocoli-surgele: 120
+    oignon: 30
+    sauce-soja: 10
+    gingembre: 1
+    huile-colza: 8
+  etapes:
+    - Couper le tofu en cubes et le faire dorer dans l'huile.
+    - Ajouter l'oignon, la carotte en bâtonnets et le brocoli, sauter 8 min.
+    - Assaisonner de sauce soja et de gingembre, servir avec le riz.
+
+- id: poulet-roti-legumes
+  nom: Poulet rôti, pommes de terre et haricots verts
+  type: plat
+  temps: {preparation: 10, cuisson: 45}
+  etiquettes: [enfants, four]
+  ingredients:
+    poulet-cuisse: 160
+    pomme-de-terre: 200
+    haricots-verts-surgeles: 150
+    huile-olive: 8
+    herbes-provence: 1
+    ail: 3
+  etapes:
+    - Disposer les cuisses et les pommes de terre en quartiers dans un plat, arroser d'huile, ajouter herbes et ail.
+    - Rôtir 45 min à 200 °C en retournant à mi-cuisson.
+    - Cuire les haricots verts à la vapeur.
+
+- id: dinde-moutarde-boulgour
+  nom: Escalope de dinde à la moutarde, boulgour et carottes
+  type: plat
+  temps: {preparation: 10, cuisson: 20}
+  etiquettes: [rapide]
+  ingredients:
+    dinde-escalope: 120
+    boulgour: 70
+    carotte: 150
+    creme: 20
+    moutarde: 8
+    huile-olive: 5
+  etapes:
+    - Cuire le boulgour et les carottes en rondelles.
+    - Saisir les escalopes, déglacer avec la crème mélangée à la moutarde.
+    - Servir le tout nappé de sauce.
+
+- id: sardines-pommes-de-terre
+  nom: Pommes de terre, sardines et salade de carottes
+  type: plat
+  temps: {preparation: 15, cuisson: 20}
+  etiquettes: [poisson-gras, rapide]
+  ingredients:
+    sardines: 80
+    pomme-de-terre: 250
+    carotte: 120
+    citron: 15
+    huile-colza: 8
+    persil: 5
+  etapes:
+    - Cuire les pommes de terre à l'eau.
+    - Râper les carottes, assaisonner de citron et d'huile de colza.
+    - Servir avec les sardines et le persil.
+
+- id: saumon-quinoa-epinards
+  nom: Pavé de saumon, quinoa et épinards
+  type: plat
+  temps: {preparation: 10, cuisson: 20}
+  etiquettes: [poisson-gras, rapide]
+  ingredients:
+    saumon: 120
+    quinoa: 60
+    epinards-surgeles: 150
+    citron: 15
+    creme: 15
+  etapes:
+    - Cuire le quinoa 15 min.
+    - Cuire le saumon 10 min au four ou à la poêle.
+    - Réchauffer les épinards avec la crème, servir avec le citron.
+
+- id: soupe-haricots-blancs
+  nom: Soupe de haricots blancs, carottes et pain grillé
+  type: plat
+  temps: {preparation: 10, cuisson: 25}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, legumineuses, soupe]
+  ingredients:
+    haricots-blancs: 150
+    carotte: 120
+    oignon: 40
+    tomates-concassees: 100
+    pain-complet: 60
+    parmesan: 10
+    huile-olive: 5
+    bouillon: 2
+  etapes:
+    - Faire revenir l'oignon et les carottes en dés.
+    - Ajouter tomates, haricots égouttés, bouillon et 25 cl d'eau par portion ; cuire 20 min.
+    - Servir avec le pain grillé et le parmesan.
+
+- id: couscous-legumes-pois-chiches
+  nom: Couscous végétarien aux pois chiches
+  type: plat
+  temps: {preparation: 20, cuisson: 40}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien, legumineuses]
+  ingredients:
+    semoule: 70
+    pois-chiches: 100
+    carotte: 100
+    navet: 70
+    oignon: 30
+    tomates-concassees: 80
+    cumin: 1
+    huile-olive: 8
+  etapes:
+    - Faire revenir l'oignon avec le cumin, ajouter carottes et navets en tronçons.
+    - Couvrir d'eau avec les tomates, cuire 30 min ; ajouter les pois chiches 10 min avant la fin.
+    - Préparer la semoule, servir avec le bouillon de légumes.
