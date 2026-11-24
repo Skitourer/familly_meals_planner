@@ -36,6 +36,12 @@ gitGraph
 « chore(main): release x.y.z » qui accumule le `CHANGELOG.md`. La fusionner crée le tag, la
 release GitHub et publie l'image Docker versionnée sur `ghcr.io`.
 
+release-please utilise le secret **`RELEASE_PLEASE_TOKEN`** : un jeton d'accès personnel
+*fine-grained*, limité à ce dépôt, avec les permissions *Contents*, *Pull requests* et
+*Issues* en lecture/écriture. Il est nécessaire pour que la PR de version déclenche la CI
+(GitHub ne la lance pas pour les PR créées par le jeton automatique des Actions). Le jeton
+expire : le renouveler et mettre à jour le secret (`gh secret set RELEASE_PLEASE_TOKEN`).
+
 ## Automatisations
 
 | Workflow | Déclencheur | Rôle |
