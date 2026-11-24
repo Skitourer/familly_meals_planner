@@ -170,6 +170,15 @@ export interface RepasANoter {
 	nom: string;
 	convives: number[];
 	notes: Record<string, number>;
+	a_venir: boolean;
+}
+
+export interface Compte {
+	id: number;
+	identifiant: string;
+	role: 'adulte' | 'enfant';
+	membre_id: number | null;
+	actif: boolean;
 }
 
 export interface Reglages {

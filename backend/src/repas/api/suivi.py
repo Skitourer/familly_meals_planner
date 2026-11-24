@@ -6,11 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
+from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
-from repas.modeles import Creneau, Note, Semaine, Stock, maintenant
+from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
 
 router = APIRouter(tags=["suivi"])
+ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
 
 
 # --- Notes ------------------------------------------------------------------------------
@@ -24,6 +26,7 @@ class RepasANoter(BaseModel):
     nom: str
     convives: list[int]
     notes: dict[int, int]  # membre -> note déjà donnée
+    a_venir: bool = False  # repas futur : avis donné à l'avance
 
 
 class NoteEntree(BaseModel):
@@ -35,18 +38,32 @@ class NoteEntree(BaseModel):
 
 
 @router.get("/notes/a-noter")
-def a_noter(jours: int = 14, s: Session = Depends(session)) -> list[RepasANoter]:
-    """Repas passés des ``jours`` derniers jours, avec les notes déjà données."""
+def a_noter(
+    jours: int = 14,
+    jours_a_venir: int = 7,
+    s: Session = Depends(session),
+    compte: Compte = Depends(compte_connecte),
+) -> list[RepasANoter]:
+    """Repas des ``jours`` derniers jours (à noter) et des ``jours_a_venir`` prochains
+    (avis à l'avance), avec les notes déjà données.
+
+    Un compte enfant ne voit que les repas auxquels il participe.
+    """
     cat = catalogue()
     aujourd_hui = date.today()
     debut = aujourd_hui - timedelta(days=jours)
-    semaines = s.exec(select(Semaine).where(Semaine.lundi >= debut - timedelta(days=6))).all()
+    fin = aujourd_hui + timedelta(days=jours_a_venir)
+    semaines = s.exec(
+        select(Semaine).where(Semaine.lundi >= debut - timedelta(days=6), Semaine.lundi <= fin)
+    ).all()
     resultat: list[RepasANoter] = []
     for semaine in semaines:
         creneaux = s.exec(select(Creneau).where(Creneau.semaine_id == semaine.id)).all()
         for c in creneaux:
             jour = semaine.lundi + timedelta(days=c.jour)
-            if not (debut <= jour <= aujourd_hui) or not c.plat_id or not c.convives:
+            if not (debut <= jour <= fin) or not c.plat_id or not c.convives:
+                continue
+            if compte.role == "enfant" and compte.membre_id not in c.convives:
                 continue
             if c.plat_id not in cat.recettes or c.restes_de:  # les restes ne se notent pas
                 continue
@@ -62,16 +79,30 @@ def a_noter(jours: int = 14, s: Session = Depends(session)) -> list[RepasANoter]
                     nom=cat.recettes[c.plat_id].nom,
                     convives=c.convives,
                     notes={n.membre_id: n.valeur for n in notes},
+                    a_venir=jour > aujourd_hui,
                 )
             )
     return sorted(resultat, key=lambda r: (r.date, r.moment), reverse=True)
 
 
 @router.put("/notes")
-def noter(entree: NoteEntree, s: Session = Depends(session)) -> Note:
-    """Crée ou met à jour la note d'un membre pour un plat servi."""
-    if s.get(Creneau, entree.creneau_id) is None:
+def noter(
+    entree: NoteEntree,
+    s: Session = Depends(session),
+    compte: Compte = Depends(compte_connecte),
+) -> Note:
+    """Crée ou met à jour la note d'un membre pour un plat servi (ou prévu).
+
+    Un adulte peut noter pour n'importe quel membre (utile pour les petits) ; un
+    compte enfant uniquement pour lui-même.
+    """
+    creneau = s.get(Creneau, entree.creneau_id)
+    if creneau is None or creneau.plat_id != entree.recette_id:
         raise HTTPException(404, "Repas introuvable")
+    if compte.role == "enfant" and entree.membre_id != compte.membre_id:
+        raise HTTPException(403, "Un compte enfant ne peut noter que pour lui-même")
+    if entree.membre_id not in creneau.convives:
+        raise HTTPException(400, "Ce membre ne participe pas à ce repas")
     note = s.exec(
         select(Note).where(
             Note.membre_id == entree.membre_id,
@@ -103,7 +134,7 @@ class StockEntree(BaseModel):
     peremption: date | None = None
 
 
-@router.get("/placard")
+@router.get("/placard", dependencies=ADULTE)
 def placard(s: Session = Depends(session)) -> list[StockSortie]:
     cat = catalogue()
     limite = date.today() + timedelta(days=7)
@@ -121,7 +152,7 @@ def placard(s: Session = Depends(session)) -> list[StockSortie]:
     ]
 
 
-@router.put("/placard/{ingredient_id}")
+@router.put("/placard/{ingredient_id}", dependencies=ADULTE)
 def ajuster(ingredient_id: str, entree: StockEntree, s: Session = Depends(session)) -> None:
     """Corrige la quantité d'un ingrédient (0 = retirer du placard)."""
     cat = catalogue()

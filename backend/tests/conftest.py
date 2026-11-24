@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from repas import securite
 from repas.base import moteur
 from repas.catalogue import Catalogue, catalogue, charger_catalogue
 from repas.config import RACINE_DEPOT, parametres
@@ -29,6 +30,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     )
     for cache in (parametres, moteur, catalogue):
         cache.cache_clear()
+    securite.limiteur.echecs.clear()
 
     from repas.api.catalogue import verificateur_lien
     from repas.application import creer_application

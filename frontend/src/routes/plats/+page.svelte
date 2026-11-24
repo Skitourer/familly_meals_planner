@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { api, messageErreur } from '#lib/api.ts';
 	import DetailRecette from '#lib/composants/DetailRecette.svelte';
+	import { session } from '#lib/session.svelte.ts';
 	import Modale from '#lib/composants/Modale.svelte';
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import type { FicheRecette, RapportImport } from '#lib/types.ts';
@@ -100,56 +101,58 @@
 	{/each}
 </div>
 
-<section class="carte import">
-	<h2>Ajouter des plats avec une IA</h2>
-	<ol>
-		<li>
-			Téléchargez le <a href="/api/import/instructions-ia.md" download>fichier d'instructions</a>
-			(il contient la liste à jour des ingrédients autorisés).
-		</li>
-		<li>
-			Donnez-le à l'assistant IA de votre choix avec votre demande (« 10 plats d'hiver rapides »…)
-			et enregistrez sa réponse dans un fichier <code>.json</code>.
-		</li>
-		<li>Importez le fichier : chaque recette est vérifiée avant d'être ajoutée.</li>
-	</ol>
-	<div class="ligne">
-		<input
-			type="file"
-			accept="application/json,.json"
-			onchange={(e) => {
-				fichier = (e.target as HTMLInputElement).files?.[0] ?? null;
-				rapport = null;
-			}}
-		/>
-		<button disabled={!fichier} onclick={() => analyser(false)}>Vérifier</button>
-		{#if rapport && rapport.nb_acceptees && !rapport.applique}
-			<button class="principal" onclick={() => analyser(true)}>
-				Importer {rapport.nb_acceptees} recette{rapport.nb_acceptees > 1 ? 's' : ''}
-			</button>
+{#if session.estAdulte}
+	<section class="carte import">
+		<h2>Ajouter des plats avec une IA</h2>
+		<ol>
+			<li>
+				Téléchargez le <a href="/api/import/instructions-ia.md" download>fichier d'instructions</a>
+				(il contient la liste à jour des ingrédients autorisés).
+			</li>
+			<li>
+				Donnez-le à l'assistant IA de votre choix avec votre demande (« 10 plats d'hiver rapides »…)
+				et enregistrez sa réponse dans un fichier <code>.json</code>.
+			</li>
+			<li>Importez le fichier : chaque recette est vérifiée avant d'être ajoutée.</li>
+		</ol>
+		<div class="ligne">
+			<input
+				type="file"
+				accept="application/json,.json"
+				onchange={(e) => {
+					fichier = (e.target as HTMLInputElement).files?.[0] ?? null;
+					rapport = null;
+				}}
+			/>
+			<button disabled={!fichier} onclick={() => analyser(false)}>Vérifier</button>
+			{#if rapport && rapport.nb_acceptees && !rapport.applique}
+				<button class="principal" onclick={() => analyser(true)}>
+					Importer {rapport.nb_acceptees} recette{rapport.nb_acceptees > 1 ? 's' : ''}
+				</button>
+			{/if}
+		</div>
+		{#if rapport}
+			{#if rapport.erreur_fichier}<p class="erreur">{rapport.erreur_fichier}</p>{/if}
+			{#if rapport.applique}<p class="badge vert">
+					{rapport.nb_acceptees} recette(s) ajoutée(s) !
+				</p>{/if}
+			<ul class="rapport">
+				{#each rapport.recettes as r, i (i)}
+					<li>
+						{r.acceptee ? '✅' : '❌'} <strong>{r.nom}</strong> <code>{r.id}</code>
+						{#each r.erreurs as e (e)}<div class="erreur">{e}</div>{/each}
+						{#each r.avertissements as a (a)}<div class="doux">⚠️ {a}</div>{/each}
+					</li>
+				{/each}
+			</ul>
 		{/if}
-	</div>
-	{#if rapport}
-		{#if rapport.erreur_fichier}<p class="erreur">{rapport.erreur_fichier}</p>{/if}
-		{#if rapport.applique}<p class="badge vert">
-				{rapport.nb_acceptees} recette(s) ajoutée(s) !
-			</p>{/if}
-		<ul class="rapport">
-			{#each rapport.recettes as r, i (i)}
-				<li>
-					{r.acceptee ? '✅' : '❌'} <strong>{r.nom}</strong> <code>{r.id}</code>
-					{#each r.erreurs as e (e)}<div class="erreur">{e}</div>{/each}
-					{#each r.avertissements as a (a)}<div class="doux">⚠️ {a}</div>{/each}
-				</li>
-			{/each}
-		</ul>
-	{/if}
-</section>
+	</section>
+{/if}
 
 <Modale titre={fiche?.recette.nom ?? ''} bind:ouverte={ficheOuverte}>
 	{#if fiche}
 		<DetailRecette {fiche} />
-		{#if fiche.importee}
+		{#if fiche.importee && session.estAdulte}
 			<button onclick={() => fiche && supprimer(fiche)}>🗑 Supprimer cette recette importée</button>
 		{/if}
 	{/if}
