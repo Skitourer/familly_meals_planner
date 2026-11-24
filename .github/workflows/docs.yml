@@ -20,18 +20,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 1. Génération du site (MkDocs), téléversé comme artefact « github-pages ».
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      # Exécuté depuis la racine : le site est produit dans ./site
+      - run: uv run --project backend --only-group docs mkdocs build --strict -d site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  # 2. Mise en ligne, dans une tâche séparée (structure recommandée par GitHub :
+  #    l'artefact n'est pas encore visible depuis la tâche qui l'a téléversé).
   publier:
+    needs: construire
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
-      # Exécuté depuis la racine : le site est produit dans ./site
-      - run: uv run --project backend --only-group docs mkdocs build --strict -d site
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: site
       - id: deploiement
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

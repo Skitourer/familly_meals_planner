@@ -15,7 +15,7 @@ jobs:
   importer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - name: Récupérer la table CIQUAL
         run: |
@@ -27,7 +27,7 @@ jobs:
       - name: Vérification
         working-directory: backend
         run: uv run pytest -q
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: donnees/mise-a-jour
           commit-message: "chore(donnees): mise à jour des données ouvertes"

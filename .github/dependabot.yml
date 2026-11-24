@@ -13,6 +13,10 @@ updates:
     schedule: { interval: monthly }
     groups:
       interface: { patterns: ["*"] }
+    ignore:
+      # TypeScript 7 n'est pas encore supporté par svelte-check : mises à jour majeures à la main.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     commit-message: { prefix: "chore(deps)" }
 
   - package-ecosystem: github-actions
