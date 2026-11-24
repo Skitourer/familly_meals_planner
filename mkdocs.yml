@@ -1,0 +1,63 @@
+site_name: Menu Famille
+site_description: Planificateur de repas familial — équilibré, de saison et bas carbone
+repo_url: https://github.com/Skitourer/familly_meals_planner
+edit_uri: edit/main/docs/
+docs_dir: docs
+
+theme:
+  name: material
+  language: fr
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      toggle: { icon: material/weather-night, name: Mode sombre }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      toggle: { icon: material/weather-sunny, name: Mode clair }
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.arithmatex: { generic: true }
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+nav:
+  - Accueil: index.md
+  - Guide:
+      - Démarrer: guide/demarrage.md
+      - Utiliser l'application: guide/utilisation.md
+      - Ajouter des recettes avec une IA: guide/recettes-ia.md
+  - Fonctionnement:
+      - Algorithme de planification: technique/algorithme.md
+      - Données ouvertes: technique/donnees-ouvertes.md
+      - Format du catalogue: technique/catalogue.md
+  - Technique:
+      - Architecture: technique/architecture.md
+      - API: technique/api.md
+      - Déploiement: exploitation/deploiement.md
+      - Contribuer: contribuer.md
+  - Décisions (ADR):
+      - adr/index.md
+      - 1. Python et SvelteKit: adr/0001-python-sveltekit.md
+      - 2. Optimisation CP-SAT: adr/0002-optimisation-cp-sat.md
+      - 3. Catalogue en fichiers: adr/0003-catalogue-en-fichiers.md
+      - 4. Pas d'IA à l'exécution: adr/0004-pas-d-ia-a-l-execution.md
+  - Instructions pour IA (fichier): ia/instructions-ia.md

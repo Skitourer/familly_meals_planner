@@ -1,0 +1,87 @@
+# Desserts : chaque repas = un plat + un dessert. Les fruits frais ne sont
+# proposés qu'en saison ; les desserts « plaisir » seulement sur les jokers.
+# Quantités par portion adulte de référence (voir docs/catalogue.md).
+
+# --- Fruits de saison ----------------------------------------------------------
+- {id: fruit-pomme, nom: Pomme, type: dessert, ingredients: {pomme: 150}}
+- {id: fruit-poire, nom: Poire, type: dessert, ingredients: {poire: 150}}
+- {id: fruit-clementines, nom: Clémentines, type: dessert, ingredients: {clementine: 150}}
+- {id: fruit-orange, nom: Orange, type: dessert, ingredients: {orange: 150}}
+- {id: fruit-kiwi, nom: Kiwis, type: dessert, ingredients: {kiwi: 150}}
+- {id: fruit-banane, nom: Banane, type: dessert, ingredients: {banane: 120}}
+- {id: fruit-fraises, nom: Fraises, type: dessert, ingredients: {fraise: 150}}
+- {id: fruit-cerises, nom: Cerises, type: dessert, ingredients: {cerise: 150}}
+- {id: fruit-abricots, nom: Abricots, type: dessert, ingredients: {abricot: 150}}
+- {id: fruit-peche, nom: Pêche, type: dessert, ingredients: {peche: 150}}
+- {id: fruit-melon, nom: Melon, type: dessert, ingredients: {melon: 200}}
+- {id: fruit-raisin, nom: Raisin, type: dessert, ingredients: {raisin: 150}}
+- {id: fruit-prunes, nom: Prunes, type: dessert, ingredients: {prune: 150}}
+
+# --- Laitages et desserts simples ----------------------------------------------
+- {id: yaourt-nature, nom: Yaourt nature, type: dessert, ingredients: {yaourt: 125}}
+- id: fromage-blanc-miel
+  nom: Fromage blanc au miel
+  type: dessert
+  ingredients: {fromage-blanc: 120, miel: 8}
+- id: fromage-blanc-framboises
+  nom: Fromage blanc aux framboises
+  type: dessert
+  ingredients: {fromage-blanc: 100, framboise: 80}
+- {id: compote, nom: Compote de pomme, type: dessert, ingredients: {compote: 100}}
+- id: comte-pain
+  nom: Comté et pain complet
+  type: dessert
+  ingredients: {comte: 30, pain-complet: 30}
+- id: pommes-au-four
+  nom: Pommes au four au miel
+  lien: https://www.marmiton.org/recettes/recette_pommes-au-four-au-miel-et-a-la-vanille_311848.aspx
+  type: dessert
+  temps: {preparation: 5, cuisson: 30}
+  ingredients: {pomme: 180, miel: 5}
+  etapes:
+    - Évider les pommes, ajouter un peu de miel au centre.
+    - Cuire 30 min à 180 °C.
+
+# --- Desserts plaisir (jokers uniquement) --------------------------------------
+- id: mousse-chocolat
+  nom: Mousse au chocolat
+  lien: https://www.marmiton.org/recettes/recette_mousse-au-chocolat-facile_13585.aspx
+  type: dessert
+  plaisir: true
+  temps: {preparation: 20, cuisson: 0}
+  ingredients: {chocolat-noir: 35, oeuf: 50, sucre: 5}
+  etapes:
+    - Faire fondre le chocolat, ajouter les jaunes.
+    - Incorporer les blancs montés en neige avec le sucre ; réserver 3 h au frais.
+
+- id: crepes-sucre
+  nom: Crêpes au sucre
+  lien: https://www.marmiton.org/recettes/recette_pate-a-crepes_12372.aspx
+  type: dessert
+  plaisir: true
+  temps: {preparation: 10, cuisson: 15}
+  ingredients: {farine: 40, oeuf: 25, lait: 70, sucre: 10, beurre: 5}
+  etapes:
+    - Préparer la pâte, laisser reposer 30 min, cuire les crêpes.
+
+- id: gateau-yaourt
+  nom: Gâteau au yaourt
+  lien: https://www.marmiton.org/recettes/recette_gateau-au-yaourt_12719.aspx
+  type: dessert
+  plaisir: true
+  temps: {preparation: 10, cuisson: 35}
+  ingredients: {farine: 35, yaourt: 20, sucre: 20, oeuf: 20, huile-colza: 8, levure-chimique: 1}
+  etapes:
+    - Mélanger yaourt, sucre, œufs, huile puis farine et levure.
+    - Cuire 35 min à 180 °C.
+
+- id: tarte-pommes
+  nom: Tarte aux pommes
+  lien: https://www.marmiton.org/recettes/recette_tarte-aux-pommes_18588.aspx
+  type: dessert
+  plaisir: true
+  temps: {preparation: 15, cuisson: 35}
+  ingredients: {pate-brisee: 40, pomme: 120, sucre: 8, beurre: 3}
+  etapes:
+    - Foncer le moule, disposer les pommes en lamelles, saupoudrer de sucre.
+    - Cuire 35 min à 190 °C.

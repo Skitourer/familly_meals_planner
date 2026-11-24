@@ -1,0 +1,20 @@
+name: 🥕 Proposer une recette
+description: Ajouter une recette au catalogue commun
+labels: [recette]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Les recettes du catalogue sont décrites dans `donnees/recettes/*.yaml` (format dans
+        `docs/catalogue.md`). Vous pouvez aussi coller ici un JSON généré avec le fichier
+        d'instructions pour IA (`docs/ia/instructions-ia.md`).
+  - type: input
+    id: nom
+    attributes: { label: Nom de la recette }
+    validations: { required: true }
+  - type: textarea
+    id: recette
+    attributes:
+      label: Ingrédients (par portion adulte) et étapes, ou JSON
+      render: yaml
+    validations: { required: true }

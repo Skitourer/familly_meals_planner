@@ -1,0 +1,210 @@
+/* Thème de l'application : variables de couleur (clair / sombre) et éléments de base. */
+
+:root {
+	--fond: #f7f4ee;
+	--surface: #ffffff;
+	--surface-2: #f0ebe1;
+	--texte: #24302a;
+	--texte-doux: #5f6b64;
+	--bordure: #dfd8ca;
+	--accent: #2f6b40;
+	--accent-doux: #e3efe2;
+	--accent-texte: #ffffff;
+	--joker: #b4570f;
+	--joker-doux: #fbe9d8;
+	--ok: #2f7d43;
+	--attention: #a66a00;
+	--alerte: #b3362b;
+	--alerte-doux: #f9e3e0;
+	--ombre: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 14px rgb(0 0 0 / 5%);
+	--rayon: 12px;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--fond: #141a17;
+		--surface: #1c2420;
+		--surface-2: #242e29;
+		--texte: #e6ece8;
+		--texte-doux: #9aa8a0;
+		--bordure: #33403a;
+		--accent: #7cc48d;
+		--accent-doux: #22392a;
+		--accent-texte: #0f1712;
+		--joker: #f0a35e;
+		--joker-doux: #3a2a1b;
+		--ok: #7cc48d;
+		--attention: #e2b04f;
+		--alerte: #f08a80;
+		--alerte-doux: #3c2422;
+		--ombre: 0 1px 2px rgb(0 0 0 / 30%);
+		color-scheme: dark;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--fond);
+	color: var(--texte);
+	font-family:
+		system-ui,
+		-apple-system,
+		'Segoe UI',
+		Roboto,
+		sans-serif;
+	font-size: 16px;
+	line-height: 1.45;
+}
+
+h1,
+h2,
+h3 {
+	line-height: 1.2;
+	margin: 0 0 0.5rem;
+}
+
+h1 {
+	font-size: 1.5rem;
+}
+
+h2 {
+	font-size: 1.15rem;
+}
+
+a {
+	color: var(--accent);
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+button,
+a.bouton {
+	cursor: pointer;
+	display: inline-block;
+	text-decoration: none;
+	border: 1px solid var(--bordure);
+	background: var(--surface);
+	border-radius: 999px;
+	padding: 0.45rem 0.95rem;
+	transition: background 0.15s;
+}
+
+button:hover:not(:disabled),
+a.bouton:hover {
+	background: var(--surface-2);
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+button.principal,
+a.bouton.principal {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-texte);
+	font-weight: 600;
+}
+
+button.principal:hover:not(:disabled) {
+	filter: brightness(1.08);
+	background: var(--accent);
+}
+
+button.discret,
+a.bouton.discret {
+	border-color: transparent;
+	background: transparent;
+	padding: 0.3rem 0.5rem;
+}
+
+input,
+select,
+textarea {
+	background: var(--surface);
+	border: 1px solid var(--bordure);
+	border-radius: 8px;
+	padding: 0.45rem 0.6rem;
+	max-width: 100%;
+}
+
+label {
+	display: grid;
+	gap: 0.2rem;
+	font-size: 0.9rem;
+	color: var(--texte-doux);
+}
+
+.carte {
+	background: var(--surface);
+	border: 1px solid var(--bordure);
+	border-radius: var(--rayon);
+	box-shadow: var(--ombre);
+	padding: 1rem;
+}
+
+.doux {
+	color: var(--texte-doux);
+	font-size: 0.9rem;
+}
+
+.ligne {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.75rem;
+	padding: 0.1rem 0.5rem;
+	border-radius: 999px;
+	background: var(--surface-2);
+	color: var(--texte-doux);
+	white-space: nowrap;
+}
+
+.badge.vert {
+	background: var(--accent-doux);
+	color: var(--accent);
+}
+
+.badge.joker {
+	background: var(--joker-doux);
+	color: var(--joker);
+}
+
+.badge.alerte {
+	background: var(--alerte-doux);
+	color: var(--alerte);
+}
+
+.erreur {
+	background: var(--alerte-doux);
+	color: var(--alerte);
+	padding: 0.6rem 0.9rem;
+	border-radius: 8px;
+}
+
+.visuellement-cache {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+}

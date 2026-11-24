@@ -1,0 +1,135 @@
+# Plats « plaisir » : ils ne sont proposés QUE sur les créneaux joker choisis
+# par la famille, où les contraintes nutritionnelles sont relâchées.
+# Quantités par portion adulte de référence (voir docs/catalogue.md).
+
+- id: pizza-maison
+  nom: Pizza maison jambon-champignons
+  lien: https://www.marmiton.org/recettes/recette_pizza-maison_313213.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 15, cuisson: 15}
+  etiquettes: [enfants, four]
+  ingredients:
+    pate-pizza: 130
+    tomates-concassees: 60
+    jambon: 40
+    champignons: 50
+    mozzarella: 60
+    huile-olive: 5
+  etapes:
+    - Étaler la pâte, la couvrir de tomates concassées égouttées.
+    - Garnir de jambon, de champignons émincés et de mozzarella.
+    - Cuire 15 min à 240 °C.
+
+- id: burger-maison
+  nom: Burger maison et frites au four
+  lien: https://www.marmiton.org/recettes/recette_home-burger_93645.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 15, cuisson: 25}
+  etiquettes: [enfants]
+  ingredients:
+    pain-burger: 75
+    boeuf-hache: 110
+    emmental: 20
+    tomate: 40
+    laitue: 15
+    oignon: 15
+    frites-four: 180
+  etapes:
+    - Enfourner les frites 25 min à 220 °C.
+    - Cuire les steaks, garnir les pains de fromage, steak, tomate, salade et oignon.
+
+- id: tartiflette
+  nom: Tartiflette et salade verte
+  lien: https://www.marmiton.org/recettes/recette_tartiflette_10514.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 20, cuisson: 40}
+  etiquettes: [four, hiver]
+  ingredients:
+    pomme-de-terre: 280
+    reblochon: 80
+    lardons: 40
+    oignon: 40
+    creme: 20
+    mache: 40
+  etapes:
+    - Cuire les pommes de terre à l'eau, les couper en rondelles.
+    - Faire revenir lardons et oignon.
+    - Alterner dans un plat, napper de crème, couvrir du reblochon coupé en deux dans l'épaisseur.
+    - Gratiner 25 min à 200 °C. Servir avec la salade.
+
+- id: raclette
+  nom: Raclette, charcuterie légère et salade
+  lien: https://www.marmiton.org/recettes/recette_raclette-a-la-poele_86649.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 10, cuisson: 25}
+  etiquettes: [convivial, hiver]
+  ingredients:
+    pomme-de-terre: 280
+    raclette: 120
+    jambon: 50
+    mache: 40
+    vinaigre: 3
+    huile-colza: 5
+  etapes:
+    - Cuire les pommes de terre en robe des champs.
+    - Faire fondre la raclette à l'appareil ; servir avec jambon et salade.
+
+- id: croque-monsieur
+  nom: Croque-monsieur et salade
+  lien: https://www.marmiton.org/recettes/recette_croque-monsieur-hivernal_528745.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 10, cuisson: 10}
+  etiquettes: [enfants, rapide]
+  ingredients:
+    pain-de-mie: 100
+    jambon: 40
+    emmental: 40
+    beurre: 10
+    laitue: 40
+    huile-olive: 5
+  etapes:
+    - Beurrer le pain de mie, garnir de jambon et d'emmental.
+    - Cuire 10 min à 220 °C ou à l'appareil. Servir avec la salade.
+
+- id: moules-frites
+  nom: Moules marinières et frites au four
+  lien: https://www.marmiton.org/recettes/recette_moules-marinieres_13214.aspx
+  type: plat
+  plaisir: true
+  temps: {preparation: 20, cuisson: 25}
+  etiquettes: [convivial]
+  ingredients:
+    moules: 160
+    frites-four: 200
+    echalote: 20
+    creme: 20
+    persil: 5
+    beurre: 5
+  etapes:
+    - Enfourner les frites 25 min à 220 °C.
+    - Faire suer l'échalote dans le beurre, ajouter les moules nettoyées, couvrir 6 min.
+    - Ajouter crème et persil.
+
+- id: crepes-jambon-fromage
+  nom: Crêpes salées jambon-fromage
+  lien: https://www.marmiton.org/recettes/recherche.aspx?aqt=cr%C3%AApes%20jambon%20fromage
+  type: plat
+  plaisir: true
+  temps: {preparation: 15, cuisson: 20}
+  etiquettes: [enfants]
+  ingredients:
+    farine: 70
+    oeuf: 40
+    lait: 120
+    jambon: 40
+    emmental: 30
+    beurre: 8
+    laitue: 30
+  etapes:
+    - Préparer la pâte (farine, œufs, lait) et laisser reposer 30 min.
+    - Cuire les crêpes, garnir de jambon et d'emmental, replier et réchauffer.

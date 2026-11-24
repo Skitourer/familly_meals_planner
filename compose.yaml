@@ -1,0 +1,16 @@
+# Déploiement simple (Raspberry Pi ou VPS) : docker compose up -d
+# Voir docs/deploiement.md pour le HTTPS et les sauvegardes.
+services:
+  menu-famille:
+    image: ghcr.io/skitourer/familly_meals_planner:latest
+    # Pour construire localement à la place : décommenter la ligne suivante.
+    # build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - donnees-famille:/app/donnees/local
+
+volumes:
+  donnees-famille:

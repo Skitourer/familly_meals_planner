@@ -1,0 +1,1407 @@
+# =============================================================================
+# Référentiel des ingrédients (fichier édité à la main)
+# =============================================================================
+#
+# Chaque ingrédient utilisé par une recette doit être décrit ici. Les valeurs
+# nutritionnelles, l'empreinte carbone, la saisonnalité, les conditionnements
+# et les prix NE SONT PAS saisis ici : ils sont importés depuis les bases
+# ouvertes par `uv run repas-import` et stockés dans `aliments.json`.
+#
+# Champs :
+#   nom                 Libellé affiché.
+#   ciqual              Code CIQUAL (ANSES) : nutrition + lien Agribalyse (CO2).
+#   ciqual_agribalyse   Code CIQUAL « proche » à utiliser pour le CO2 quand
+#                       Agribalyse ne connaît pas le code exact.
+#   famille             Sert aux repères PNNS (voir docs/algorithme.md) :
+#                       feculent, feculent-complet, legumineuse, legume, fruit,
+#                       viande-rouge, volaille, charcuterie, poisson,
+#                       poisson-gras, fruits-de-mer, oeuf, laitier, fromage,
+#                       matiere-grasse, sucre, condiment.
+#   rayon               Regroupement sur la liste de courses.
+#   saison              Identifiant du calendrier Impact CO2 (ADEME). Absent =
+#                       disponible toute l'année (conserve, surgelé, sec...).
+#                       Les légumes de garde (carotte, oignon, ail, échalote),
+#                       conservés en France toute l'année, et le citron (utilisé
+#                       en petite quantité) n'ont volontairement pas de saison.
+#   conservation_jours  Durée de conservation après achat. Si >= 7 jours, le
+#                       surplus d'un paquet entamé va dans le placard.
+#   vente               Comment l'ingrédient s'achète :
+#                         {mode: paquet, formats: [g...]}  formats facultatifs :
+#                             si absents, déduits d'Open Food Facts (`categorie_off`).
+#                         {mode: piece, poids: g, lots: [n...]}
+#                         {mode: vrac, pas: g}
+#   unite               "g" (défaut) ou "ml" (liquides, densité ~1).
+#   part_comestible     Fraction comestible (épluchures, noyaux...), défaut 1.
+#   basique             true = produit de fond de placard (sel, épices, huile) :
+#                       non ajouté aux courses, listé dans « à vérifier ».
+#   categorie_off       Catégorie Open Food Facts (conditionnements et prix).
+#   prix_kg             Prix de repli en €/kg si Open Prices n'a pas assez de
+#                       relevés.
+# =============================================================================
+
+# --- Féculents ---------------------------------------------------------------
+pates:
+  nom: Pâtes sèches
+  ciqual: 9810
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:dry-pastas
+  prix_kg: 1.8
+
+pates-completes:
+  nom: Pâtes complètes
+  ciqual: 9870
+  famille: feculent-complet
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [500]}
+  categorie_off: en:wholemeal-pasta
+  prix_kg: 2.6
+
+feuilles-lasagne:
+  nom: Feuilles de lasagne
+  ciqual: 9810
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [500]}
+  categorie_off: en:lasagna-sheets
+  prix_kg: 3.0
+
+riz:
+  nom: Riz basmati
+  ciqual: 9100
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:basmati-rices
+  prix_kg: 3.0
+
+riz-complet:
+  nom: Riz complet
+  ciqual: 9102
+  famille: feculent-complet
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:brown-rices
+  prix_kg: 3.2
+
+riz-arborio:
+  nom: Riz à risotto
+  ciqual: 9100
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [500, 1000]}
+  categorie_off: en:risotto-rices
+  prix_kg: 4.0
+
+semoule:
+  nom: Semoule de blé (couscous)
+  ciqual: 9610
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:couscous
+  prix_kg: 2.0
+
+boulgour:
+  nom: Boulgour
+  ciqual: 9690
+  famille: feculent-complet
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:bulgur
+  prix_kg: 3.5
+
+quinoa:
+  nom: Quinoa
+  ciqual: 9340
+  famille: feculent-complet
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:quinoa
+  prix_kg: 7.0
+
+farine:
+  nom: Farine de blé T65
+  ciqual: 9435
+  famille: feculent
+  rayon: epicerie-sucree
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [1000]}
+  categorie_off: en:wheat-flours
+  basique: true
+  prix_kg: 1.2
+
+farine-sarrasin:
+  nom: Farine de sarrasin
+  ciqual: 9540
+  famille: feculent-complet
+  rayon: epicerie-sucree
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [500, 1000]}
+  categorie_off: en:buckwheat-flours
+  prix_kg: 4.0
+
+pomme-de-terre:
+  nom: Pommes de terre
+  ciqual: 4008
+  famille: feculent
+  rayon: fruits-legumes
+  conservation_jours: 21
+  part_comestible: 0.85
+  vente: {mode: paquet, formats: [1000, 2500, 5000]}
+  categorie_off: en:potatoes
+  prix_kg: 1.3
+
+patate-douce:
+  nom: Patate douce
+  ciqual: 4101
+  famille: feculent
+  rayon: fruits-legumes
+  conservation_jours: 14
+  part_comestible: 0.85
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:sweet-potatoes
+  prix_kg: 3.0
+
+frites-four:
+  nom: Frites au four (surgelées)
+  ciqual: 4044
+  famille: feculent
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [1000, 2500]}
+  categorie_off: en:frozen-fries
+  prix_kg: 2.5
+
+pain-complet:
+  nom: Pain complet
+  ciqual: 7110
+  famille: feculent-complet
+  rayon: boulangerie
+  conservation_jours: 3
+  vente: {mode: piece, poids: 400}
+  categorie_off: en:wholemeal-breads
+  prix_kg: 5.5
+
+pain:
+  nom: Baguette
+  ciqual: 7007
+  famille: feculent
+  rayon: boulangerie
+  conservation_jours: 1
+  vente: {mode: piece, poids: 250}
+  categorie_off: en:baguettes
+  prix_kg: 4.5
+
+pain-de-mie:
+  nom: Pain de mie
+  ciqual: 7200
+  famille: feculent
+  rayon: boulangerie
+  conservation_jours: 10
+  vente: {mode: paquet, formats: [500]}
+  categorie_off: en:sliced-breads
+  prix_kg: 4.0
+
+pain-burger:
+  nom: Pains à burger
+  ciqual: 7210
+  famille: feculent
+  rayon: boulangerie
+  conservation_jours: 10
+  vente: {mode: piece, poids: 75, lots: [4, 6]}
+  categorie_off: en:burger-buns
+  prix_kg: 5.0
+
+pate-brisee:
+  nom: Pâte brisée
+  ciqual: 23414
+  famille: feculent
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: piece, poids: 230}
+  categorie_off: en:shortcrust-pastry
+  prix_kg: 6.0
+
+pate-pizza:
+  nom: Pâte à pizza
+  ciqual: 37001
+  famille: feculent
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: piece, poids: 260}
+  categorie_off: en:pizza-dough
+  prix_kg: 6.0
+
+chapelure:
+  nom: Chapelure
+  ciqual: 7500
+  ciqual_agribalyse: 7004
+  famille: feculent
+  rayon: epicerie-salee
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [250]}
+  basique: true
+  prix_kg: 4.0
+
+# --- Légumineuses ------------------------------------------------------------
+lentilles-corail:
+  nom: Lentilles corail
+  ciqual: 20535
+  famille: legumineuse
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:red-lentils
+  prix_kg: 4.0
+
+lentilles-vertes:
+  nom: Lentilles vertes
+  ciqual: 20585
+  famille: legumineuse
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet}
+  categorie_off: en:green-lentils
+  prix_kg: 3.5
+
+pois-chiches:
+  nom: Pois chiches en conserve (égouttés)
+  ciqual: 20532
+  famille: legumineuse
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [265, 530]}
+  categorie_off: en:canned-chickpeas
+  prix_kg: 2.5
+
+haricots-rouges:
+  nom: Haricots rouges en conserve (égouttés)
+  ciqual: 20524
+  famille: legumineuse
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:canned-red-kidney-beans
+  prix_kg: 2.5
+
+haricots-blancs:
+  nom: Haricots blancs en conserve (égouttés)
+  ciqual: 20511
+  famille: legumineuse
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [265, 530]}
+  categorie_off: en:canned-white-beans
+  prix_kg: 2.5
+
+tofu:
+  nom: Tofu nature
+  ciqual: 20904
+  famille: legumineuse
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: paquet}
+  categorie_off: en:tofu
+  prix_kg: 9.0
+
+# --- Légumes frais (de saison) -------------------------------------------------
+carotte:
+  nom: Carottes
+  ciqual: 20009
+  famille: legume
+  rayon: fruits-legumes
+  conservation_jours: 14
+  part_comestible: 0.9
+  vente: {mode: paquet, formats: [1000, 2000]}
+  categorie_off: en:carrots
+  prix_kg: 1.5
+
+oignon:
+  nom: Oignons
+  ciqual: 20034
+  famille: legume
+  rayon: fruits-legumes
+  conservation_jours: 30
+  part_comestible: 0.9
+  vente: {mode: paquet, formats: [1000]}
+  categorie_off: en:onions
+  prix_kg: 1.8
+
+ail:
+  nom: Ail
+  ciqual: 11000
+  famille: condiment
+  rayon: fruits-legumes
+  conservation_jours: 60
+  vente: {mode: piece, poids: 50}
+  basique: true
+  categorie_off: en:garlic
+  prix_kg: 8.0
+
+echalote:
+  nom: Échalotes
+  ciqual: 20097
+  famille: legume
+  rayon: fruits-legumes
+  conservation_jours: 60
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:shallots
+  prix_kg: 5.0
+
+tomate:
+  nom: Tomates
+  ciqual: 20385
+  ciqual_agribalyse: 20047
+  famille: legume
+  rayon: fruits-legumes
+  saison: tomate
+  conservation_jours: 5
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:tomatoes
+  prix_kg: 3.0
+
+courgette:
+  nom: Courgettes
+  ciqual: 20020
+  famille: legume
+  rayon: fruits-legumes
+  saison: courgette
+  conservation_jours: 6
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:zucchini
+  prix_kg: 2.5
+
+aubergine:
+  nom: Aubergines
+  ciqual: 20053
+  famille: legume
+  rayon: fruits-legumes
+  saison: aubergine
+  conservation_jours: 6
+  vente: {mode: piece, poids: 300}
+  categorie_off: en:eggplants
+  prix_kg: 3.0
+
+poivron:
+  nom: Poivrons
+  ciqual: 20041
+  famille: legume
+  rayon: fruits-legumes
+  saison: poivron
+  conservation_jours: 7
+  part_comestible: 0.85
+  vente: {mode: piece, poids: 180}
+  categorie_off: en:bell-peppers
+  prix_kg: 4.0
+
+concombre:
+  nom: Concombre
+  ciqual: 20019
+  famille: legume
+  rayon: fruits-legumes
+  saison: concombre
+  conservation_jours: 6
+  vente: {mode: piece, poids: 350}
+  categorie_off: en:cucumbers
+  prix_kg: 2.5
+
+laitue:
+  nom: Laitue
+  ciqual: 20031
+  famille: legume
+  rayon: fruits-legumes
+  saison: laitue
+  conservation_jours: 4
+  part_comestible: 0.75
+  vente: {mode: piece, poids: 350}
+  categorie_off: en:lettuces
+  prix_kg: 3.5
+
+mache:
+  nom: Mâche
+  ciqual: 20099
+  famille: legume
+  rayon: fruits-legumes
+  saison: mache
+  conservation_jours: 4
+  vente: {mode: paquet, formats: [150, 250]}
+  categorie_off: en:lamb-s-lettuce
+  prix_kg: 14.0
+
+poireau:
+  nom: Poireaux
+  ciqual: 20039
+  famille: legume
+  rayon: fruits-legumes
+  saison: poireau
+  conservation_jours: 10
+  part_comestible: 0.65
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:leeks
+  prix_kg: 2.5
+
+navet:
+  nom: Navets
+  ciqual: 20064
+  famille: legume
+  rayon: fruits-legumes
+  saison: navet
+  conservation_jours: 14
+  part_comestible: 0.85
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:turnips
+  prix_kg: 2.5
+
+chou-vert:
+  nom: Chou vert
+  ciqual: 20069
+  famille: legume
+  rayon: fruits-legumes
+  saison: chou
+  conservation_jours: 14
+  part_comestible: 0.8
+  vente: {mode: piece, poids: 1200}
+  categorie_off: en:green-cabbages
+  prix_kg: 2.0
+
+chou-fleur:
+  nom: Chou-fleur
+  ciqual: 20016
+  famille: legume
+  rayon: fruits-legumes
+  saison: choufleur
+  conservation_jours: 7
+  part_comestible: 0.6
+  vente: {mode: piece, poids: 1000}
+  categorie_off: en:cauliflowers
+  prix_kg: 3.0
+
+brocoli:
+  nom: Brocoli
+  ciqual: 20057
+  famille: legume
+  rayon: fruits-legumes
+  saison: brocoli
+  conservation_jours: 5
+  part_comestible: 0.7
+  vente: {mode: piece, poids: 500}
+  categorie_off: en:broccoli
+  prix_kg: 4.0
+
+endive:
+  nom: Endives
+  ciqual: 20026
+  famille: legume
+  rayon: fruits-legumes
+  saison: endive
+  conservation_jours: 7
+  vente: {mode: paquet, formats: [500, 1000]}
+  categorie_off: en:endives
+  prix_kg: 3.5
+
+potiron:
+  nom: Potiron
+  ciqual: 20044
+  famille: legume
+  rayon: fruits-legumes
+  saison: potiron
+  conservation_jours: 30
+  part_comestible: 0.7
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:pumpkins
+  prix_kg: 2.5
+
+courge-butternut:
+  nom: Courge butternut
+  ciqual: 20138
+  famille: legume
+  rayon: fruits-legumes
+  saison: courge
+  conservation_jours: 30
+  part_comestible: 0.75
+  vente: {mode: piece, poids: 1200}
+  categorie_off: en:butternut-squashes
+  prix_kg: 2.5
+
+champignons:
+  nom: Champignons de Paris
+  ciqual: 20056
+  ciqual_agribalyse: 20498
+  famille: legume
+  rayon: fruits-legumes
+  conservation_jours: 5
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:mushrooms
+  prix_kg: 6.0
+
+epinards-frais:
+  nom: Épinards frais
+  ciqual: 20059
+  famille: legume
+  rayon: fruits-legumes
+  saison: epinard
+  conservation_jours: 3
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:spinachs
+  prix_kg: 6.0
+
+haricots-verts:
+  nom: Haricots verts frais
+  ciqual: 20061
+  famille: legume
+  rayon: fruits-legumes
+  saison: haricotvert
+  conservation_jours: 4
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:green-beans
+  prix_kg: 6.0
+
+asperge:
+  nom: Asperges vertes
+  ciqual: 20279
+  famille: legume
+  rayon: fruits-legumes
+  saison: asperge
+  conservation_jours: 3
+  part_comestible: 0.7
+  vente: {mode: piece, poids: 500}
+  categorie_off: en:asparagus
+  prix_kg: 10.0
+
+betterave:
+  nom: Betterave cuite
+  ciqual: 20007
+  famille: legume
+  rayon: fruits-legumes
+  saison: betterave
+  conservation_jours: 7
+  vente: {mode: paquet, formats: [500]}
+  categorie_off: en:cooked-beetroots
+  prix_kg: 3.0
+
+persil:
+  nom: Persil (botte)
+  ciqual: 11014
+  famille: condiment
+  rayon: fruits-legumes
+  conservation_jours: 5
+  vente: {mode: piece, poids: 40}
+  categorie_off: en:parsley
+  prix_kg: 25.0
+
+citron:
+  nom: Citrons
+  ciqual: 13009
+  famille: fruit
+  rayon: fruits-legumes
+  conservation_jours: 21
+  part_comestible: 0.7
+  vente: {mode: piece, poids: 120}
+  categorie_off: en:lemons
+  prix_kg: 4.0
+
+# --- Légumes surgelés ou en conserve (toute l'année) ---------------------------
+epinards-surgeles:
+  nom: Épinards surgelés
+  ciqual: 20083
+  famille: legume
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [750, 1000]}
+  categorie_off: en:frozen-spinachs
+  prix_kg: 2.5
+
+haricots-verts-surgeles:
+  nom: Haricots verts surgelés
+  ciqual: 20070
+  famille: legume
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [750, 1000]}
+  categorie_off: en:frozen-green-beans
+  prix_kg: 3.0
+
+petits-pois-surgeles:
+  nom: Petits pois surgelés
+  ciqual: 20084
+  famille: legume
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [750, 1000]}
+  categorie_off: en:frozen-peas
+  prix_kg: 3.0
+
+brocoli-surgele:
+  nom: Brocoli surgelé
+  ciqual: 20204
+  famille: legume
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [750, 1000]}
+  categorie_off: en:frozen-broccoli
+  prix_kg: 3.0
+
+tomates-concassees:
+  nom: Tomates pelées en conserve
+  ciqual: 20137
+  ciqual_agribalyse: 20048
+  famille: legume
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [400, 800]}
+  categorie_off: en:peeled-tomatoes
+  prix_kg: 2.2
+
+concentre-tomate:
+  nom: Concentré de tomate
+  ciqual: 20068
+  ciqual_agribalyse: 20268
+  famille: condiment
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [70, 140]}
+  basique: true
+  categorie_off: en:tomato-pastes
+  prix_kg: 6.0
+
+mais:
+  nom: Maïs doux en conserve
+  ciqual: 20066
+  famille: legume
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [140, 285]}
+  categorie_off: en:canned-sweet-corn
+  prix_kg: 4.0
+
+olives:
+  nom: Olives noires
+  ciqual: 13032
+  ciqual_agribalyse: 13147
+  famille: matiere-grasse
+  rayon: conserves
+  conservation_jours: 90
+  vente: {mode: paquet, formats: [150]}
+  categorie_off: en:black-olives
+  prix_kg: 12.0
+
+lait-coco:
+  nom: Lait de coco
+  ciqual: 18041
+  famille: matiere-grasse
+  rayon: epicerie-salee
+  unite: ml
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [200, 400]}
+  categorie_off: en:coconut-milks
+  prix_kg: 5.0
+
+# --- Viandes et charcuterie ----------------------------------------------------
+boeuf-hache:
+  nom: Bœuf haché 5 % MG
+  ciqual: 6250
+  famille: viande-rouge
+  rayon: boucherie
+  conservation_jours: 2
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:minced-beef
+  prix_kg: 14.0
+
+boeuf-mijoter:
+  nom: Bœuf à mijoter (paleron, macreuse)
+  ciqual: 6231
+  famille: viande-rouge
+  rayon: boucherie
+  conservation_jours: 3
+  vente: {mode: vrac, pas: 100}
+  categorie_off: en:beef-for-stew
+  prix_kg: 16.0
+
+poulet-filet:
+  nom: Filets de poulet
+  ciqual: 36017
+  famille: volaille
+  rayon: boucherie
+  conservation_jours: 3
+  vente: {mode: paquet, formats: [300, 600]}
+  categorie_off: en:chicken-breasts
+  prix_kg: 13.0
+
+poulet-cuisse:
+  nom: Cuisses de poulet
+  ciqual: 36024
+  famille: volaille
+  rayon: boucherie
+  conservation_jours: 3
+  part_comestible: 0.7
+  vente: {mode: piece, poids: 250}
+  categorie_off: en:chicken-legs
+  prix_kg: 7.0
+
+dinde-escalope:
+  nom: Escalopes de dinde
+  ciqual: 36304
+  famille: volaille
+  rayon: boucherie
+  conservation_jours: 3
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:turkey-cutlets
+  prix_kg: 12.0
+
+chair-saucisse:
+  nom: Chair à saucisse
+  ciqual: 30051
+  famille: charcuterie
+  rayon: boucherie
+  conservation_jours: 2
+  vente: {mode: vrac, pas: 50}
+  categorie_off: en:sausage-meat
+  prix_kg: 11.0
+
+lardons:
+  nom: Lardons
+  ciqual: 28501
+  famille: charcuterie
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: paquet, formats: [100, 200]}
+  categorie_off: en:lardons
+  prix_kg: 12.0
+
+jambon:
+  nom: Jambon blanc
+  ciqual: 28902
+  famille: charcuterie
+  rayon: cremerie
+  conservation_jours: 7
+  vente: {mode: paquet, formats: [160, 240]}
+  categorie_off: en:cooked-hams
+  prix_kg: 15.0
+
+saucisse-montbeliard:
+  nom: Saucisse de Montbéliard
+  ciqual: 30105
+  famille: charcuterie
+  rayon: boucherie
+  conservation_jours: 14
+  vente: {mode: piece, poids: 150}
+  categorie_off: en:smoked-sausages
+  prix_kg: 13.0
+
+# --- Poissons ------------------------------------------------------------------
+saumon:
+  nom: Pavés de saumon
+  ciqual: 26036
+  famille: poisson-gras
+  rayon: poissonnerie
+  conservation_jours: 2
+  vente: {mode: vrac, pas: 50}
+  categorie_off: en:salmons
+  prix_kg: 25.0
+
+cabillaud:
+  nom: Dos de cabillaud
+  ciqual: 26043
+  famille: poisson
+  rayon: poissonnerie
+  conservation_jours: 2
+  vente: {mode: vrac, pas: 50}
+  categorie_off: en:cods
+  prix_kg: 22.0
+
+lieu-surgele:
+  nom: Filets de lieu noir surgelés
+  ciqual: 26047
+  famille: poisson
+  rayon: surgeles
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [400, 1000]}
+  categorie_off: en:frozen-saithe-fillets
+  prix_kg: 12.0
+
+maquereau-fume:
+  nom: Filets de maquereau fumé
+  ciqual: 26087
+  famille: poisson-gras
+  rayon: poissonnerie
+  conservation_jours: 14
+  vente: {mode: paquet, formats: [200]}
+  categorie_off: en:smoked-mackerels
+  prix_kg: 15.0
+
+sardines:
+  nom: Sardines à l'huile d'olive
+  ciqual: 26040
+  famille: poisson-gras
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [115]}
+  categorie_off: en:sardines-in-olive-oil
+  prix_kg: 18.0
+
+thon:
+  nom: Thon au naturel
+  ciqual: 26039
+  famille: poisson
+  rayon: conserves
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [140, 280]}
+  categorie_off: en:canned-tunas
+  prix_kg: 16.0
+
+moules:
+  nom: Moules
+  ciqual: 10014
+  famille: fruits-de-mer
+  rayon: poissonnerie
+  conservation_jours: 1
+  part_comestible: 0.35
+  vente: {mode: vrac, pas: 500}
+  categorie_off: en:mussels
+  prix_kg: 5.0
+
+# --- Crèmerie : œufs, laitages, fromages ---------------------------------------
+oeuf:
+  nom: Œufs
+  ciqual: 22000
+  famille: oeuf
+  rayon: cremerie
+  conservation_jours: 28
+  part_comestible: 0.88
+  vente: {mode: piece, poids: 60, lots: [6, 12]}
+  categorie_off: en:chicken-eggs
+  prix_kg: 6.0
+
+lait:
+  nom: Lait demi-écrémé
+  ciqual: 19041
+  famille: laitier
+  rayon: cremerie
+  unite: ml
+  conservation_jours: 90
+  vente: {mode: paquet, formats: [1000]}
+  categorie_off: en:semi-skimmed-milks
+  prix_kg: 1.1
+
+creme:
+  nom: Crème fraîche légère
+  ciqual: 19431
+  famille: matiere-grasse
+  rayon: cremerie
+  conservation_jours: 14
+  vente: {mode: paquet, formats: [200, 400]}
+  categorie_off: en:light-creme-fraiche
+  prix_kg: 5.0
+
+beurre:
+  nom: Beurre doux
+  ciqual: 16400
+  famille: matiere-grasse
+  rayon: cremerie
+  conservation_jours: 60
+  vente: {mode: paquet, formats: [250]}
+  categorie_off: en:unsalted-butters
+  prix_kg: 10.0
+
+yaourt:
+  nom: Yaourt nature
+  ciqual: 19593
+  famille: laitier
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: piece, poids: 125, lots: [4, 8, 12]}
+  categorie_off: en:plain-yogurts
+  prix_kg: 2.5
+
+fromage-blanc:
+  nom: Fromage blanc 3 %
+  ciqual: 19646
+  famille: laitier
+  rayon: cremerie
+  conservation_jours: 14
+  vente: {mode: paquet, formats: [500, 1000]}
+  categorie_off: en:fromage-blanc
+  prix_kg: 3.0
+
+emmental:
+  nom: Emmental râpé
+  ciqual: 12118
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: paquet}
+  categorie_off: en:grated-emmental
+  prix_kg: 10.0
+
+parmesan:
+  nom: Parmesan
+  ciqual: 12120
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 60
+  vente: {mode: paquet, formats: [100, 200]}
+  categorie_off: en:parmigiano-reggiano
+  prix_kg: 25.0
+
+comte:
+  nom: Comté
+  ciqual: 12110
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 30
+  vente: {mode: paquet, formats: [200, 400]}
+  categorie_off: en:comte
+  prix_kg: 20.0
+
+mozzarella:
+  nom: Mozzarella
+  ciqual: 19590
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 10
+  vente: {mode: paquet, formats: [125]}
+  categorie_off: en:mozzarella
+  prix_kg: 10.0
+
+ricotta:
+  nom: Ricotta
+  ciqual: 19585
+  ciqual_agribalyse: 19590
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 10
+  vente: {mode: paquet, formats: [250]}
+  categorie_off: en:ricotta
+  prix_kg: 10.0
+
+feta:
+  nom: Feta
+  ciqual: 12066
+  ciqual_agribalyse: 12061
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: paquet, formats: [200]}
+  categorie_off: en:feta
+  prix_kg: 14.0
+
+chevre:
+  nom: Bûche de chèvre
+  ciqual: 12812
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 14
+  vente: {mode: paquet, formats: [180]}
+  categorie_off: en:goat-cheese-logs
+  prix_kg: 13.0
+
+reblochon:
+  nom: Reblochon
+  ciqual: 12045
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: piece, poids: 450}
+  categorie_off: en:reblochon
+  prix_kg: 16.0
+
+raclette:
+  nom: Fromage à raclette
+  ciqual: 12749
+  famille: fromage
+  rayon: cremerie
+  conservation_jours: 21
+  vente: {mode: paquet, formats: [400, 800]}
+  categorie_off: en:raclette-cheeses
+  prix_kg: 15.0
+
+# --- Matières grasses, condiments, épices (placard) ----------------------------
+huile-olive:
+  nom: Huile d'olive
+  ciqual: 17270
+  famille: matiere-grasse
+  rayon: epicerie-salee
+  unite: ml
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [750, 1000]}
+  basique: true
+  categorie_off: en:extra-virgin-olive-oils
+  prix_kg: 10.0
+
+huile-colza:
+  nom: Huile de colza
+  ciqual: 17130
+  famille: matiere-grasse
+  rayon: epicerie-salee
+  unite: ml
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [1000]}
+  basique: true
+  categorie_off: en:rapeseed-oils
+  prix_kg: 3.0
+
+vinaigre:
+  nom: Vinaigre de vin
+  ciqual: 11018
+  famille: condiment
+  rayon: epicerie-salee
+  unite: ml
+  conservation_jours: 730
+  vente: {mode: paquet, formats: [500]}
+  basique: true
+  prix_kg: 2.0
+
+moutarde:
+  nom: Moutarde
+  ciqual: 11013
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 180
+  vente: {mode: paquet, formats: [210]}
+  basique: true
+  prix_kg: 6.0
+
+sauce-soja:
+  nom: Sauce soja
+  ciqual: 11104
+  famille: condiment
+  rayon: epicerie-salee
+  unite: ml
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [150]}
+  basique: true
+  prix_kg: 12.0
+
+pesto:
+  nom: Pesto
+  ciqual: 11179
+  famille: matiere-grasse
+  rayon: epicerie-salee
+  conservation_jours: 90
+  vente: {mode: paquet, formats: [190]}
+  categorie_off: en:pestos
+  prix_kg: 18.0
+
+bouillon:
+  nom: Bouillon de légumes (cube)
+  ciqual: 11041
+  ciqual_agribalyse: 25948
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [80]}
+  basique: true
+  prix_kg: 20.0
+
+curry:
+  nom: Curry en poudre
+  ciqual: 11005
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [40]}
+  basique: true
+  prix_kg: 50.0
+
+cumin:
+  nom: Cumin
+  ciqual: 11042
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [40]}
+  basique: true
+  prix_kg: 50.0
+
+paprika:
+  nom: Paprika
+  ciqual: 11049
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [40]}
+  basique: true
+  prix_kg: 50.0
+
+herbes-provence:
+  nom: Herbes de Provence
+  ciqual: 11060
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [30]}
+  basique: true
+  prix_kg: 60.0
+
+muscade:
+  nom: Noix de muscade
+  ciqual: 11048
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [30]}
+  basique: true
+  prix_kg: 80.0
+
+gingembre:
+  nom: Gingembre en poudre
+  ciqual: 11006
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [30]}
+  basique: true
+  prix_kg: 60.0
+
+sel:
+  nom: Sel iodé
+  ciqual: 11058
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 3650
+  vente: {mode: paquet, formats: [1000]}
+  basique: true
+  prix_kg: 1.0
+
+poivre:
+  nom: Poivre noir
+  ciqual: 11015
+  famille: condiment
+  rayon: epicerie-salee
+  conservation_jours: 730
+  vente: {mode: paquet, formats: [50]}
+  basique: true
+  prix_kg: 40.0
+
+# --- Épicerie sucrée -----------------------------------------------------------
+sucre:
+  nom: Sucre
+  ciqual: 31016
+  famille: sucre
+  rayon: epicerie-sucree
+  conservation_jours: 3650
+  vente: {mode: paquet, formats: [1000]}
+  basique: true
+  prix_kg: 1.2
+
+miel:
+  nom: Miel
+  ciqual: 31008
+  famille: sucre
+  rayon: epicerie-sucree
+  conservation_jours: 730
+  vente: {mode: paquet, formats: [250, 500]}
+  basique: true
+  categorie_off: en:honeys
+  prix_kg: 12.0
+
+chocolat-noir:
+  nom: Chocolat noir pâtissier
+  ciqual: 31085
+  famille: sucre
+  rayon: epicerie-sucree
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [200]}
+  categorie_off: en:dark-chocolates-for-cooking
+  prix_kg: 12.0
+
+levure-chimique:
+  nom: Levure chimique
+  ciqual: 11046
+  famille: condiment
+  rayon: epicerie-sucree
+  conservation_jours: 365
+  vente: {mode: paquet, formats: [55]}
+  basique: true
+  prix_kg: 20.0
+
+compote:
+  nom: Compote de pomme sans sucre ajouté
+  ciqual: 13151
+  ciqual_agribalyse: 13038
+  famille: fruit
+  rayon: epicerie-sucree
+  conservation_jours: 180
+  vente: {mode: piece, poids: 100, lots: [4, 8, 12]}
+  categorie_off: en:apple-compotes
+  prix_kg: 3.5
+
+# --- Fruits (de saison) --------------------------------------------------------
+pomme:
+  nom: Pommes
+  ciqual: 13039
+  famille: fruit
+  rayon: fruits-legumes
+  saison: pomme
+  conservation_jours: 21
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:apples
+  prix_kg: 2.5
+
+poire:
+  nom: Poires
+  ciqual: 13037
+  famille: fruit
+  rayon: fruits-legumes
+  saison: poire
+  conservation_jours: 7
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:pears
+  prix_kg: 3.0
+
+clementine:
+  nom: Clémentines
+  ciqual: 13024
+  famille: fruit
+  rayon: fruits-legumes
+  saison: clementine
+  conservation_jours: 14
+  part_comestible: 0.75
+  vente: {mode: paquet, formats: [1000, 2000]}
+  categorie_off: en:clementines
+  prix_kg: 3.0
+
+orange:
+  nom: Oranges
+  ciqual: 13034
+  famille: fruit
+  rayon: fruits-legumes
+  saison: orange
+  conservation_jours: 14
+  part_comestible: 0.7
+  vente: {mode: paquet, formats: [1500, 2000]}
+  categorie_off: en:oranges
+  prix_kg: 2.5
+
+kiwi:
+  nom: Kiwis
+  ciqual: 13021
+  famille: fruit
+  rayon: fruits-legumes
+  saison: kiwi
+  conservation_jours: 14
+  part_comestible: 0.85
+  vente: {mode: piece, poids: 90}
+  categorie_off: en:kiwis
+  prix_kg: 4.0
+
+banane:
+  nom: Bananes
+  ciqual: 13005
+  famille: fruit
+  rayon: fruits-legumes
+  saison: banane
+  conservation_jours: 6
+  part_comestible: 0.65
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:bananas
+  prix_kg: 2.0
+
+fraise:
+  nom: Fraises
+  ciqual: 13014
+  famille: fruit
+  rayon: fruits-legumes
+  saison: fraise
+  conservation_jours: 3
+  vente: {mode: paquet, formats: [250, 500]}
+  categorie_off: en:strawberries
+  prix_kg: 8.0
+
+cerise:
+  nom: Cerises
+  ciqual: 13008
+  famille: fruit
+  rayon: fruits-legumes
+  saison: cerise
+  conservation_jours: 4
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:cherries
+  prix_kg: 9.0
+
+abricot:
+  nom: Abricots
+  ciqual: 13000
+  famille: fruit
+  rayon: fruits-legumes
+  saison: abricot
+  conservation_jours: 4
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:apricots
+  prix_kg: 5.0
+
+peche:
+  nom: Pêches
+  ciqual: 13043
+  famille: fruit
+  rayon: fruits-legumes
+  saison: peche
+  conservation_jours: 4
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:peaches
+  prix_kg: 4.5
+
+melon:
+  nom: Melon
+  ciqual: 13026
+  famille: fruit
+  rayon: fruits-legumes
+  saison: melon
+  conservation_jours: 5
+  part_comestible: 0.55
+  vente: {mode: piece, poids: 1000}
+  categorie_off: en:melons
+  prix_kg: 3.0
+
+raisin:
+  nom: Raisin
+  ciqual: 13395
+  ciqual_agribalyse: 13112
+  famille: fruit
+  rayon: fruits-legumes
+  saison: raisin
+  conservation_jours: 5
+  part_comestible: 0.95
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:grapes
+  prix_kg: 4.5
+
+prune:
+  nom: Prunes
+  ciqual: 13100
+  famille: fruit
+  rayon: fruits-legumes
+  saison: prune
+  conservation_jours: 5
+  part_comestible: 0.9
+  vente: {mode: vrac, pas: 250}
+  categorie_off: en:plums
+  prix_kg: 4.0
+
+framboise:
+  nom: Framboises
+  ciqual: 13015
+  famille: fruit
+  rayon: fruits-legumes
+  saison: framboise
+  conservation_jours: 2
+  vente: {mode: paquet, formats: [125, 250]}
+  categorie_off: en:raspberries
+  prix_kg: 16.0

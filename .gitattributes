@@ -1,0 +1,5 @@
+# Fins de ligne normalisées (LF) quel que soit le système.
+* text=auto eol=lf
+*.ttf binary
+*.png binary
+*.pdf binary

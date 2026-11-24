@@ -1,0 +1,18 @@
+# Contrôles locaux avant chaque commit (facultatif) : `uvx pre-commit install`
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (interface)
+        entry: bash -c "cd frontend && npx prettier --write ."
+        language: system
+        files: ^frontend/
+        pass_filenames: false

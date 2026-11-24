@@ -1,0 +1,253 @@
+# Plats de printemps et d'été : tomates, courgettes, aubergines, poivrons...
+# Quantités par portion adulte de référence (voir docs/catalogue.md).
+
+- id: ratatouille-oeufs
+  nom: Ratatouille, œufs au plat et semoule
+  lien: https://www.marmiton.org/recettes/recette_ratatouille_23223.aspx
+  type: plat
+  temps: {preparation: 25, cuisson: 45}
+  lot: {repas_max: 3, conservation_jours: 4}
+  etiquettes: [vegetarien]
+  ingredients:
+    courgette: 120
+    aubergine: 100
+    poivron: 80
+    tomate: 150
+    oignon: 30
+    oeuf: 60
+    semoule: 60
+    huile-olive: 10
+    herbes-provence: 1
+  etapes:
+    - Couper tous les légumes en dés, les faire revenir séparément dans l'huile.
+    - Réunir dans une cocotte avec les herbes, mijoter 40 min.
+    - Servir avec un œuf au plat et la semoule.
+
+- id: salade-nicoise
+  nom: Salade niçoise
+  lien: https://www.marmiton.org/recettes/recette_salade-nicoise_25614.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 15}
+  etiquettes: [poisson, sans-four]
+  ingredients:
+    thon: 70
+    oeuf: 60
+    tomate: 150
+    haricots-verts: 100
+    pomme-de-terre: 150
+    laitue: 40
+    olives: 10
+    huile-olive: 10
+    vinaigre: 5
+  etapes:
+    - Cuire les pommes de terre, les haricots verts et les œufs durs.
+    - Disposer la salade, les tomates en quartiers, les légumes refroidis, le thon et les œufs.
+    - Ajouter les olives et la vinaigrette.
+
+- id: taboule-pois-chiches
+  nom: Taboulé aux pois chiches et feta
+  lien: https://www.marmiton.org/recettes/recette_le-vrai-taboule-libanais_26796.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 10}
+  etiquettes: [vegetarien, legumineuses, sans-four]
+  ingredients:
+    boulgour: 60
+    pois-chiches: 100
+    tomate: 120
+    concombre: 100
+    feta: 30
+    persil: 15
+    citron: 20
+    huile-olive: 10
+  etapes:
+    - Cuire le boulgour 10 min et le refroidir.
+    - Couper tomates et concombre en petits dés, ciseler le persil.
+    - Mélanger avec les pois chiches, la feta émiettée, le citron et l'huile.
+
+- id: tomates-farcies
+  nom: Tomates farcies et riz
+  lien: https://www.marmiton.org/recettes/recette_tomates-farcies-facile_63622.aspx
+  type: plat
+  temps: {preparation: 25, cuisson: 45}
+  etiquettes: [four, enfants]
+  ingredients:
+    tomate: 250
+    chair-saucisse: 70
+    riz: 60
+    oignon: 30
+    persil: 5
+    huile-olive: 5
+  etapes:
+    - Évider les tomates, mélanger la chair avec l'oignon et le persil.
+    - Farcir, disposer dans un plat avec le riz cru et la pulpe des tomates.
+    - Cuire 45 min à 180 °C en ajoutant un peu d'eau si nécessaire.
+
+- id: gaspacho-tartines-chevre
+  nom: Gaspacho et tartines au chèvre
+  lien: https://www.marmiton.org/recettes/recette_gaspacho_92502.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 5}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [vegetarien, soupe, sans-four]
+  ingredients:
+    tomate: 250
+    concombre: 100
+    poivron: 50
+    oignon: 15
+    huile-olive: 10
+    vinaigre: 5
+    pain-complet: 80
+    chevre: 40
+  etapes:
+    - Mixer tomates, concombre, poivron et oignon avec l'huile et le vinaigre.
+    - Réserver au frais au moins 1 h.
+    - Servir avec des tartines grillées au chèvre.
+
+- id: salade-pates-thon
+  nom: Salade de pâtes au thon et légumes croquants
+  lien: https://www.marmiton.org/recettes/recette_salade-de-pates-au-thon_15412.aspx
+  type: plat
+  temps: {preparation: 15, cuisson: 10}
+  etiquettes: [poisson, rapide, enfants]
+  ingredients:
+    pates: 80
+    thon: 60
+    tomate: 120
+    concombre: 80
+    mais: 40
+    huile-olive: 10
+    vinaigre: 5
+  etapes:
+    - Cuire les pâtes, les refroidir.
+    - Mélanger avec les légumes en dés, le maïs et le thon émietté ; assaisonner.
+
+- id: poulet-basquaise
+  nom: Poulet basquaise et riz
+  lien: https://www.marmiton.org/recettes/recette_poulet-basquaise-savoureux-de-cyril-lignac_538444.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 45}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [mijote]
+  ingredients:
+    poulet-cuisse: 160
+    poivron: 150
+    tomate: 150
+    oignon: 40
+    riz: 60
+    huile-olive: 8
+    paprika: 1
+  etapes:
+    - Faire dorer les cuisses dans l'huile, réserver.
+    - Faire revenir oignon et poivrons en lanières, ajouter les tomates et le paprika.
+    - Remettre le poulet, mijoter 40 min. Servir avec le riz.
+
+- id: asperges-oeufs-mollets
+  nom: Asperges vertes, œufs mollets et pommes de terre nouvelles
+  lien: https://www.marmiton.org/recettes/recette_asperges-lardons-et-oeufs-mollets_63844.aspx
+  type: plat
+  temps: {preparation: 15, cuisson: 20}
+  etiquettes: [vegetarien, rapide]
+  ingredients:
+    asperge: 200
+    oeuf: 120
+    pomme-de-terre: 200
+    parmesan: 10
+    huile-olive: 8
+  etapes:
+    - Cuire les pommes de terre à l'eau 20 min.
+    - Cuire les asperges 8 min à la vapeur et les œufs 6 min.
+    - Servir avec un filet d'huile et des copeaux de parmesan.
+
+- id: brochettes-poulet-courgettes
+  nom: Brochettes de poulet, courgettes grillées et semoule
+  lien: https://www.marmiton.org/recettes/recette_brochettes-de-poulet-a-la-libanaise_28894.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 15}
+  etiquettes: [barbecue]
+  ingredients:
+    poulet-filet: 120
+    courgette: 200
+    semoule: 70
+    citron: 15
+    huile-olive: 10
+    herbes-provence: 1
+  etapes:
+    - Mariner le poulet en cubes avec citron, huile et herbes.
+    - Monter les brochettes, griller 12 min avec les courgettes en tranches.
+    - Servir avec la semoule.
+
+- id: courgettes-farcies-quinoa
+  nom: Courgettes farcies au quinoa et à la feta
+  lien: https://www.marmiton.org/recettes/recette_courgettes-farcies-au-quinoa_64458.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 35}
+  etiquettes: [vegetarien, four]
+  ingredients:
+    courgette: 300
+    quinoa: 50
+    pois-chiches: 60
+    feta: 40
+    tomate: 100
+    oignon: 20
+    huile-olive: 8
+  etapes:
+    - Cuire le quinoa 15 min.
+    - Couper les courgettes en deux, les évider ; mélanger la chair avec quinoa, pois chiches, oignon et feta.
+    - Farcir, entourer de tomates en dés, cuire 30 min à 180 °C.
+
+- id: saumon-courgettes-pates
+  nom: Pâtes au saumon et aux courgettes
+  lien: https://www.marmiton.org/recettes/recette_salade-de-pates-au-saumon-et-aux-courgettes_80338.aspx
+  type: plat
+  temps: {preparation: 10, cuisson: 15}
+  etiquettes: [poisson-gras, rapide, pates]
+  ingredients:
+    pates: 85
+    saumon: 90
+    courgette: 150
+    creme: 20
+    citron: 10
+  etapes:
+    - Cuire les pâtes.
+    - Poêler les courgettes en dés puis le saumon en cubes 4 min ; ajouter la crème et le citron.
+    - Mélanger avec les pâtes.
+
+- id: salade-lentilles-ete
+  nom: Salade de lentilles, tomates, concombre et œuf
+  lien: https://www.marmiton.org/recettes/recette_delicieuse-salade-de-lentilles_168181.aspx
+  type: plat
+  temps: {preparation: 15, cuisson: 25}
+  etiquettes: [vegetarien, legumineuses, sans-four]
+  ingredients:
+    lentilles-vertes: 70
+    tomate: 120
+    concombre: 80
+    oeuf: 60
+    echalote: 10
+    pain-complet: 50
+    huile-colza: 10
+    vinaigre: 5
+  etapes:
+    - Cuire les lentilles 25 min et les œufs durs 10 min ; refroidir.
+    - Mélanger avec les tomates, le concombre et l'échalote, ajouter la vinaigrette.
+    - Servir avec les œufs en quartiers et le pain.
+
+- id: aubergines-parmigiana
+  nom: Aubergines à la parmesane
+  lien: https://www.marmiton.org/recettes/recette_aubergines-a-la-parmesane_13369.aspx
+  type: plat
+  temps: {preparation: 20, cuisson: 40}
+  lot: {repas_max: 2, conservation_jours: 3}
+  etiquettes: [vegetarien, four]
+  ingredients:
+    aubergine: 250
+    tomates-concassees: 150
+    mozzarella: 50
+    parmesan: 15
+    pain-complet: 60
+    huile-olive: 10
+    herbes-provence: 1
+  etapes:
+    - Couper les aubergines en tranches, les griller au four 15 min avec un peu d'huile.
+    - Alterner aubergines, sauce tomate et mozzarella dans un plat.
+    - Parsemer de parmesan, cuire 25 min à 180 °C. Servir avec du pain.

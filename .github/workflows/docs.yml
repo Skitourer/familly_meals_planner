@@ -1,0 +1,37 @@
+# Publication de la documentation (MkDocs Material) sur GitHub Pages.
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", "mkdocs.yml", ".github/workflows/docs.yml"]
+  workflow_dispatch:
+
+env:
+  NO_MKDOCS_2_WARNING: "1"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - working-directory: backend
+        run: uv run --only-group docs mkdocs build --strict -f ../mkdocs.yml -d ../site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - id: deploiement
+        uses: actions/deploy-pages@v4
