@@ -1,0 +1,81 @@
+[project]
+name = "repas"
+version = "1.0.0"
+description = "Planificateur de repas familial : équilibré, de saison, bas carbone."
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.165.0",
+    "fpdf2>=2.9.0",
+    "httpx>=0.28.1",
+    "itsdangerous>=2.2.0",
+    "openpyxl>=3.1.5",
+    "ortools>=9.15.6755",
+    "pydantic-settings>=2.12.0",
+    "python-multipart>=0.0.20",
+    "pyyaml>=6.0.3",
+    "sqlmodel>=0.0.50",
+    "uvicorn[standard]>=0.38.0",
+]
+
+[project.scripts]
+repas = "repas.__main__:main"
+repas-import = "repas.import_donnees.__main__:main"
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.37.0",
+    "pyright>=1.1.414",
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.17.6",
+]
+docs = [
+    "mkdocs-material>=9.8.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
+
+# --- Qualité -------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+# E/F : erreurs de base, I : tri des imports, B : bugs probables,
+# UP : syntaxe moderne, SIM : simplifications, N : nommage, RUF : divers.
+select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF"]
+ignore = [
+    "RUF001", # caractères ambigus : le code et les textes sont en français
+    "RUF002",
+    "RUF003",
+    "B008",   # FastAPI utilise Depends() dans les valeurs par défaut
+    "N818",   # exceptions nommées en français (ErreurXxx)
+]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = ["reseau: test qui interroge une API externe (exclu par défaut en CI)"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
+
+[tool.coverage.run]
+source = ["repas"]
+omit = ["*/import_donnees/*"]
+
+# --- Tâches (uv run poe <tâche>) -------------------------------------------------
+[tool.poe.tasks]
+dev = { cmd = "uvicorn repas.application:creer_application --factory --reload --port ${port}", args = [{ name = "port", default = "8000", help = "Port de l'API" }], help = "Lance l'API en mode développement" }
+lint = { sequence = [{ cmd = "ruff check ." }, { cmd = "ruff format --check ." }], help = "Vérifie le style" }
+format = { sequence = [{ cmd = "ruff check --fix ." }, { cmd = "ruff format ." }], help = "Corrige le style" }
+types = { cmd = "pyright", help = "Vérifie les types" }
+test = { cmd = "pytest --cov --cov-report=term-missing", help = "Lance les tests avec couverture" }
+check = { sequence = ["lint", "types", "test"], help = "Tout vérifier (comme la CI)" }
+import = { cmd = "repas-import", help = "Met à jour les données ouvertes" }

@@ -1,0 +1,14 @@
+name: ✨ Idée de fonctionnalité
+description: Proposer une amélioration
+labels: [amelioration]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Quel besoin ?
+      description: La situation de la vie de famille qui motive cette idée.
+    validations: { required: true }
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Proposition

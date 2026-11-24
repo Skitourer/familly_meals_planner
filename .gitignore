@@ -1,11 +1,31 @@
-# Dépendances, build, base et données
-node_modules/
-dist/
-donnees/
-*.db
-*.db-*
+# Données locales de la famille (base SQLite, recettes importées) : jamais versionnées
+donnees/local/
+# Cache des téléchargements (CIQUAL, API ouvertes) : régénérable par `repas-import`
+donnees/sources/
+# Base de l'ancienne maquette
+donnees/*.db*
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Interface
+node_modules/
+frontend/.svelte-kit/
+frontend/build/
+
+# Documentation compilée
+site/
 
 # Divers
 .DS_Store
 *.log
+.vscode/
+.idea/
