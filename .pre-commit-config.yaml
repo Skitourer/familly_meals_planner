@@ -1,5 +1,9 @@
 # Contrôles locaux avant chaque commit (facultatif) : `uvx pre-commit install`
 repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks # refuse le commit si un secret (jeton, clé privée…) est détecté
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.6
     hooks:
