@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/Skitourer/familly_meals_planner/compare/v1.3.0...v1.3.1) (2026-11-24)
+
+
+### Corrections
+
+* création des réglages par défaut sûre en cas de requêtes simultanées ([#39](https://github.com/Skitourer/familly_meals_planner/issues/39)) ([bdb5099](https://github.com/Skitourer/familly_meals_planner/commit/bdb50990473a6b96430838948e106dd6d0cc3fd3))
+
 ## [1.3.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.2.0...v1.3.0) (2026-11-24)
 
 
