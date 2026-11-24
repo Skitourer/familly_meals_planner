@@ -125,7 +125,11 @@
 </div>
 
 {#if erreur}<p class="erreur">{erreur}</p>{/if}
-{#if !enLigne || enAttente}
+{#if !enLigne && !enAttente}
+	<p class="badge attente" role="status">
+		📵 Hors ligne : liste telle qu'elle était à la dernière connexion.
+	</p>
+{:else if !enLigne || enAttente}
 	<p class="badge attente" role="status">
 		{enLigne ? '⏳' : '📵 Hors ligne :'}
 		{enAttente}
@@ -185,6 +189,9 @@
 	.attente {
 		display: inline-block;
 		margin: 0.5rem 0;
+		/* Phrase complète : elle doit revenir à la ligne sur un écran de téléphone. */
+		white-space: normal;
+		border-radius: 8px;
 	}
 
 	.entete {

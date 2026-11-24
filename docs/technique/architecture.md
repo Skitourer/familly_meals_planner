@@ -70,9 +70,22 @@ flowchart TB
 | `lib/types.ts` | Types des réponses de l'API |
 | `lib/donnees.svelte.ts` | Membres et recettes partagés entre les pages |
 | `lib/dates.ts` | Calcul des semaines (testé) |
+| `lib/coches.ts` | File d'attente des coches de la liste de courses (testé) |
+| `lib/hors-ligne.ts` | Règles du service worker : quoi garder, comment (testé) |
+| `service-worker/` | Service worker : application et liste de courses sans réseau |
 
 L'interface est une application monopage (`adapter-static`), utilisable sur téléphone (barre
-de navigation en bas) et installable (manifeste web).
+de navigation en bas) et installable (manifeste web, icônes PNG pour Android et iPhone).
+
+Le service worker ([ADR 6](../adr/0006-hors-ligne.md)) garde dans le cache du navigateur :
+
+| Cache | Contenu | Stratégie |
+|---|---|---|
+| `menu-famille-application-<version>` | fichiers compilés, icônes, page d'accueil | cache d'abord ; ancienne version supprimée à l'activation |
+| `menu-famille-donnees` | `GET /api/session` et `GET /api/semaines/{lundi}/courses` | réseau d'abord, cache sans réseau ; vidé à la déconnexion ou si la session est fermée |
+
+Les navigations passent par le réseau, puis la page d'accueil gardée sans réseau. Le reste de
+l'API (écritures, PDF, autres données) n'est jamais intercepté.
 
 ## Sécurité
 

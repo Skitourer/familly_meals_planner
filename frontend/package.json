@@ -11,7 +11,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p src/service-worker/tsconfig.json",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"test": "vitest run"

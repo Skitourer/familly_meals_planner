@@ -17,14 +17,22 @@
 	];
 
 	let verifie = $state(false);
+	let erreurDemarrage = $state('');
 	const surConnexion = $derived(page.url.pathname === '/connexion');
 	const visibles = $derived(liens.filter((l) => session.autorise(l.href)));
 
 	$effect(() => {
-		session.charger().then(({ connecte }) => {
-			verifie = true;
-			if (!connecte && !surConnexion) goto('/connexion');
-		});
+		session
+			.charger()
+			.then(({ connecte }) => {
+				verifie = true;
+				if (!connecte && !surConnexion) goto('/connexion');
+			})
+			.catch(() => {
+				// Sans réseau et sans session gardée par le service worker (jamais ouverte en ligne).
+				erreurDemarrage =
+					"Pas de réseau : connectez-vous une fois avec le réseau pour utiliser l'application hors ligne.";
+			});
 	});
 
 	// Un compte enfant qui ouvre une page réservée aux adultes revient au menu.
@@ -40,6 +48,8 @@
 
 {#if surConnexion}
 	{@render children()}
+{:else if erreurDemarrage}
+	<main><p class="erreur" role="alert">{erreurDemarrage}</p></main>
 {:else if verifie}
 	<header>
 		<a class="marque" href="/">🥗 Menu Famille</a>
