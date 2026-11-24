@@ -9,6 +9,7 @@ from repas.domaine.planificateur import (
     CreneauAPlanifier,
     ErreurPlanification,
     alternatives,
+    attribuer_restes,
     planifier,
 )
 
@@ -115,3 +116,34 @@ def test_semaine_vide(cat: Catalogue):
         ).repas
         == {}
     )
+
+
+def test_restes_dans_la_duree_de_conservation(cat: Catalogue):
+    for mois in (1, 6, 11):
+        resultat = planifier(semaine(), cat, ContextePlanification(mois=mois, restes_max=6))
+        jours = {cle: int(cle.split("-")[0]) for cle in resultat.repas}
+        for r in resultat.repas.values():
+            if r.restes_de:
+                lot = cat.recettes[r.plat].lot
+                assert lot is not None
+                assert 0 < jours[r.cle] - jours[r.restes_de] <= lot.conservation_jours
+
+
+def test_attribuer_restes_limite_de_repas_et_de_conservation(cat: Catalogue):
+    dahl = "dahl-lentilles-corail"  # 3 repas au plus, 4 jours de conservation
+    restes = attribuer_restes(
+        [("0-soir", 0, dahl), ("1-midi", 1, dahl), ("2-soir", 2, dahl), ("3-midi", 3, dahl),
+         ("4-soir", 4, "omelette-champignons"), ("6-soir", 6, dahl)],
+        cat,
+    )  # fmt: skip
+    assert restes["0-soir"] is None  # cuisson
+    assert restes["1-midi"] == restes["2-soir"] == "0-soir"
+    assert restes["3-midi"] is None  # 3 repas déjà servis : on recuisine
+    assert restes["6-soir"] == "3-midi"  # 3 jours après la seconde cuisson
+    assert restes["4-soir"] is None  # plat ordinaire
+
+
+def test_attribuer_restes_au_dela_de_la_conservation(cat: Catalogue):
+    dahl = "dahl-lentilles-corail"
+    restes = attribuer_restes([("0-soir", 0, dahl), ("5-soir", 5, dahl)], cat)
+    assert restes["5-soir"] is None  # 5 jours > 4 jours de conservation : on recuisine

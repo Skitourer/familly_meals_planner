@@ -47,7 +47,9 @@ flowchart TB
 | `domaine/reperes.py` | Repères ANSES / PNNS |
 | `domaine/notes.py` | Préférences (moyenne bayésienne) |
 | `domaine/planificateur.py` | Modèle d'optimisation CP-SAT |
-| `domaine/bilan.py` | Bilan nutritionnel et explications |
+| `domaine/bilan.py` | Bilan d'une semaine, chiffres clés d'un repas et explications |
+| `domaine/nutriscore.py` | Nutri-Score 2023 appliqué à un repas |
+| `statistiques.py` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `domaine/courses.py` | Liste de courses, conditionnements, placard |
 | `modeles.py`, `base.py` | Tables SQLModel et connexion SQLite |
 | `services.py` | Cas d'usage (générer, valider les courses...) |
