@@ -49,6 +49,7 @@ class ProfilRecette:
         metadata={"doc": "Ingrédients saisonniers -> mois de saison."},
     )
     grammes_par_ingredient: dict[str, float] = field(default_factory=dict)
+    poids_cuit_g: float = 0  # poids dans l'assiette (eau de cuisson des féculents comprise)
 
     @property
     def id(self) -> str:
@@ -59,6 +60,27 @@ class ProfilRecette:
         return self.grammes_par_famille.get(Famille.LEGUME, 0) + self.grammes_par_famille.get(
             Famille.FRUIT, 0
         )
+
+    @property
+    def fruits_legumes_legumineuses_g(self) -> float:
+        """Fruits, légumes et légumineuses (au sens du Nutri-Score 2023)."""
+        return self.fruits_legumes_g + self.grammes_par_famille.get(Famille.LEGUMINEUSE, 0)
+
+    @property
+    def est_laitier(self) -> bool:
+        """Repère PNNS : une portion de produit laitier (30 g de fromage ou 100 g de laitage)."""
+        return (
+            self.grammes_par_famille.get(Famille.FROMAGE, 0) >= 25
+            or self.grammes_par_famille.get(Famille.LAITIER, 0) >= 100
+        )
+
+    @property
+    def est_vegetarien(self) -> bool:
+        return not any(
+            self.grammes_par_famille.get(f, 0) > 0
+            for f in (Famille.VIANDE_ROUGE, Famille.VOLAILLE, Famille.CHARCUTERIE,
+                      Famille.POISSON, Famille.POISSON_GRAS, Famille.FRUITS_DE_MER)
+        )  # fmt: skip
 
     @property
     def est_poisson(self) -> bool:
@@ -166,6 +188,7 @@ class Catalogue:
         prix = 0.0
         familles: dict[Famille, float] = defaultdict(float)
         mois_par_ingredient: dict[str, list[int]] = {}
+        poids_cuit = 0.0
         for id_ing, grammes in recette.ingredients.items():
             ingredient = self.ingredients[id_ing]
             donnees = self.aliments.get(id_ing)
@@ -177,6 +200,7 @@ class Catalogue:
                     mois_par_ingredient[id_ing] = donnees.mois_saison
             prix += achete_kg * self.prix_kg(id_ing)
             familles[ingredient.famille] += grammes
+            poids_cuit += grammes * ingredient.rendement_cuisson
         return ProfilRecette(
             recette=recette,
             nutriments=nutriments,
@@ -185,6 +209,7 @@ class Catalogue:
             grammes_par_famille=dict(familles),
             mois_par_ingredient=mois_par_ingredient,
             grammes_par_ingredient=dict(recette.ingredients),
+            poids_cuit_g=poids_cuit,
         )
 
 

@@ -45,6 +45,11 @@ class Preferences:
         valeurs = self._notes.get((membre_id, recette_id), [])
         return (sum(valeurs) + POIDS_A_PRIORI * a_priori) / (len(valeurs) + POIDS_A_PRIORI)
 
+    def moyenne_brute(self, membre_id: int, recette_id: str) -> float | None:
+        """Moyenne simple des notes d'un membre pour une recette (None si jamais notée)."""
+        valeurs = self._notes.get((membre_id, recette_id))
+        return round(sum(valeurs) / len(valeurs), 1) if valeurs else None
+
     def nombre_notes(self, recette_id: str) -> int:
         return sum(len(v) for (_, r), v in self._notes.items() if r == recette_id)
 
