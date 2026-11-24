@@ -15,7 +15,7 @@ from repas.base import moteur
 from repas.catalogue import catalogue as charger_catalogue
 from repas.config import parametres
 
-VERSION = "1.1.0"  # x-release-please-version
+VERSION = "1.2.0"  # x-release-please-version
 
 
 @asynccontextmanager
