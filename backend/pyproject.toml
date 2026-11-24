@@ -1,5 +1,7 @@
 [project]
 name = "repas"
+# Version du paquet Python figée : la version de l'application (affichée par /api/sante)
+# est gérée par release-please dans src/repas/application.py et CHANGELOG.md.
 version = "1.0.0"
 description = "Planificateur de repas familial : équilibré, de saison, bas carbone."
 license = "MIT"
