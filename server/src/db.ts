@@ -85,7 +85,10 @@ db.exec(`
 }
 
 // ---------- Données initiales ----------
-// Lien vers une recette pour chaque plat : recherche Marmiton par nom du plat.
+// Lien par défaut = recherche Marmiton (plusieurs recettes possibles) : ce n'est
+// PAS la source des ingrédients. Les quantités ci-dessous sont des ESTIMATIONS de
+// portions (ordres de grandeur) servant uniquement au calcul de la liste de courses ;
+// la famille remplace le lien par sa propre recette dans l'interface.
 const marmiton = (nom: string) =>
   `https://www.marmiton.org/recettes/recherche.aspx?aqt=${encodeURIComponent(nom)}`;
 

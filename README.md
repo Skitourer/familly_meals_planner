@@ -93,6 +93,17 @@ et transmet `/api/*` au port 3000 (avec HTTPS, ce qui active aussi l'installatio
 PWA sur mobile). La base est un simple fichier SQLite : sauvegarde = copie du
 fichier `donnees/menu.db`.
 
+## Source des données
+
+- **Ingrédients et quantités du catalogue initial** : ce sont des *estimations de
+  portions* (ordres de grandeur), pas des recettes copiées d'un site. Elles servent
+  uniquement à calculer la liste de courses. À affiner plat par plat dans l'onglet
+  **Plats**, où l'on renseigne aussi son propre lien de recette.
+- **Liens de recette par défaut** : recherche Marmiton par nom du plat (plusieurs
+  recettes proposées) — à remplacer par la recette familiale.
+- **Besoins énergétiques** : formule de Mifflin-St Jeor (référence scientifique).
+- **Saisonnalité** : fruits et légumes de saison usuels pour la France.
+
 ## Paramétrage accessible
 
 - Conditionnements magasin : table `emballages` (modifiable via la base ou une
