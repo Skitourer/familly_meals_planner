@@ -14,7 +14,12 @@ Sources :
 * Santé publique France, *Recommandations PNNS 4* (mangerbouger.fr) : au moins
   5 fruits et légumes par jour, poisson 2 fois par semaine dont un gras,
   légumes secs au moins 2 fois par semaine, viande hors volaille ≤ 500 g et
-  charcuterie ≤ 150 g par semaine.
+  charcuterie ≤ 150 g par semaine ; 2 produits laitiers par jour pour un adulte
+  (davantage pour les enfants et adolescents).
+
+Produits laitiers : le petit-déjeuner en apporte généralement un ; on demande donc
+au moins **un produit laitier par jour** sur le déjeuner et le dîner (fromage dans
+le plat, ou laitage en dessert).
 
 La borne haute des protéines est portée à 25 % sur les repas principaux, car le
 petit-déjeuner est en général pauvre en protéines.
@@ -47,6 +52,7 @@ class Reperes:
     legumineuses_min: int = 2
     viande_rouge_max_g: float = 500
     charcuterie_max_g: float = 150
+    produits_laitiers_min_par_jour: int = 1
 
     def a_l_echelle(self, nb_repas: int) -> RepereHebdo:
         """Repères hebdomadaires ramenés au nombre de repas planifiés à la maison."""

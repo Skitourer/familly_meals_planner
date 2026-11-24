@@ -103,3 +103,14 @@ class Reglages(SQLModel, table=True):
     priorite_carbone: int = Field(default=2, ge=0, le=3)
     cuisine_en_lot: int = Field(default=2, ge=0, le=3)
     restes_max: int = Field(default=4, ge=0, le=8)
+
+
+class BilanCourses(SQLModel, table=True):
+    """Résumé des courses d'une semaine, enregistré quand on les valide (pour le bilan)."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    budget_eur: float
+    depuis_placard_g: float  # quantités prises dans le placard au lieu d'être achetées
+    surplus_placard_g: float  # restes de paquets rangés au placard
+    surplus_perdu_g: float  # restes de produits frais, à risque de gaspillage
+    validee_le: datetime = Field(default_factory=maintenant)

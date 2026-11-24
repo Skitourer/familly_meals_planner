@@ -12,6 +12,7 @@ from typing import Literal
 from repas.catalogue import Catalogue, ProfilRecette
 from repas.catalogue.schemas import Nutriments
 from repas.domaine.notes import Preferences
+from repas.domaine.nutriscore import nutriscore
 from repas.domaine.reperes import Reperes
 
 type Statut = Literal["ok", "attention", "hors_cible"]
@@ -117,6 +118,11 @@ def bilan_semaine(repas: list[RepasServi], catalogue: Catalogue, reperes: Repere
               hebdo.poissons_min, None, "repas"),
         entre("legumineuses", "Repas avec légumineuses", sum(p.est_legumineuse for p in plats),
               hebdo.legumineuses_min, None, "repas"),
+        entre("laitiers", "Produits laitiers (midi et soir)",
+              sum(catalogue.profils[r.plat].est_laitier + catalogue.profils[r.dessert].est_laitier
+                  for r in suivis),
+              reperes.produits_laitiers_min_par_jour * len({r.jour for r in suivis}), None,
+              "portions"),
         au_plus("viande_rouge", "Viande hors volaille", sum(p.viande_rouge_g for p in plats),
                 round(hebdo.viande_rouge_max_g), "g/pers."),
         au_plus("charcuterie", "Charcuterie", sum(p.charcuterie_g for p in plats),
@@ -178,3 +184,42 @@ def raisons(
     if du_placard:
         explications.append("Utilise le placard : " + ", ".join(du_placard))
     return explications
+
+
+@dataclass(frozen=True)
+class InfosRepas:
+    """Chiffres clés d'un repas (plat + dessert), affichés dans le planning."""
+
+    nutriscore: str  # lettre A à E
+    nutriscore_points: int
+    energie_kcal: float  # portion adulte de référence
+    proteines_g: float
+    fibres_g: float
+    fruits_legumes_g: float
+    vegetarien: bool
+    co2_kg: float  # pour tous les convives
+    co2_kg_portion: float  # portion adulte de référence
+    prix_eur: float  # pour tous les convives (estimation, ingrédients consommés)
+
+
+def infos_repas(plat: ProfilRecette, dessert: ProfilRecette, coefficients: float) -> InfosRepas:
+    """Nutri-Score, valeurs nutritionnelles, carbone et coût d'un repas."""
+    nutriments = plat.nutriments + dessert.nutriments
+    score = nutriscore(
+        nutriments,
+        plat.poids_cuit_g + dessert.poids_cuit_g,
+        plat.fruits_legumes_legumineuses_g + dessert.fruits_legumes_legumineuses_g,
+    )
+    co2 = plat.co2_kg + dessert.co2_kg
+    return InfosRepas(
+        nutriscore=score.lettre,
+        nutriscore_points=score.score,
+        energie_kcal=round(nutriments.energie_kcal),
+        proteines_g=round(nutriments.proteines_g, 1),
+        fibres_g=round(nutriments.fibres_g, 1),
+        fruits_legumes_g=round(plat.fruits_legumes_g + dessert.fruits_legumes_g),
+        vegetarien=plat.est_vegetarien,
+        co2_kg=round(co2 * coefficients, 2),
+        co2_kg_portion=round(co2, 2),
+        prix_eur=round((plat.prix_eur + dessert.prix_eur) * coefficients, 2),
+    )

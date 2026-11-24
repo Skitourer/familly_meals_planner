@@ -32,6 +32,22 @@ export interface Creneau {
 	dessert_id: string | null;
 	restes_de: string | null;
 	raisons: string[];
+	infos: InfosRepas | null;
+}
+
+export type LettreNutriScore = 'A' | 'B' | 'C' | 'D' | 'E';
+
+export interface InfosRepas {
+	nutriscore: LettreNutriScore;
+	nutriscore_points: number;
+	energie_kcal: number;
+	proteines_g: number;
+	fibres_g: number;
+	fruits_legumes_g: number;
+	vegetarien: boolean;
+	co2_kg: number;
+	co2_kg_portion: number;
+	prix_eur: number;
 }
 
 export interface Semaine {
@@ -174,4 +190,58 @@ export interface RapportImport {
 		erreurs: string[];
 		avertissements: string[];
 	}[];
+}
+
+export interface BilanHebdo {
+	lundi: string;
+	nb_repas: number;
+	nutriscore_moyen: LettreNutriScore;
+	nutriscore_repartition: Partial<Record<LettreNutriScore, number>>;
+	reperes: Record<string, { valeur: number; statut: Indicateur['statut'] }>;
+	co2_kg: number;
+	co2_reference_kg: number;
+	budget_eur: number;
+	budget_estime: boolean;
+	cout_par_repas_personne_eur: number;
+	part_saison: number;
+	part_vegetarien: number;
+	legumes_differents: number;
+	proteines: Record<string, number>;
+}
+
+export interface BilanMembre {
+	id: number;
+	prenom: string;
+	couleur: string;
+	repas_a_la_maison: number;
+	repas_dehors: number;
+	couverture: {
+		code: string;
+		libelle: string;
+		unite: string;
+		apport_par_repas: number;
+		reference_par_repas: number;
+		pourcentage: number;
+	}[];
+	preferes: [string, number][];
+	moins_aimes: [string, number][];
+}
+
+export interface BilanPeriode {
+	semaines: BilanHebdo[];
+	membres: BilanMembre[];
+	a_redecouvrir: string[];
+	jamais_servis: string[];
+	nb_plats_differents: number;
+	gaspillage: {
+		depuis_placard_kg: number;
+		surplus_placard_kg: number;
+		surplus_perdu_kg: number;
+		semaines_validees: number;
+		perimes: string[];
+	};
+	co2_total_kg: number;
+	co2_economise_kg: number;
+	equivalent_km_voiture: number;
+	budget_total_eur: number;
 }
