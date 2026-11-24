@@ -1,0 +1,9 @@
+{
+	"name": "Menu Famille",
+	"short_name": "Menu",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#f7f4ee",
+	"theme_color": "#2f6b40",
+	"icons": [{ "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
