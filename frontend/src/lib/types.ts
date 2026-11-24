@@ -142,6 +142,7 @@ export interface Courses {
 	a_verifier: string[];
 	total_eur: number;
 	validees: boolean;
+	coches: string[]; // articles cochés, partagés entre appareils
 }
 
 export interface Stock {

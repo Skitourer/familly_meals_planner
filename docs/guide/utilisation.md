@@ -83,8 +83,11 @@ Onglet **Courses** :
 - les produits de base (sel, épices, huile...) sont listés à part, « à vérifier » ;
 - le **budget estimé** utilise les prix médians relevés par Open Prices.
 
-Les cases cochées sont mémorisées sur le téléphone, même sans réseau au magasin. Le bouton
-**Imprimer (PDF)** produit une liste à cocher. Le **Menu PDF** (onglet Semaine) s'affiche
+Les cases cochées sont **partagées entre appareils** : à deux au magasin, chacun voit ce que
+l'autre a déjà pris (en rechargeant la page ou en revenant sur l'application). Sans réseau, les
+coches restent sur le téléphone, un bandeau indique combien sont en attente, et elles partent
+dès le retour de la connexion ; pour un même article, la plus récente l'emporte. **Courses
+faites** demande le réseau. Le bouton **Imprimer (PDF)** produit une liste à cocher. Le **Menu PDF** (onglet Semaine) s'affiche
 sur le frigo.
 
 Une fois les courses faites, **Courses faites** met à jour le placard : les restes des paquets

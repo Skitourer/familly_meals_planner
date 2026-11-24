@@ -1,7 +1,20 @@
-<!-- Liste de courses de la semaine : par rayon, arrondie aux conditionnements du magasin. -->
+<!--
+	Liste de courses de la semaine : par rayon, arrondie aux conditionnements du magasin.
+	Les coches sont partagées entre appareils ; sans réseau, elles attendent sur l'appareil
+	et partent au retour de la connexion (voir lib/coches.ts).
+-->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { api, messageErreur } from '#lib/api.ts';
+	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
+	import {
+		ajouterAFile,
+		cochesAffichees,
+		ecrireFile,
+		lireFile,
+		retirerEnvoyees,
+		type FileCoches
+	} from '#lib/coches.ts';
 	import ChoixSemaine from '#lib/composants/ChoixSemaine.svelte';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
 	import type { Courses } from '#lib/types.ts';
@@ -9,38 +22,72 @@
 	const lundi = $derived(lundiDepuisUrl(page.url));
 	let courses = $state<Courses | null>(null);
 	let erreur = $state('');
-	let coches = $state<Set<string>>(new Set());
+	let file = $state<FileCoches>({});
+	let enLigne = $state(true);
+	let envoiEnCours = false;
 
-	// Les cases cochées sont mémorisées sur l'appareil (utile au magasin, même hors connexion).
-	const cleStockage = $derived(`courses-cochees-${lundi}`);
+	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
+	const enAttente = $derived(Object.keys(file).length);
 
+	// Recharger seulement quand la semaine change (charger lit et modifie la file d'attente).
 	$effect(() => {
-		charger(lundi);
+		const date = lundi;
+		untrack(() => charger(date));
+	});
+
+	// Au retour du réseau ou de l'application au premier plan : envoyer la file, relire la liste.
+	$effect(() => {
+		enLigne = navigator.onLine;
+		const reconnecte = () => {
+			enLigne = true;
+			charger(lundi);
+		};
+		const deconnecte = () => (enLigne = false);
+		const visible = () =>
+			document.visibilityState === 'visible' && navigator.onLine && charger(lundi);
+		window.addEventListener('online', reconnecte);
+		window.addEventListener('offline', deconnecte);
+		document.addEventListener('visibilitychange', visible);
+		return () => {
+			window.removeEventListener('online', reconnecte);
+			window.removeEventListener('offline', deconnecte);
+			document.removeEventListener('visibilitychange', visible);
+		};
 	});
 
 	async function charger(date: string) {
 		erreur = '';
+		file = lireFile(localStorage, date);
+		await envoyer(date);
 		try {
 			courses = await api.lire<Courses>(`/semaines/${date}/courses`);
 		} catch (e) {
 			erreur = messageErreur(e);
 		}
-		try {
-			coches = new Set(JSON.parse(localStorage.getItem(cleStockage) ?? '[]'));
-		} catch {
-			coches = new Set();
-		}
 	}
 
 	function cocher(id: string) {
-		const nouveau = new Set(coches);
-		if (nouveau.has(id)) nouveau.delete(id);
-		else nouveau.add(id);
-		coches = nouveau;
+		file = ajouterAFile(file, id, !coches.has(id), new Date());
+		ecrireFile(localStorage, lundi, file);
+		envoyer(lundi);
+	}
+
+	/** Envoie la file d'attente ; sans réseau, elle reste sur l'appareil pour plus tard. */
+	async function envoyer(date: string) {
+		const lot = Object.values(file);
+		if (!lot.length || envoiEnCours) return;
+		envoiEnCours = true;
 		try {
-			localStorage.setItem(cleStockage, JSON.stringify([...nouveau]));
-		} catch {
-			/* stockage indisponible : sans conséquence */
+			const cochees = await api.modifier<string[]>(`/semaines/${date}/courses/coches`, lot);
+			if (courses) courses.coches = cochees;
+			file = retirerEnvoyees(file, lot);
+			ecrireFile(localStorage, date, file);
+			enLigne = true;
+		} catch (e) {
+			if (e instanceof ErreurApi) erreur = messageErreur(e);
+			else enLigne = false; // réseau indisponible : nouvel essai au retour de la connexion
+		} finally {
+			envoiEnCours = false;
 		}
 	}
 
@@ -69,7 +116,7 @@
 				🖨 Imprimer (PDF)
 			</a>
 			{#if !courses.validees}
-				<button class="principal" onclick={valider}>✅ Courses faites</button>
+				<button class="principal" onclick={valider} disabled={!enLigne}>✅ Courses faites</button>
 			{:else}
 				<span class="badge vert">Courses faites, placard à jour</span>
 			{/if}
@@ -78,6 +125,13 @@
 </div>
 
 {#if erreur}<p class="erreur">{erreur}</p>{/if}
+{#if !enLigne || enAttente}
+	<p class="badge attente" role="status">
+		{enLigne ? '⏳' : '📵 Hors ligne :'}
+		{enAttente}
+		{enAttente > 1 ? 'coches en attente' : 'coche en attente'}, envoyées dès le retour du réseau.
+	</p>
+{/if}
 
 {#if courses}
 	{#if !nbLignes}
@@ -128,6 +182,11 @@
 {/if}
 
 <style>
+	.attente {
+		display: inline-block;
+		margin: 0.5rem 0;
+	}
+
 	.entete {
 		display: flex;
 		justify-content: space-between;

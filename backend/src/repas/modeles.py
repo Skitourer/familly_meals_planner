@@ -2,7 +2,7 @@
 
 Le catalogue (recettes, ingrédients) n'est PAS en base : il vit dans des
 fichiers versionnés (``donnees/``). La base ne contient que les données de la
-famille : membres, semaines planifiées, notes, placard et réglages.
+famille : membres, semaines planifiées, notes, placard, coches des courses et réglages.
 """
 
 from __future__ import annotations
@@ -84,6 +84,15 @@ class Note(SQLModel, table=True):
     valeur: int = Field(ge=1, le=5)
     commentaire: str = Field(default="", max_length=500)
     creee_le: datetime = Field(default_factory=maintenant)
+
+
+class Coche(SQLModel, table=True):
+    """État d'un article de la liste de courses d'une semaine (coché ou non), tous appareils."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    ingredient_id: str = Field(primary_key=True)
+    cochee: bool
+    modifiee_le: datetime  # heure de l'action sur l'appareil : la plus récente l'emporte
 
 
 class Stock(SQLModel, table=True):

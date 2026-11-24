@@ -3,9 +3,9 @@
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field
 from sqlmodel import Session, select
 
 from repas import services
@@ -13,6 +13,7 @@ from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
+from repas.domaine.coches import ModificationCoche
 from repas.domaine.courses import ListeCourses, format_quantite
 from repas.modeles import Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
@@ -78,6 +79,16 @@ class CoursesSortie(BaseModel):
     a_verifier: list[str]
     total_eur: float
     validees: bool
+    coches: list[str]  # articles cochés, partagés entre appareils
+
+
+class CocheEntree(BaseModel):
+    ingredient_id: str = Field(max_length=80)
+    cochee: bool
+    modifiee_le: AwareDatetime  # heure de l'action sur l'appareil
+
+
+MAX_COCHES_PAR_ENVOI = 500
 
 
 # --- Utilitaires ---------------------------------------------------------------------
@@ -141,7 +152,7 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
     )
 
 
-def _courses_sortie(liste: ListeCourses, validees: bool) -> CoursesSortie:
+def _courses_sortie(liste: ListeCourses, validees: bool, coches: list[str]) -> CoursesSortie:
     def ligne(x) -> LigneCoursesSortie:
         achat = " + ".join(
             format_quantite(a.total_g, x.unite) if a.libelle == "au poids"
@@ -166,6 +177,7 @@ def _courses_sortie(liste: ListeCourses, validees: bool) -> CoursesSortie:
         a_verifier=[x.nom for x in liste.a_verifier],
         total_eur=liste.total_eur,
         validees=validees,
+        coches=coches,
     )
 
 
@@ -244,7 +256,26 @@ def bilan(lundi: date, s: Session = Depends(session)) -> Bilan:
 def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
     semaine = _semaine(s, lundi)
     liste = services.courses(s, semaine, catalogue())
-    return _courses_sortie(liste, semaine.courses_validees_le is not None)
+    return _courses_sortie(
+        liste, semaine.courses_validees_le is not None, services.coches(s, semaine)
+    )
+
+
+@router.put("/{lundi}/courses/coches", dependencies=ADULTE)
+def cocher(
+    lundi: date,
+    entrees: list[CocheEntree] = Body(max_length=MAX_COCHES_PAR_ENVOI),
+    s: Session = Depends(session),
+) -> list[str]:
+    """Enregistre des coches (une ou une file d'attente hors ligne) ; renvoie les articles cochés.
+
+    Pour chaque article, la modification la plus récente l'emporte, même arrivée en retard.
+    """
+    inconnus = sorted({e.ingredient_id for e in entrees} - catalogue().ingredients.keys())
+    if inconnus:
+        raise HTTPException(400, f"Ingrédients inconnus : {', '.join(inconnus)}")
+    modifications = [ModificationCoche(e.ingredient_id, e.cochee, e.modifiee_le) for e in entrees]
+    return services.enregistrer_coches(s, _semaine(s, lundi), modifications)
 
 
 @router.post("/{lundi}/courses/valider", status_code=204, dependencies=ADULTE)
