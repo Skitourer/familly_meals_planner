@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
 
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlmodel import Session, col, select
 
 from repas.catalogue import Catalogue
@@ -380,10 +381,15 @@ def stock_disponible(s: Session, le: date) -> dict[str, float]:
 
 
 def obtenir_reglages(s: Session) -> Reglages:
+    """Réglages de la famille, créés avec les valeurs par défaut à la première lecture."""
+    reglages = s.get(Reglages, 1)
+    if reglages is not None:
+        return reglages
+    # Deux requêtes simultanées peuvent trouver la table vide (issue #38) : l'insertion
+    # ignore le conflit, puis on relit la ligne, créée par l'une ou l'autre.
+    s.exec(sqlite_insert(Reglages).values(Reglages().model_dump()).on_conflict_do_nothing())
+    s.commit()
     reglages = s.get(Reglages, 1)
     if reglages is None:
-        reglages = Reglages()
-        s.add(reglages)
-        s.commit()
-        s.refresh(reglages)
+        raise RuntimeError("Réglages introuvables après leur création")
     return reglages
