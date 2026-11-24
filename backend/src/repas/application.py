@@ -7,9 +7,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlmodel import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from repas.api import bilan, catalogue, famille, semaines, session, suivi
+from repas.api import bilan, catalogue, comptes, famille, semaines, session, suivi
 from repas.base import moteur
 from repas.catalogue import catalogue as charger_catalogue
 from repas.config import parametres
@@ -19,8 +20,9 @@ VERSION = "1.1.0"  # x-release-please-version
 
 @asynccontextmanager
 async def demarrage(_: FastAPI) -> AsyncIterator[None]:
-    """Au démarrage : crée la base si besoin et valide le catalogue."""
-    moteur()
+    """Au démarrage : crée la base, le compte initial si besoin, et valide le catalogue."""
+    with Session(moteur()) as s:
+        session.creer_compte_initial(s)
     charger_catalogue()
     yield
 
@@ -47,8 +49,14 @@ def creer_application() -> FastAPI:
     api = APIRouter(prefix="/api")
     api.include_router(session.router)
     protege = [Depends(session.exiger_connexion)]
-    for module in (famille, catalogue, semaines, suivi, bilan):
+    adulte = [Depends(session.exiger_adulte)]
+    # Les routes de ces modules sont accessibles à tout compte connecté, sauf celles
+    # marquées « ADULTE » dans chaque module.
+    for module in (famille, catalogue, semaines, suivi):
         api.include_router(module.router, dependencies=protege)
+    # Modules entièrement réservés aux adultes.
+    for module in (bilan, comptes):
+        api.include_router(module.router, dependencies=adulte)
 
     @api.get("/sante", tags=["session"])
     def sante() -> dict[str, str]:

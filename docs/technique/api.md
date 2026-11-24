@@ -1,11 +1,16 @@
 # API
 
 La documentation interactive (OpenAPI) est servie par l'application sur **`/api/docs`**.
-Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connecté.
+Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connecté. Un compte
+enfant n'a accès qu'à la lecture du menu (`GET /api/semaines/{lundi}`, `menu.pdf`), des
+membres et des plats, et aux avis ; les autres routes répondent 403.
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| `GET` / `POST` / `DELETE` | `/api/session` | État, connexion (`{"mot_de_passe": "..."}`), déconnexion |
+| `GET` / `POST` / `DELETE` | `/api/session` | État, connexion (`{"identifiant": "...", "mot_de_passe": "..."}`), déconnexion |
+| `PUT` | `/api/session/mot-de-passe` | Changer son mot de passe |
+| `GET` / `POST` | `/api/comptes` | Lister, créer un compte (adulte) |
+| `PUT` / `DELETE` | `/api/comptes/{id}` | Modifier, supprimer un compte (adulte) |
 | `GET` | `/api/sante` | Santé et version |
 | `GET` / `POST` | `/api/membres` | Lister, ajouter un membre |
 | `PUT` / `DELETE` | `/api/membres/{id}` | Modifier ; supprimer définitivement (avec ses notes) |
@@ -25,8 +30,8 @@ Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connect�
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |
 | `GET` | `/api/bilan?semaines=12` | Bilan sur plusieurs semaines (onglet Bilan) |
-| `GET` | `/api/notes/a-noter?jours=14` | Repas récents et notes déjà données |
-| `PUT` | `/api/notes` | Noter un plat (crée ou met à jour) |
+| `GET` | `/api/notes/a-noter?jours=14&jours_a_venir=7` | Repas récents et à venir, notes déjà données |
+| `PUT` | `/api/notes` | Noter un plat (crée ou met à jour ; un enfant pour lui-même) |
 | `GET` | `/api/placard` | Contenu du placard |
 | `PUT` | `/api/placard/{ingredient}` | Corriger une quantité (0 = retirer) |
 

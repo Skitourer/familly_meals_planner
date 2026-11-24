@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
 from repas import services
+from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.domaine.besoins import (
     ModeDeVie,
@@ -15,9 +16,10 @@ from repas.domaine.besoins import (
     besoin_energetique_kcal,
     coefficient_portion,
 )
-from repas.modeles import Creneau, Membre, Note, Reglages
+from repas.modeles import Compte, Creneau, Membre, Note, Reglages
 
 router = APIRouter(tags=["famille"])
+ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
 
 
 class MembreEntree(BaseModel):
@@ -61,7 +63,7 @@ def lister(s: Session = Depends(session)) -> list[MembreSortie]:
     return [_sortie(m) for m in s.exec(select(Membre).order_by(col(Membre.id))).all()]
 
 
-@router.post("/membres", status_code=201)
+@router.post("/membres", status_code=201, dependencies=ADULTE)
 def creer(entree: MembreEntree, s: Session = Depends(session)) -> MembreSortie:
     membre = Membre(**entree.model_dump())
     s.add(membre)
@@ -70,7 +72,7 @@ def creer(entree: MembreEntree, s: Session = Depends(session)) -> MembreSortie:
     return _sortie(membre)
 
 
-@router.put("/membres/{membre_id}")
+@router.put("/membres/{membre_id}", dependencies=ADULTE)
 def modifier(membre_id: int, entree: MembreEntree, s: Session = Depends(session)) -> MembreSortie:
     membre = s.get(Membre, membre_id)
     if membre is None:
@@ -82,7 +84,7 @@ def modifier(membre_id: int, entree: MembreEntree, s: Session = Depends(session)
     return _sortie(membre)
 
 
-@router.delete("/membres/{membre_id}", status_code=204)
+@router.delete("/membres/{membre_id}", status_code=204, dependencies=ADULTE)
 def supprimer(membre_id: int, s: Session = Depends(session)) -> None:
     """Supprime définitivement un membre, ses notes et sa présence aux repas planifiés.
 
@@ -98,16 +100,22 @@ def supprimer(membre_id: int, s: Session = Depends(session)) -> None:
         if membre_id in creneau.convives:
             creneau.convives = [m for m in creneau.convives if m != membre_id]
             s.add(creneau)
+    for compte in s.exec(select(Compte).where(Compte.membre_id == membre_id)).all():
+        if compte.role == "enfant":
+            s.delete(compte)  # un compte enfant n'existe pas sans son membre
+        else:
+            compte.membre_id = None
+            s.add(compte)
     s.delete(membre)
     s.commit()
 
 
-@router.get("/reglages")
+@router.get("/reglages", dependencies=ADULTE)
 def lire_reglages(s: Session = Depends(session)) -> Reglages:
     return services.obtenir_reglages(s)
 
 
-@router.put("/reglages")
+@router.put("/reglages", dependencies=ADULTE)
 def modifier_reglages(entree: ReglagesEntree, s: Session = Depends(session)) -> Reglages:
     reglages = services.obtenir_reglages(s)
     reglages.sqlmodel_update(entree.model_dump())

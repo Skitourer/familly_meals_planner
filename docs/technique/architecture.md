@@ -53,6 +53,7 @@ flowchart TB
 | `domaine/courses.py` | Liste de courses, conditionnements, placard |
 | `modeles.py`, `base.py` | Tables SQLModel et connexion SQLite |
 | `services.py` | Cas d'usage (générer, valider les courses...) |
+| `securite.py` | Hachage des mots de passe, limitation des essais de connexion |
 | `api/` | Routes HTTP |
 | `pdf/` | Liste de courses et menu en PDF (fpdf2) |
 | `import_donnees/` | Import des bases ouvertes |
@@ -73,8 +74,11 @@ de navigation en bas) et installable (manifeste web).
 
 ## Sécurité
 
-- Mot de passe unique comparé en temps constant ; session dans un cookie signé
-  (`itsdangerous`), `SameSite=Lax`, `Secure` derrière HTTPS.
-- Toutes les routes `/api` sauf `/session` et `/sante` exigent la session.
+- Comptes adulte / enfant ; mots de passe hachés avec **scrypt** (sel aléatoire, comparaison
+  en temps constant) ; blocage d'un identifiant après 5 échecs pendant 1 minute ; session
+  dans un cookie signé (`itsdangerous`), `SameSite=Lax`, `Secure` derrière HTTPS.
+- Toutes les routes `/api` sauf `/session` et `/sante` exigent une session ; les routes de
+  modification, les courses, le placard, le bilan et les comptes exigent un compte adulte
+  (dépendance `exiger_adulte`, 403 sinon) ; un enfant ne note que pour lui-même.
 - Imports JSON limités à 2 Mo et validés champ par champ.
 - Image Docker exécutée par un utilisateur non privilégié.

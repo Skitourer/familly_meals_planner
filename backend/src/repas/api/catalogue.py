@@ -7,6 +7,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.catalogue import Catalogue, ProfilRecette, catalogue, recharger_catalogue
 from repas.catalogue.import_recettes import (
@@ -21,6 +22,7 @@ from repas.domaine.notes import NoteDonnee, Preferences
 from repas.modeles import Creneau, Note
 
 router = APIRouter(tags=["catalogue"])
+ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
 
 
 class RecetteSortie(BaseModel):
@@ -108,7 +110,7 @@ def verificateur_lien():
     return verifier_lien_http
 
 
-@router.post("/import/recettes")
+@router.post("/import/recettes", dependencies=ADULTE)
 async def importer(
     fichier: UploadFile, appliquer: bool = False, verifier=Depends(verificateur_lien)
 ) -> dict:
@@ -128,7 +130,7 @@ async def importer(
     }
 
 
-@router.delete("/recettes/{recette_id}", status_code=204)
+@router.delete("/recettes/{recette_id}", status_code=204, dependencies=ADULTE)
 def supprimer_importee(recette_id: str, s: Session = Depends(session)) -> None:
     """Supprime une recette importée (les recettes du catalogue versionné ne le sont pas)."""
     if recette_id not in catalogue().importees:

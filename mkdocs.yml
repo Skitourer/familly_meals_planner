@@ -60,4 +60,5 @@ nav:
       - 2. Optimisation CP-SAT: adr/0002-optimisation-cp-sat.md
       - 3. Catalogue en fichiers: adr/0003-catalogue-en-fichiers.md
       - 4. Pas d'IA à l'exécution: adr/0004-pas-d-ia-a-l-execution.md
+      - 5. Comptes adulte et enfant: adr/0005-comptes-adulte-enfant.md
   - Instructions pour IA (fichier): ia/instructions-ia.md

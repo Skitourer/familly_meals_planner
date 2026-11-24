@@ -9,11 +9,13 @@
 	let {
 		creneau,
 		onmodifier,
-		onchanger
+		onchanger,
+		lectureSeule = false
 	}: {
 		creneau: Creneau;
 		onmodifier: (modification: Partial<Creneau>) => void;
 		onchanger: () => void;
+		lectureSeule?: boolean; // compte enfant : consultation seulement
 	} = $props();
 
 	const personnes = $derived(creneau.convives.length + creneau.invites);
@@ -53,20 +55,24 @@
 				<Pastille
 					{membre}
 					present={creneau.convives.includes(membre.id)}
-					onclick={() => basculer(membre.id)}
+					onclick={lectureSeule ? undefined : () => basculer(membre.id)}
 				/>
 			{/each}
-			<button
-				class="discret invites"
-				title="Invités (clic : +1, clic droit : −1)"
-				onclick={() => onmodifier({ invites: creneau.invites + 1 })}
-				oncontextmenu={(e) => {
-					e.preventDefault();
-					onmodifier({ invites: Math.max(0, creneau.invites - 1) });
-				}}
-			>
-				+{creneau.invites || ''}
-			</button>
+			{#if lectureSeule}
+				{#if creneau.invites}<span class="badge">+{creneau.invites}</span>{/if}
+			{:else}
+				<button
+					class="discret invites"
+					title="Invités (clic : +1, clic droit : −1)"
+					onclick={() => onmodifier({ invites: creneau.invites + 1 })}
+					oncontextmenu={(e) => {
+						e.preventDefault();
+						onmodifier({ invites: Math.max(0, creneau.invites - 1) });
+					}}
+				>
+					+{creneau.invites || ''}
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -125,22 +131,28 @@
 
 	{#if aLaMaison}
 		<div class="actions">
-			<button
-				class="discret"
-				class:actif={creneau.joker}
-				onclick={() => onmodifier({ joker: !creneau.joker })}
-				title="Joker : repas plaisir, contraintes nutritionnelles relâchées"
-			>
-				🎉 Joker
-			</button>
-			{#if creneau.plat_id}
+			{#if !lectureSeule}
 				<button
 					class="discret"
-					onclick={() => onmodifier({ verrouille: !creneau.verrouille })}
-					title={creneau.verrouille ? 'Déverrouiller' : 'Garder ce plat si je régénère'}
+					class:actif={creneau.joker}
+					onclick={() => onmodifier({ joker: !creneau.joker })}
+					title="Joker : repas plaisir, contraintes nutritionnelles relâchées"
 				>
-					{creneau.verrouille ? '🔓' : '🔒'}
+					🎉 Joker
 				</button>
+			{:else if creneau.joker}
+				<span class="badge joker">🎉 Joker</span>
+			{/if}
+			{#if creneau.plat_id}
+				{#if !lectureSeule}
+					<button
+						class="discret"
+						onclick={() => onmodifier({ verrouille: !creneau.verrouille })}
+						title={creneau.verrouille ? 'Déverrouiller' : 'Garder ce plat si je régénère'}
+					>
+						{creneau.verrouille ? '🔓' : '🔒'}
+					</button>
+				{/if}
 				<a
 					class="bouton discret"
 					href={`/plats/${creneau.plat_id}?portions=${portions}`}
@@ -148,7 +160,9 @@
 				>
 					📖 Recette
 				</a>
-				<button class="discret" onclick={onchanger}>🔄 Changer</button>
+				{#if !lectureSeule}
+					<button class="discret" onclick={onchanger}>🔄 Changer</button>
+				{/if}
 			{/if}
 		</div>
 	{/if}

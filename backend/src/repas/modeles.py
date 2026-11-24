@@ -114,3 +114,15 @@ class BilanCourses(SQLModel, table=True):
     surplus_placard_g: float  # restes de paquets rangés au placard
     surplus_perdu_g: float  # restes de produits frais, à risque de gaspillage
     validee_le: datetime = Field(default_factory=maintenant)
+
+
+class Compte(SQLModel, table=True):
+    """Compte de connexion : adulte (tous les droits) ou enfant (menu et avis seulement)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    identifiant: str = Field(unique=True, index=True, min_length=2, max_length=40)
+    mot_de_passe_hache: str
+    role: str = Field(regex="^(adulte|enfant)$")
+    membre_id: int | None = Field(default=None, foreign_key="membre.id")
+    actif: bool = True
+    cree_le: datetime = Field(default_factory=maintenant)

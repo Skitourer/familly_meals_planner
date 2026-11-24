@@ -1,9 +1,19 @@
 # Utiliser l'application
 
-## Connexion
+## Connexion et comptes
 
-Un **mot de passe unique** est partagé par la famille. La session dure 90 jours sur chaque
-appareil.
+Au premier démarrage, un compte adulte **`famille`** est créé avec le mot de passe
+`REPAS_MOT_DE_PASSE`. Depuis l'onglet **Famille**, les adultes créent ensuite d'autres
+comptes :
+
+| Type | Peut faire |
+|---|---|
+| 🧑 **Adulte** | tout : planifier, courses, placard, bilan, famille, comptes, import de plats |
+| 🧒 **Enfant** (relié à un membre) | consulter le menu de la semaine, les plats et leurs recettes, et **donner son avis** sur ses repas passés et à venir |
+
+Les droits sont vérifiés par le serveur, pas seulement masqués dans l'interface. Chacun change
+son mot de passe depuis **👤 Mon compte** (en haut à droite). Après 5 essais erronés, un
+identifiant est bloqué une minute. La session dure 90 jours sur chaque appareil.
 
 ## La famille
 
@@ -113,10 +123,16 @@ L'onglet **Placard** liste les restes avec leur date limite estimée. Les quanti
 modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter un produit à la main.
 L'algorithme favorise les recettes qui utilisent le placard.
 
-## Noter les repas
+## Avis sur les repas
 
-L'onglet **Notes** liste les repas des deux dernières semaines. Chaque convive donne de 1 à
-5 étoiles. Les notes influencent les choix suivants, **pour les membres présents** au repas :
+L'onglet **Avis** comporte deux parties :
+
+- **À venir** : les repas des 7 prochains jours ; chacun dit à l'avance s'il en a envie
+  (5 étoiles) ou pas du tout (1 étoile) ;
+- **Comment c'était ?** : les repas des deux dernières semaines, à noter de 1 à 5 étoiles.
+
+Un compte enfant ne donne que son propre avis ; un adulte peut noter pour toute la famille
+(pratique pour les plus petits). Les notes influencent les choix suivants, **pour les membres présents** au repas :
 un plat adoré par les enfants sera proposé plus volontiers quand ils sont là. Les plats déjà
 servis les trois semaines précédentes sont aussi évités pour limiter la répétition.
 

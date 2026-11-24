@@ -2,14 +2,14 @@
 	import '../app.css';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api } from '#lib/api.ts';
+	import { session } from '#lib/session.svelte.ts';
 
 	let { children } = $props();
 
 	const liens = [
 		{ href: '/', libelle: 'Semaine', icone: '📅' },
 		{ href: '/courses', libelle: 'Courses', icone: '🛒' },
-		{ href: '/notes', libelle: 'Notes', icone: '⭐' },
+		{ href: '/notes', libelle: 'Avis', icone: '⭐' },
 		{ href: '/placard', libelle: 'Placard', icone: '🥫' },
 		{ href: '/bilan', libelle: 'Bilan', icone: '📊' },
 		{ href: '/plats', libelle: 'Plats', icone: '📖' },
@@ -18,16 +18,22 @@
 
 	let verifie = $state(false);
 	const surConnexion = $derived(page.url.pathname === '/connexion');
+	const visibles = $derived(liens.filter((l) => session.autorise(l.href)));
 
 	$effect(() => {
-		api.lire<{ connecte: boolean }>('/session').then(({ connecte }) => {
+		session.charger().then(({ connecte }) => {
 			verifie = true;
 			if (!connecte && !surConnexion) goto('/connexion');
 		});
 	});
 
+	// Un compte enfant qui ouvre une page réservée aux adultes revient au menu.
+	$effect(() => {
+		if (verifie && session.etat?.connecte && !session.autorise(page.url.pathname)) goto('/');
+	});
+
 	async function deconnecter() {
-		await api.supprimer('/session');
+		await session.deconnecter();
 		await goto('/connexion');
 	}
 </script>
@@ -38,13 +44,16 @@
 	<header>
 		<a class="marque" href="/">🥗 Menu Famille</a>
 		<nav aria-label="Navigation principale">
-			{#each liens as lien (lien.href)}
+			{#each visibles as lien (lien.href)}
 				<a href={lien.href} aria-current={page.url.pathname === lien.href ? 'page' : undefined}>
 					<span aria-hidden="true">{lien.icone}</span>
 					<span>{lien.libelle}</span>
 				</a>
 			{/each}
 		</nav>
+		<a class="compte" href="/compte" title="Mon compte">
+			👤 {session.etat?.prenom ?? session.etat?.identifiant}
+		</a>
 		<button class="discret deconnexion" onclick={deconnecter} title="Se déconnecter">⎋</button>
 	</header>
 	<main>
@@ -92,6 +101,13 @@
 		background: var(--accent-doux);
 		color: var(--accent);
 		font-weight: 600;
+	}
+
+	.compte {
+		font-size: 0.85rem;
+		color: var(--texte-doux);
+		text-decoration: none;
+		white-space: nowrap;
 	}
 
 	main {
