@@ -265,8 +265,9 @@ Personal project, MIT licence, accounts with adult and child roles.
 - Release PRs are opened by release-please through a GitHub App (variable
   `RELEASE_APP_ID`, secret `RELEASE_APP_PRIVATE_KEY`).
 - Images: `ghcr.io/skitourer/familly_meals_planner` (amd64, arm64).
-- Hosting **to be decided** (Raspberry Pi at home with Tailscale, or VPS). Manual upgrade
-  after each release: `docker compose pull && docker compose up -d`.
+- Hosting: **Raspberry Pi at home, HTTPS through Tailscale**; keep everything portable to a
+  VPS later (same multi-arch image, data = SQLite volume + `.env`). Manual upgrade after
+  each release: `docker compose pull && docker compose up -d`.
 
 ### Code layout
 
