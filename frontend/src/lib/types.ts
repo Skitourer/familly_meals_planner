@@ -214,8 +214,15 @@ export interface BilanMembre {
 	prenom: string;
 	couleur: string;
 	repas_a_la_maison: number;
-	couverture_energie: number;
-	couverture_proteines: number;
+	repas_dehors: number;
+	couverture: {
+		code: string;
+		libelle: string;
+		unite: string;
+		apport_par_repas: number;
+		reference_par_repas: number;
+		pourcentage: number;
+	}[];
 	preferes: [string, number][];
 	moins_aimes: [string, number][];
 }

@@ -1,8 +1,12 @@
 """Bilan sur plusieurs semaines : nutrition, carbone, budget, goûts, variété, saison,
 anti-gaspillage. Alimente l'onglet « Bilan » de l'interface.
 
-Toutes les valeurs sont calculées à partir des repas planifiés (hors repas pris à
-l'extérieur) ; les semaines sans repas générés sont ignorées.
+Toutes les valeurs sont calculées à partir des repas planifiés ; les semaines sans
+repas générés sont ignorées.
+
+Repas pris à l'extérieur (cantine, restaurant d'entreprise...) : ils ne sont pas
+saisis et sont **supposés équilibrés**. Ils ne comptent donc ni dans les repères, ni
+dans la couverture des besoins, calculée comme une moyenne par repas pris à la maison.
 """
 
 from __future__ import annotations
@@ -15,18 +19,17 @@ from sqlmodel import Session, col, select
 
 from repas import services
 from repas.catalogue import Catalogue
-from repas.catalogue.schemas import Famille
-from repas.domaine.besoins import ProfilPhysique, besoin_energetique_kcal
+from repas.catalogue.schemas import Famille, Nutriments
 from repas.domaine.bilan import bilan_semaine, infos_repas
 from repas.domaine.courses import Portion, liste_de_courses
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.nutriscore import lettre
+from repas.domaine.references import NUTRIMENTS_SUIVIS, reference_journaliere
 from repas.domaine.reperes import PART_ENERGIE_PAR_REPAS, REPERES
 from repas.modeles import BilanCourses, Membre, Note, Semaine, Stock
 
 # ADEME (Impact CO2) : voiture thermique ≈ 0,22 kg CO2e par km et par personne.
 CO2_KG_PAR_KM_VOITURE = 0.218
-PROTEINES_G_PAR_KG = {"adulte": 0.83, "enfant": 0.9}  # ANSES, références nutritionnelles
 
 
 class StatutRepere(BaseModel):
@@ -53,13 +56,24 @@ class BilanHebdo(BaseModel):
     proteines: dict[str, int]  # source principale -> nombre de repas
 
 
+class CouvertureNutriment(BaseModel):
+    """Apport moyen d'un repas pris à la maison, comparé à 30 % de la référence du jour."""
+
+    code: str
+    libelle: str
+    unite: str
+    apport_par_repas: float
+    reference_par_repas: float
+    pourcentage: float
+
+
 class BilanMembre(BaseModel):
     id: int
     prenom: str
     couleur: str
     repas_a_la_maison: int
-    couverture_energie: float  # % de la cible énergétique des repas pris
-    couverture_proteines: float
+    repas_dehors: int  # supposés équilibrés
+    couverture: list[CouvertureNutriment]
     preferes: list[tuple[str, float]]  # (plat, moyenne des notes)
     moins_aimes: list[tuple[str, float]]
 
@@ -102,7 +116,8 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
     resultats: list[BilanHebdo] = []
     servis: Counter[str] = Counter()
     dernier_service: dict[str, date] = {}
-    presences: dict[int, list[tuple[float, float]]] = defaultdict(list)  # kcal, protéines
+    presences: dict[int, list[Nutriments]] = defaultdict(list)  # apports de chaque repas
+    creneaux_total = 0
 
     for semaine in semaines:
         repas = [
@@ -113,6 +128,7 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
         if not repas:
             continue
         coefs = services.coefficients(s, semaine.lundi)
+        creneaux_total += len(services.creneaux_de(s, semaine))
         infos = [
             infos_repas(catalogue.profils[r.plat], catalogue.profils[r.dessert], r.coefficients)
             for _, r in repas
@@ -144,15 +160,9 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
             if not r.restes_de:
                 servis[r.plat] += 1
             dernier_service[r.plat] = semaine.lundi + timedelta(days=r.jour)
-            repas_kcal = (
-                plat.nutriments.energie_kcal + catalogue.profils[r.dessert].nutriments.energie_kcal
-            )
-            repas_prot = (
-                plat.nutriments.proteines_g + catalogue.profils[r.dessert].nutriments.proteines_g
-            )
+            apports = plat.nutriments + catalogue.profils[r.dessert].nutriments
             for membre_id in c.convives:
-                coef = coefs.get(membre_id, 1.0)
-                presences[membre_id].append((repas_kcal * coef, repas_prot * coef))
+                presences[membre_id].append(apports.fois(coefs.get(membre_id, 1.0)))
 
         scores = [i.nutriscore_points for i in infos]
         vegetariens = sum(catalogue.profils[r.plat].est_vegetarien for _, r in repas)
@@ -184,7 +194,10 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
     plats_ordinaires = catalogue.plats(plaisir=False)
     return BilanPeriode(
         semaines=resultats,
-        membres=[_membre(m, presences.get(m.id or 0, []), preferences, catalogue) for m in membres],
+        membres=[
+            _membre(m, presences.get(m.id or 0, []), creneaux_total, preferences, catalogue)
+            for m in membres
+        ],
         a_redecouvrir=sorted(
             catalogue.recettes[p.id].nom
             for p in plats_ordinaires
@@ -203,34 +216,44 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
 
 def _membre(
     membre: Membre,
-    repas: list[tuple[float, float]],
+    repas: list[Nutriments],
+    creneaux_total: int,
     preferences: Preferences,
     catalogue: Catalogue,
 ) -> BilanMembre:
     """Couverture des besoins par les repas pris à la maison, et goûts du membre."""
     age = membre.age()
-    profil = ProfilPhysique(
-        age, membre.poids_kg, membre.sexe, membre.mode_de_vie, membre.heures_sport_semaine
-    )
-    cible_kcal = besoin_energetique_kcal(profil) * PART_ENERGIE_PAR_REPAS
-    cle = "enfant" if age < 18 else "adulte"
-    cible_proteines = PROTEINES_G_PAR_KG[cle] * membre.poids_kg * PART_ENERGIE_PAR_REPAS
-    n = len(repas) or 1
+    total = Nutriments()
+    for apports in repas:
+        total = total + apports
+    moyenne = total.fois(1 / len(repas)) if repas else Nutriments()
+    couverture = []
+    for code, (unite, libelle) in NUTRIMENTS_SUIVIS.items():
+        reference = reference_journaliere(code, age, membre.sexe) * PART_ENERGIE_PAR_REPAS
+        apport = getattr(moyenne, code)
+        couverture.append(
+            CouvertureNutriment(
+                code=code,
+                libelle=libelle,
+                unite=unite,
+                apport_par_repas=round(apport, 2),
+                reference_par_repas=round(reference, 2),
+                pourcentage=round(100 * apport / reference) if repas else 0,
+            )
+        )
     notes: dict[str, float] = {}
     for rid in catalogue.recettes:
-        moyenne = preferences.moyenne_brute(membre.id or 0, rid)
-        if moyenne is not None:
-            notes[rid] = moyenne
+        note_moyenne = preferences.moyenne_brute(membre.id or 0, rid)
+        if note_moyenne is not None:
+            notes[rid] = note_moyenne
     tries = sorted(notes.items(), key=lambda x: x[1], reverse=True)
     return BilanMembre(
         id=membre.id or 0,
         prenom=membre.prenom,
         couleur=membre.couleur,
         repas_a_la_maison=len(repas),
-        couverture_energie=round(100 * sum(k for k, _ in repas) / n / cible_kcal) if repas else 0,
-        couverture_proteines=(
-            round(100 * sum(p for _, p in repas) / n / cible_proteines) if repas else 0
-        ),
+        repas_dehors=max(creneaux_total - len(repas), 0),
+        couverture=couverture,
         preferes=[(catalogue.recettes[r].nom, v) for r, v in tries[:3] if v >= 3.5],
         moins_aimes=[(catalogue.recettes[r].nom, v) for r, v in tries[::-1][:3] if v <= 2.5],
     )

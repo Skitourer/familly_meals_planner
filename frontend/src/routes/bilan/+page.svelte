@@ -172,32 +172,29 @@
 
 		<h3>Couverture des besoins par membre</h3>
 		<p class="doux">
-			Apports moyens d'un déjeuner ou dîner pris à la maison, comparés à la cible d'un repas (30 %
-			des besoins de la journée).
+			Apport moyen d'un déjeuner ou dîner pris à la maison, comparé à 30 % de la référence
+			journalière (ANSES / EFSA) selon l'âge et le sexe. En dessous de 70 % : point d'attention (le
+			petit-déjeuner et le goûter complètent). Les repas pris dehors (cantine...) sont supposés
+			équilibrés et ne sont pas comptés.
 		</p>
 		<div class="membres">
 			{#each bilan.membres as m (m.id)}
 				<div class="membre" style:--couleur={m.couleur}>
 					<strong>{m.prenom}</strong>
-					<span class="doux">{m.repas_a_la_maison} repas</span>
-					<div class="jauge">
-						<span>Énergie</span>
-						<meter min="0" max="150" low="85" high="115" optimum="100" value={m.couverture_energie}
-						></meter>
-						<span>{m.couverture_energie} %</span>
-					</div>
-					<div class="jauge">
-						<span>Protéines</span>
-						<meter
-							min="0"
-							max="400"
-							low="100"
-							high="400"
-							optimum="250"
-							value={m.couverture_proteines}
-						></meter>
-						<span>{m.couverture_proteines} %</span>
-					</div>
+					<span class="doux">
+						{m.repas_a_la_maison} repas à la maison · {m.repas_dehors} dehors
+					</span>
+					{#each m.couverture as n (n.code)}
+						<div
+							class="jauge"
+							title={`${f1(n.apport_par_repas)} ${n.unite} par repas (repère : ${f1(n.reference_par_repas)} ${n.unite})`}
+						>
+							<span>{n.libelle}</span>
+							<meter min="0" max="150" low="70" high="150" optimum="120" value={n.pourcentage}
+							></meter>
+							<span class:faible={n.pourcentage < 70}>{n.pourcentage} %</span>
+						</div>
+					{/each}
 				</div>
 			{/each}
 		</div>
@@ -456,7 +453,7 @@
 
 	.jauge {
 		display: grid;
-		grid-template-columns: 5.5rem 1fr 3rem;
+		grid-template-columns: 8.5rem 1fr 3.2rem;
 		align-items: center;
 		gap: 0.4rem;
 		font-size: 0.8rem;
@@ -464,6 +461,11 @@
 
 	meter {
 		width: 100%;
+	}
+
+	.faible {
+		color: var(--attention);
+		font-weight: 700;
 	}
 
 	.grille-gouts {

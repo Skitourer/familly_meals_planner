@@ -206,7 +206,12 @@ def test_infos_du_repas_et_bilan(client: TestClient):
     assert sum(hebdo["proteines"].values()) == hebdo["nb_repas"]
     assert bilan["nb_plats_differents"] > 5 and bilan["jamais_servis"]
     assert {m["prenom"] for m in bilan["membres"]} == {"Alex", "Sam", "Léo"}
-    assert all(50 < m["couverture_energie"] < 200 for m in bilan["membres"])
+    leo = next(m for m in bilan["membres"] if m["prenom"] == "Léo")
+    assert [c["code"] for c in leo["couverture"]] == [
+        "calcium_mg", "fer_mg", "vitamine_c_mg", "fibres_g", "folates_ug", "epa_dha_g"
+    ]  # fmt: skip
+    assert all(c["pourcentage"] > 0 for c in leo["couverture"])
+    assert leo["repas_a_la_maison"] + leo["repas_dehors"] == 14
 
     client.post(f"/api/semaines/{lundi}/courses/valider")
     apres = client.get("/api/bilan", params={"semaines": 4}).json()
