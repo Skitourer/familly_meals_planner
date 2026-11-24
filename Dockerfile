@@ -3,7 +3,7 @@
 #   docker run -p 8000:8000 -v menu-famille:/app/donnees/local -e REPAS_MOT_DE_PASSE=... menu-famille
 
 # --- Étape 1 : compilation de l'interface SvelteKit -----------------------------------
-FROM node:24-alpine AS interface
+FROM node:26-alpine AS interface
 WORKDIR /interface
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
