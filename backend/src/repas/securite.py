@@ -25,21 +25,27 @@ BLOCAGE_S = 60.0
 
 
 def hacher(mot_de_passe: str) -> str:
-    """Empreinte stockable : ``scrypt$<sel>$<empreinte>`` (base64)."""
+    """Empreinte stockable : ``scrypt$<n>$<sel>$<empreinte>`` (sel et empreinte en base64).
+
+    Le coût ``n`` est enregistré avec l'empreinte : il peut être augmenté plus tard sans
+    invalider les mots de passe existants.
+    """
     sel = secrets.token_bytes(16)
     empreinte = hashlib.scrypt(mot_de_passe.encode(), salt=sel, n=_N, r=_R, p=_P)
-    return "scrypt$" + "$".join(base64.b64encode(x).decode() for x in (sel, empreinte))
+    encodes = (base64.b64encode(x).decode() for x in (sel, empreinte))
+    return "$".join(("scrypt", str(_N), *encodes))
 
 
 def verifier(mot_de_passe: str, stocke: str) -> bool:
     """Compare un mot de passe à son empreinte, en temps constant."""
     try:
-        algorithme, sel, empreinte = stocke.split("$")
+        algorithme, cout, sel, empreinte = stocke.split("$")
+        n = int(cout)
     except ValueError:
         return False
     if algorithme != "scrypt":
         return False
-    calcule = hashlib.scrypt(mot_de_passe.encode(), salt=base64.b64decode(sel), n=_N, r=_R, p=_P)
+    calcule = hashlib.scrypt(mot_de_passe.encode(), salt=base64.b64decode(sel), n=n, r=_R, p=_P)
     return hmac.compare_digest(calcule, base64.b64decode(empreinte))
 
 

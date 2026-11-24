@@ -19,16 +19,22 @@ def connecter(client: TestClient, identifiant: str, mot_de_passe: str) -> int:
 
 @pytest.fixture
 def famille(client: TestClient) -> dict[str, int]:
-    """Famille, semaine en cours générée, et un compte enfant pour Léo."""
+    """Famille et compte enfant pour Léo (semaine créée, sans repas générés)."""
     alex, sam, leo = ajouter_famille(client)
     client.get(f"/api/semaines/{LUNDI}")
-    client.post(f"/api/semaines/{LUNDI}/generer")
     reponse = client.post(
         "/api/comptes",
         json={"identifiant": "Leo", "role": "enfant", "membre_id": leo, "mot_de_passe": "leo-123"},
     )
     assert reponse.status_code == 201
     return {"alex": alex, "sam": sam, "leo": leo, "compte_leo": reponse.json()["id"]}
+
+
+@pytest.fixture
+def famille_avec_repas(client: TestClient, famille) -> dict[str, int]:
+    """Comme ``famille``, avec les repas de la semaine en cours générés."""
+    client.post(f"/api/semaines/{LUNDI}/generer")
+    return famille
 
 
 # --- Sécurité -----------------------------------------------------------------------
@@ -99,7 +105,7 @@ def test_suppression_du_membre_supprime_son_compte_enfant(client: TestClient, fa
 # --- Droits d'un compte enfant --------------------------------------------------------
 
 
-def test_un_enfant_consulte_le_menu(client: TestClient, famille):
+def test_un_enfant_consulte_le_menu(client: TestClient, famille_avec_repas):
     assert connecter(client, "leo", "leo-123") == 200
     assert client.get("/api/session").json()["prenom"] == "Léo"
     assert client.get(f"/api/semaines/{LUNDI}").status_code == 200
@@ -122,10 +128,10 @@ def test_un_enfant_ne_modifie_rien(client: TestClient, famille, methode: str, ch
     assert reponse.status_code == 403
 
 
-def test_un_enfant_note_ses_repas_passes_et_a_venir(client: TestClient, famille):
+def test_un_enfant_note_ses_repas_passes_et_a_venir(client: TestClient, famille_avec_repas):
     assert connecter(client, "leo", "leo-123") == 200
     repas = client.get("/api/notes/a-noter").json()
-    assert repas and all(famille["leo"] in r["convives"] for r in repas)
+    assert repas and all(famille_avec_repas["leo"] in r["convives"] for r in repas)
     a_venir = [r for r in repas if r["a_venir"]]
     if date.today().weekday() < 6:  # il reste des repas cette semaine
         assert a_venir
@@ -136,16 +142,18 @@ def test_un_enfant_note_ses_repas_passes_et_a_venir(client: TestClient, famille)
                  "recette_id": cible["recette_id"], "valeur": 4}  # fmt: skip
         return client.put("/api/notes", json=corps).status_code
 
-    assert noter(famille["leo"]) == 200
-    assert noter(famille["alex"]) == 403  # pas pour quelqu'un d'autre
+    assert noter(famille_avec_repas["leo"]) == 200
+    assert noter(famille_avec_repas["alex"]) == 403  # pas pour quelqu'un d'autre
 
 
-def test_note_refusee_pour_un_absent(client: TestClient, famille):
-    client.put(f"/api/semaines/{LUNDI}/creneaux/0/soir", json={"convives": [famille["alex"]]})
+def test_note_refusee_pour_un_absent(client: TestClient, famille_avec_repas):
+    client.put(
+        f"/api/semaines/{LUNDI}/creneaux/0/soir", json={"convives": [famille_avec_repas["alex"]]}
+    )
     repas = next(r for r in client.get("/api/notes/a-noter").json()
-                 if r["convives"] == [famille["alex"]])  # fmt: skip
-    corps = {"membre_id": famille["leo"], "creneau_id": repas["creneau_id"],
+                 if r["convives"] == [famille_avec_repas["alex"]])  # fmt: skip
+    corps = {"membre_id": famille_avec_repas["leo"], "creneau_id": repas["creneau_id"],
              "recette_id": repas["recette_id"], "valeur": 3}  # fmt: skip
     assert client.put("/api/notes", json=corps).status_code == 400  # Léo était absent
-    corps |= {"membre_id": famille["alex"], "recette_id": "autre-plat"}
+    corps |= {"membre_id": famille_avec_repas["alex"], "recette_id": "autre-plat"}
     assert client.put("/api/notes", json=corps).status_code == 404

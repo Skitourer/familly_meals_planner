@@ -20,6 +20,12 @@ def cat() -> Catalogue:
     return charger_catalogue(DONNEES)
 
 
+@pytest.fixture(autouse=True)
+def hachage_rapide(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Coût scrypt réduit en test (le coût réel, volontairement lent, ralentirait la suite)."""
+    monkeypatch.setattr(securite, "_N", 2**8)
+
+
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """Client HTTP connecté, sur une base et un dossier d'import temporaires."""
