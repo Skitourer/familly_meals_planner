@@ -6,6 +6,13 @@ name: Release
 on:
   push:
     branches: [main]
+  # Republier l'image d'une version existante (ex. après un échec) : Actions → Release →
+  # Run workflow, avec le numéro de version.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version à republier (ex. 1.1.0)"
+        required: true
 
 permissions:
   contents: write
@@ -14,6 +21,7 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       cree: ${{ steps.release.outputs.release_created }}
@@ -39,10 +47,19 @@ jobs:
 
   image-versionnee:
     needs: release-please
-    if: needs.release-please.outputs.cree == 'true'
+    # Après une nouvelle release, ou sur demande manuelle (release-please est alors ignoré).
+    if: >-
+      always() && (needs.release-please.outputs.cree == 'true'
+      || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.release-please.outputs.version || inputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: v${{ env.VERSION }}
+      # Les noms d'images Docker doivent être en minuscules (Skitourer -> skitourer).
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
@@ -55,4 +72,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ needs.release-please.outputs.version }}
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}
