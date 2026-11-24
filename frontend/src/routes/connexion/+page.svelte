@@ -25,7 +25,7 @@
 
 <div class="page">
 	<form class="carte" onsubmit={connecter}>
-		<div class="logo" aria-hidden="true">🥗</div>
+		<img class="logo" src="/icone.svg" alt="" width="88" height="88" />
 		<h1>Menu Famille</h1>
 		<p class="doux">Des repas équilibrés, de saison et bas carbone.</p>
 		<label>
@@ -63,7 +63,8 @@
 	}
 
 	.logo {
-		font-size: 3rem;
+		display: block;
+		margin: 0 auto 0.5rem;
 	}
 
 	label {
