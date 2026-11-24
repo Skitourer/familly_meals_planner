@@ -28,8 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
-      - working-directory: backend
-        run: uv run --only-group docs mkdocs build --strict -f ../mkdocs.yml -d ../site
+      # Exécuté depuis la racine : le site est produit dans ./site
+      - run: uv run --project backend --only-group docs mkdocs build --strict -d site
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
