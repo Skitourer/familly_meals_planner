@@ -109,6 +109,37 @@ def test_placard_manuel(client: TestClient):
     assert client.put("/api/placard/licorne", json={"quantite_g": 1}).status_code == 404
 
 
+def test_coches_partagees_entre_appareils(client: TestClient):
+    ajouter_famille(client)
+    client.post(f"/api/semaines/{LUNDI}/generer")
+    url = f"/api/semaines/{LUNDI}/courses/coches"
+    assert client.get(f"/api/semaines/{LUNDI}/courses").json()["coches"] == []
+
+    # Un appareil coche le riz puis les pâtes ; le second décoche le riz plus tard.
+    assert client.put(url, json=[
+        {"ingredient_id": "riz", "cochee": True, "modifiee_le": "2026-01-05T09:00:00Z"},
+        {"ingredient_id": "pates", "cochee": True, "modifiee_le": "2026-01-05T09:01:00Z"},
+    ]).json() == ["pates", "riz"]  # fmt: skip
+    client.put(
+        url,
+        json=[
+            {"ingredient_id": "riz", "cochee": False, "modifiee_le": "2026-01-05T09:05:00+01:00"},
+        ],
+    )  # fmt: skip  (08:05 UTC : plus ancien, ignoré)
+    assert client.get(f"/api/semaines/{LUNDI}/courses").json()["coches"] == ["pates", "riz"]
+    client.put(url, json=[
+        {"ingredient_id": "riz", "cochee": False, "modifiee_le": "2026-01-05T09:10:00Z"},
+    ])  # fmt: skip
+    assert client.get(f"/api/semaines/{LUNDI}/courses").json()["coches"] == ["pates"]
+
+    inconnu = [{"ingredient_id": "licorne", "cochee": True, "modifiee_le": "2026-01-05T09:00:00Z"}]
+    assert client.put(url, json=inconnu).status_code == 400
+    sans_fuseau = [{"ingredient_id": "riz", "cochee": True, "modifiee_le": "2026-01-05T09:00:00"}]
+    assert client.put(url, json=sans_fuseau).status_code == 422
+    trop = [{"ingredient_id": "riz", "cochee": True, "modifiee_le": "2026-01-05T09:00:00Z"}] * 501
+    assert client.put(url, json=trop).status_code == 422
+
+
 def test_frigo_a_vider(client: TestClient):
     ajouter_famille(client)
     dans_deux_jours = (date.today() + timedelta(days=2)).isoformat()

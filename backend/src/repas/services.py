@@ -14,11 +14,17 @@ from repas.catalogue import Catalogue
 from repas.domaine import planificateur as plan
 from repas.domaine.besoins import ProfilPhysique, coefficient_portion
 from repas.domaine.bilan import Bilan, RepasServi, bilan_semaine
+from repas.domaine.coches import (
+    ModificationCoche,
+    articles_coches,
+    en_utc,
+    fusionner_coches,
+)
 from repas.domaine.courses import ListeCourses, Portion, liste_de_courses, placard_apres_courses
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
 from repas.domaine.reperes import REPERES
-from repas.modeles import BilanCourses, Creneau, Membre, Note, Reglages, Semaine, Stock
+from repas.modeles import BilanCourses, Coche, Creneau, Membre, Note, Reglages, Semaine, Stock
 
 MOMENTS = ("midi", "soir")
 COEFFICIENT_INVITE = 1.0
@@ -270,6 +276,43 @@ def courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> ListeCourses:
         for recette in (r.plat, r.dessert)
     ]
     return liste_de_courses(portions, catalogue, stock_disponible(s, semaine.lundi))
+
+
+def coches(s: Session, semaine: Semaine) -> list[str]:
+    """Articles cochés sur la liste de courses de la semaine."""
+    return articles_coches(_etat(_lignes_coches(s, semaine)))
+
+
+def enregistrer_coches(
+    s: Session, semaine: Semaine, modifications: list[ModificationCoche]
+) -> list[str]:
+    """Applique des coches venues d'un appareil (éventuellement en retard) ; renvoie l'état."""
+    lignes = _lignes_coches(s, semaine)
+    avant = _etat(lignes)
+    apres = fusionner_coches(avant, modifications, datetime.now(UTC))
+    for id_ing, coche in apres.items():
+        if avant.get(id_ing) == coche:
+            continue
+        ligne = lignes.get(id_ing) or Coche(
+            semaine_id=semaine.id or 0, ingredient_id=id_ing, cochee=coche.cochee,
+            modifiee_le=coche.modifiee_le,
+        )  # fmt: skip
+        ligne.cochee, ligne.modifiee_le = coche.cochee, coche.modifiee_le
+        s.add(ligne)
+    s.commit()
+    return articles_coches(apres)
+
+
+def _lignes_coches(s: Session, semaine: Semaine) -> dict[str, Coche]:
+    lignes = s.exec(select(Coche).where(Coche.semaine_id == semaine.id)).all()
+    return {c.ingredient_id: c for c in lignes}
+
+
+def _etat(lignes: dict[str, Coche]) -> dict[str, ModificationCoche]:
+    return {
+        id_ing: ModificationCoche(id_ing, c.cochee, en_utc(c.modifiee_le))
+        for id_ing, c in lignes.items()
+    }
 
 
 def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
