@@ -32,6 +32,8 @@
 #                         {mode: vrac, pas: g}
 #   unite               "g" (défaut) ou "ml" (liquides, densité ~1).
 #   part_comestible     Fraction comestible (épluchures, noyaux...), défaut 1.
+#   rendement_cuisson   Poids cuit / poids cru (pâtes, riz, légumes secs absorbent
+#                       l'eau) ; sert au Nutri-Score calculé pour 100 g. Défaut 1.
 #   basique             true = produit de fond de placard (sel, épices, huile) :
 #                       non ajouté aux courses, listé dans « à vérifier ».
 #   categorie_off       Catégorie Open Food Facts (conditionnements et prix).
@@ -46,6 +48,7 @@ pates:
   famille: feculent
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.2
   vente: {mode: paquet}
   categorie_off: en:dry-pastas
   prix_kg: 1.8
@@ -56,6 +59,7 @@ pates-completes:
   famille: feculent-complet
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.2
   vente: {mode: paquet, formats: [500]}
   categorie_off: en:wholemeal-pasta
   prix_kg: 2.6
@@ -66,6 +70,7 @@ feuilles-lasagne:
   famille: feculent
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.0
   vente: {mode: paquet, formats: [500]}
   categorie_off: en:lasagna-sheets
   prix_kg: 3.0
@@ -76,6 +81,7 @@ riz:
   famille: feculent
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.6
   vente: {mode: paquet}
   categorie_off: en:basmati-rices
   prix_kg: 3.0
@@ -86,6 +92,7 @@ riz-complet:
   famille: feculent-complet
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.6
   vente: {mode: paquet}
   categorie_off: en:brown-rices
   prix_kg: 3.2
@@ -96,6 +103,7 @@ riz-arborio:
   famille: feculent
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.5
   vente: {mode: paquet, formats: [500, 1000]}
   categorie_off: en:risotto-rices
   prix_kg: 4.0
@@ -106,6 +114,7 @@ semoule:
   famille: feculent
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.3
   vente: {mode: paquet}
   categorie_off: en:couscous
   prix_kg: 2.0
@@ -116,6 +125,7 @@ boulgour:
   famille: feculent-complet
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.5
   vente: {mode: paquet}
   categorie_off: en:bulgur
   prix_kg: 3.5
@@ -126,6 +136,7 @@ quinoa:
   famille: feculent-complet
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.6
   vente: {mode: paquet}
   categorie_off: en:quinoa
   prix_kg: 7.0
@@ -261,6 +272,7 @@ lentilles-corail:
   famille: legumineuse
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.4
   vente: {mode: paquet}
   categorie_off: en:red-lentils
   prix_kg: 4.0
@@ -271,6 +283,7 @@ lentilles-vertes:
   famille: legumineuse
   rayon: epicerie-salee
   conservation_jours: 365
+  rendement_cuisson: 2.5
   vente: {mode: paquet}
   categorie_off: en:green-lentils
   prix_kg: 3.5

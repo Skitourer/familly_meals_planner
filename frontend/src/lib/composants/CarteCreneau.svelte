@@ -3,6 +3,7 @@
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import { JOURS } from '#lib/dates.ts';
 	import type { Creneau } from '#lib/types.ts';
+	import NutriScore from './NutriScore.svelte';
 	import Pastille from './Pastille.svelte';
 
 	let {
@@ -19,6 +20,8 @@
 	const aLaMaison = $derived(personnes > 0);
 	const fiche = $derived(creneau.plat_id ? donnees.parId.get(creneau.plat_id) : undefined);
 	let details = $state(false);
+	const nombre = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+	const euros = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 
 	// Portions du repas : somme des portions des convives (un invité compte pour un adulte).
 	const portions = $derived(
@@ -79,16 +82,42 @@
 					♻️ restes du {origineRestes(creneau.restes_de)}
 				</span>{/if}
 			{#if fiche?.recette.lot && !creneau.restes_de}<span class="badge vert">🍲 en lot</span>{/if}
+			{#if creneau.infos}<NutriScore lettre={creneau.infos.nutriscore} taille="petite" />{/if}
 			{#if creneau.verrouille}<span class="badge">🔒 choisi</span>{/if}
 			{#if fiche && !fiche.de_saison}<span class="badge alerte">hors saison</span>{/if}
 			{#if fiche}<span class="badge">
 					⏱ {fiche.recette.temps.preparation + fiche.recette.temps.cuisson} min
 				</span>{/if}
 		</div>
-		{#if details && creneau.raisons.length}
-			<ul class="raisons">
-				{#each creneau.raisons as raison (raison)}<li>{raison}</li>{/each}
-			</ul>
+		{#if details}
+			<div class="details">
+				{#if creneau.infos}
+					{@const i = creneau.infos}
+					<NutriScore lettre={i.nutriscore} />
+					<dl>
+						<dt>Énergie</dt>
+						<dd>{i.energie_kcal} kcal</dd>
+						<dt>Protéines</dt>
+						<dd>{nombre(i.proteines_g)} g</dd>
+						<dt>Fibres</dt>
+						<dd>{nombre(i.fibres_g)} g</dd>
+						<dt>Fruits et légumes</dt>
+						<dd>{i.fruits_legumes_g} g</dd>
+						<dt>Carbone</dt>
+						<dd>{nombre(i.co2_kg)} kg CO₂e</dd>
+						<dt>Coût estimé</dt>
+						<dd>{euros(i.prix_eur)}</dd>
+					</dl>
+					<p class="note">
+						Nutrition par portion adulte ; carbone et coût pour les {personnes} convives.
+					</p>
+				{/if}
+				{#if creneau.raisons.length}
+					<ul class="raisons">
+						{#each creneau.raisons as raison (raison)}<li>{raison}</li>{/each}
+					</ul>
+				{/if}
+			</div>
 		{/if}
 	{:else}
 		<p class="doux">À générer</p>
@@ -181,6 +210,38 @@
 
 	.badges {
 		gap: 0.25rem;
+	}
+
+	.details {
+		display: grid;
+		gap: 0.4rem;
+		padding: 0.5rem;
+		border-radius: 8px;
+		background: var(--surface);
+	}
+
+	dl {
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 0.1rem 0.6rem;
+		margin: 0;
+		font-size: 0.8rem;
+	}
+
+	dt {
+		color: var(--texte-doux);
+	}
+
+	dd {
+		margin: 0;
+		text-align: right;
+		font-weight: 600;
+	}
+
+	.note {
+		margin: 0;
+		font-size: 0.7rem;
+		color: var(--texte-doux);
 	}
 
 	.raisons {

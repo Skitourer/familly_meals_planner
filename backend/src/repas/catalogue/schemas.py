@@ -110,6 +110,9 @@ class Ingredient(BaseModel):
     vente: Vente = Field(discriminator="mode")
     unite: Literal["g", "ml"] = "g"
     part_comestible: float = Field(default=1.0, gt=0, le=1)
+    rendement_cuisson: float = Field(
+        default=1.0, ge=1, le=4, description="Poids cuit / poids cru (pâtes, riz...)."
+    )
     basique: bool = False
     categorie_off: str | None = None
     prix_kg: PositiveFloat

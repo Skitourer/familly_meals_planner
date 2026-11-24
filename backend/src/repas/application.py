@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from repas.api import catalogue, famille, semaines, session, suivi
+from repas.api import bilan, catalogue, famille, semaines, session, suivi
 from repas.base import moteur
 from repas.catalogue import catalogue as charger_catalogue
 from repas.config import parametres
@@ -47,7 +47,7 @@ def creer_application() -> FastAPI:
     api = APIRouter(prefix="/api")
     api.include_router(session.router)
     protege = [Depends(session.exiger_connexion)]
-    for module in (famille, catalogue, semaines, suivi):
+    for module in (famille, catalogue, semaines, suivi, bilan):
         api.include_router(module.router, dependencies=protege)
 
     @api.get("/sante", tags=["session"])

@@ -20,7 +20,8 @@ Contraintes strictes
 Contraintes souples (pénalisées très fortement : la nutrition prime)
     Repères ANSES/PNNS de ``reperes.py`` sur les créneaux non joker : énergie
     par repas, part des protéines, lipides et graisses saturées, fibres, sel,
-    fruits et légumes, poisson, légumineuses, viande rouge, charcuterie.
+    fruits et légumes, poisson, légumineuses, produits laitiers, viande rouge,
+    charcuterie.
 
 Préférences (objectif, à poids réglables)
     notes de la famille, saisonnalité, empreinte carbone, prix, répétition des
@@ -169,6 +170,35 @@ def alternatives(
     return sorted(resultats, key=lambda r: r[1])
 
 
+def attribuer_restes(
+    services: list[tuple[str, int, str]], catalogue: Catalogue
+) -> dict[str, str | None]:
+    """Indique, pour chaque repas, le repas où son plat a été cuisiné (None = cuisiné ce jour).
+
+    ``services`` : (clé du créneau, jour, plat) dans l'ordre chronologique. Un plat
+    cuisiné en lot fournit des restes tant que l'on reste dans sa durée de conservation
+    (comptée depuis le jour de cuisson) et dans son nombre de repas maximal ; au-delà,
+    il faut le cuisiner à nouveau. Un plat ordinaire est toujours cuisiné le jour même.
+    """
+    lots: dict[str, tuple[str, int, int]] = {}  # plat -> (clé de cuisson, jour, repas servis)
+    resultat: dict[str, str | None] = {}
+    for cle, jour, plat in services:
+        lot = catalogue.recettes[plat].lot if plat in catalogue.recettes else None
+        en_cours = lots.get(plat)
+        if (
+            lot
+            and en_cours
+            and jour - en_cours[1] <= lot.conservation_jours
+            and en_cours[2] < lot.repas_max
+        ):
+            resultat[cle] = en_cours[0]
+            lots[plat] = (en_cours[0], en_cours[1], en_cours[2] + 1)
+        else:
+            resultat[cle] = None
+            lots[plat] = (cle, jour, 1)
+    return resultat
+
+
 def _figer(creneau: CreneauAPlanifier, repas: RepasPlanifie, *, figer_plat: bool):
     return CreneauAPlanifier(
         cle=creneau.cle,
@@ -234,15 +264,13 @@ class _Modele:
             )
             choix[c.cle] = (plat, dessert)
 
-        # Restes : la première occurrence d'un plat cuisiné en lot est la cuisson.
-        premiere: dict[str, str] = {}
-        repas: dict[str, RepasPlanifie] = {}
-        for c in self.creneaux:
-            plat, dessert = choix[c.cle]
-            origine = premiere.setdefault(plat, c.cle)
-            repas[c.cle] = RepasPlanifie(
-                c.cle, plat, dessert, restes_de=origine if origine != c.cle else None
-            )
+        restes = attribuer_restes(
+            [(c.cle, c.jour, choix[c.cle][0]) for c in self.creneaux], self.catalogue
+        )
+        repas = {
+            c.cle: RepasPlanifie(c.cle, *choix[c.cle], restes_de=restes[c.cle])
+            for c in self.creneaux
+        }
 
         ecarts = {
             nom: round(solveur.value(var) / echelle, 2)
@@ -424,6 +452,16 @@ class _Modele:
             self._au_moins(
                 "legumineuses_min", legumineuses, hebdo.legumineuses_min, hebdo.legumineuses_min
             )
+        # Produits laitiers : au moins un par jour (plat au fromage ou laitage en dessert).
+        jours = len({c.jour for c in suivis})
+        laitiers = sum(
+            v
+            for (k, rid), v in (*self.plat.items(), *self.dessert.items())
+            if k in cles_suivies and self.catalogue.profils[rid].est_laitier
+        )
+        minimum_laitiers = r.produits_laitiers_min_par_jour * jours
+        self._au_moins("laitiers_min", laitiers, minimum_laitiers, minimum_laitiers)
+
         rouge = grammes(lambda p: p.viande_rouge_g)
         self._au_plus("viande_rouge_max", rouge, hebdo.viande_rouge_max_g, r.viande_rouge_max_g)
         charcuterie = grammes(lambda p: p.charcuterie_g)
