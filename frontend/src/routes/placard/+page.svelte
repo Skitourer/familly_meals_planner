@@ -69,7 +69,7 @@
 							<input
 								type="number"
 								min="0"
-								step="10"
+								step="any"
 								value={article.quantite_g}
 								aria-label={`Quantité de ${article.nom}`}
 								onchange={(e) =>
@@ -103,7 +103,7 @@
 				<option value={ing.id}>{ing.nom}</option>
 			{/each}
 		</select>
-		<input type="number" min="1" step="10" bind:value={nouvelleQuantite} aria-label="Quantité" />
+		<input type="number" min="1" step="any" bind:value={nouvelleQuantite} aria-label="Quantité" />
 		<button disabled={!nouvelIngredient}>Ajouter</button>
 	</form>
 </div>
