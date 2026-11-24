@@ -24,6 +24,7 @@ Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connect�
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |
+| `GET` | `/api/bilan?semaines=12` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `GET` | `/api/notes/a-noter?jours=14` | Repas récents et notes déjà données |
 | `PUT` | `/api/notes` | Noter un plat (crée ou met à jour) |
 | `GET` | `/api/placard` | Contenu du placard |

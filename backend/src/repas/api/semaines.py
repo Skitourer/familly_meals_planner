@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from repas import services
 from repas.base import session
 from repas.catalogue import catalogue
-from repas.domaine.bilan import Bilan, raisons
+from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
 from repas.domaine.courses import ListeCourses, format_quantite
 from repas.modeles import Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
@@ -35,6 +35,7 @@ class CreneauSortie(BaseModel):
     dessert_id: str | None
     restes_de: str | None
     raisons: list[str]
+    infos: InfosRepas | None = None
 
 
 class SemaineSortie(BaseModel):
@@ -101,6 +102,7 @@ def _creneau(s: Session, semaine: Semaine, jour: int, moment: str) -> Creneau:
 def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
     cat = catalogue()
     ctx = services.contexte(s, semaine, cat)
+    coefs = services.coefficients(s, semaine.lundi)
     creneaux = []
     for c in services.creneaux_de(s, semaine):
         explications = []
@@ -114,8 +116,17 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
                 restes_de=c.restes_de,
                 joker=c.joker,
             )
+        infos = None
+        if c.plat_id in cat.profils and c.dessert_id in cat.profils:
+            infos = infos_repas(
+                cat.profils[c.plat_id],
+                cat.profils[c.dessert_id],
+                services.somme_coefficients(c, coefs),
+            )
         creneaux.append(
-            CreneauSortie(**c.model_dump(exclude={"semaine_id"}), cle=c.cle, raisons=explications)
+            CreneauSortie(
+                **c.model_dump(exclude={"semaine_id"}), cle=c.cle, raisons=explications, infos=infos
+            )
         )
     return SemaineSortie(
         lundi=semaine.lundi,
