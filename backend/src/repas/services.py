@@ -165,15 +165,16 @@ def generer(s: Session, semaine: Semaine, catalogue: Catalogue, *, varier: bool)
 
 
 def recalculer_restes(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
-    """Après une modification manuelle, recalcule les liens « restes de »."""
-    premiere: dict[str, str] = {}
-    for c in creneaux_de(s, semaine):
-        if not c.plat_id or not (c.convives or c.invites):
-            c.restes_de = None
-            continue
-        lot = catalogue.recettes[c.plat_id].lot if c.plat_id in catalogue.recettes else None
-        origine = premiere.setdefault(c.plat_id, c.cle)
-        c.restes_de = origine if lot and origine != c.cle else None
+    """Après une modification manuelle, recalcule les liens « restes de ».
+
+    Même règle que le solveur : des restes seulement dans la durée de conservation et
+    le nombre de repas du plat cuisiné en lot ; sinon le plat est cuisiné à nouveau.
+    """
+    creneaux = creneaux_de(s, semaine)
+    servis = [c for c in creneaux if c.plat_id and (c.convives or c.invites)]
+    restes = plan.attribuer_restes([(c.cle, c.jour, c.plat_id or "") for c in servis], catalogue)
+    for c in creneaux:
+        c.restes_de = restes.get(c.cle)
         s.add(c)
     s.commit()
 
