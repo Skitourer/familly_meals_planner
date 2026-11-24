@@ -79,8 +79,11 @@ export default function PlanningPage({ semaine, setSemaine, onError }: {
         {sale && <span className="mention">Modifications non enregistrées</span>}
       </div>
 
-      {/* Les 7 jours */}
-      {jours.map((date, jour) => (
+      {/* Les 7 jours — attendre le chargement des 14 créneaux avant de rendre
+          (sinon creneau() renvoie undefined et le rendu plante) */}
+      {repas.length < 14 ? (
+        <p className="mention">Chargement de la semaine…</p>
+      ) : jours.map((date, jour) => (
         <section className="jour" key={jour}>
           <p className="titre">{libelleJour(date)}</p>
           <div className="grille deux">
