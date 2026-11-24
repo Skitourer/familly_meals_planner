@@ -109,6 +109,31 @@ def test_placard_manuel(client: TestClient):
     assert client.put("/api/placard/licorne", json={"quantite_g": 1}).status_code == 404
 
 
+def test_frigo_a_vider(client: TestClient):
+    ajouter_famille(client)
+    dans_deux_jours = (date.today() + timedelta(days=2)).isoformat()
+    client.put("/api/placard/courgette", json={"quantite_g": 500, "peremption": dans_deux_jours})
+    client.put("/api/placard/riz", json={"quantite_g": 400})
+    a_vider = {a["ingredient_id"]: a["bientot_perime"] for a in client.get("/api/placard").json()}
+    assert a_vider == {"courgette": True, "riz": False}
+
+    idees = client.get("/api/placard/idees").json()
+    assert idees and all(idee["ingredients"] == ["Courgettes"] for idee in idees)
+
+
+def test_reajuster_la_fin_de_semaine(client: TestClient):
+    ajouter_famille(client)
+    avant = client.post(f"/api/semaines/{LUNDI}/generer").json()["creneaux"]
+    apres = client.post(
+        f"/api/semaines/{LUNDI}/generer", params={"varier": True, "a_partir_du_jour": 3}
+    ).json()["creneaux"]
+    debut = [(c["cle"], c["plat_id"], c["dessert_id"]) for c in avant if c["jour"] < 3]
+    assert debut == [(c["cle"], c["plat_id"], c["dessert_id"]) for c in apres if c["jour"] < 3]
+    assert all(c["plat_id"] for c in apres)
+    reponse = client.post(f"/api/semaines/{LUNDI}/generer", params={"a_partir_du_jour": 7})
+    assert reponse.status_code == 422
+
+
 def test_import_de_recettes(client: TestClient):
     instructions = client.get("/api/import/instructions-ia.md")
     assert instructions.status_code == 200 and "Ingrédients autorisés" in instructions.text

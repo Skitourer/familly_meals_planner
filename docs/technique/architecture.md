@@ -51,6 +51,7 @@ flowchart TB
 | `domaine/nutriscore.py` | Nutri-Score 2023 appliqué à un repas |
 | `statistiques.py` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `domaine/courses.py` | Liste de courses, conditionnements, placard |
+| `domaine/placard.py` | Frigo à vider : produits à consommer vite, idées de plats |
 | `modeles.py`, `base.py` | Tables SQLModel et connexion SQLite |
 | `services.py` | Cas d'usage (générer, valider les courses...) |
 | `securite.py` | Hachage des mots de passe, limitation des essais de connexion |

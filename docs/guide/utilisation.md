@@ -119,9 +119,22 @@ celui de la liste réellement achetée ensuite.
 
 ## Le placard
 
-L'onglet **Placard** liste les restes avec leur date limite estimée. Les quantités sont
-modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter un produit à la main.
-L'algorithme favorise les plats qui utilisent le placard.
+L'onglet **Placard** liste les restes avec leur date limite estimée. Les quantités et les
+dates sont modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter un produit à
+la main, avec sa date limite si on la connaît. L'algorithme favorise les plats qui utilisent
+le placard.
+
+### Frigo à vider
+
+Un produit dont la date limite tombe dans les 7 jours est marqué **à vider**. Le cadre
+**Frigo à vider** apparaît alors en haut de l'onglet :
+
+- les **plats qui utilisent le mieux** ces produits, à consulter pour s'en inspirer ;
+- **Réajuster la semaine en cours** : les repas d'aujourd'hui à dimanche sont recalculés en
+  vidant le frigo avant les dates limites ; les jours passés et les repas verrouillés sont
+  gardés.
+
+À la génération d'une semaine, les produits à vider sont aussi fortement favorisés.
 
 ## Avis sur les repas
 

@@ -97,7 +97,7 @@ Pour chaque plat ou dessert servi à un créneau, un **intérêt** est ajouté �
 | Prix | − 3 par € (réglable : 0 à 15) |
 | Répétition | − 40, − 20, − 10 si servi il y a 1, 2 ou 3 semaines |
 | Restes d'un plat en lot | + 6 par repas sans cuisine (réglable) |
-| Placard | + 8 par ingrédient du placard utilisé |
+| Placard | + 20 par produit du placard entièrement consommé, au prorata (voir ci-dessous) |
 | Joker | + 80 pour un plat ou dessert plaisir sur un joker |
 | Temps en semaine | − 0,5 par minute au-delà de 45 min, du lundi au vendredi |
 | Hasard | + 0 à 6, déterministe pour une « graine » donnée |
@@ -108,6 +108,16 @@ du membre et $C = 2$. Un plat noté une seule fois 5/5 n'écrase pas un plat not
 
 **Hasard** : le bouton « Autre proposition » change la graine, ce qui fait émerger une autre
 combinaison de qualité équivalente.
+
+**Placard et frigo à vider** (`_placard` dans `domaine/planificateur.py`). Pour chaque produit
+du placard (hors basiques), une variable $\text{consommé}_i$ (en g) est bornée par le stock
+$s_i$ et par l'usage de la semaine, $\sum$ grammes de la recette × coefficients de portion des
+convives. Le bonus vaut $w \cdot \text{consommé}_i / s_i$ : un produit vidé entièrement
+rapporte $w$, quel que soit son poids. Un produit **à vider** (date limite dans les 7 jours,
+`domaine/placard.py`) prend $w = 200$ au lieu de 20 et ne compte que sur les repas servis au
+plus tard à sa date limite. Les restes d'un plat en lot sont comptés au jour où ils sont servis
+(estimation prudente). Pour **réajuster la semaine en cours**, les repas des jours passés sont
+figés et ne puisent plus dans le placard.
 
 ## 6. Résolution et alternatives
 

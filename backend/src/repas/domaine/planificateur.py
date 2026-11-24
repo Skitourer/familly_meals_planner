@@ -26,8 +26,9 @@ Contraintes souples (pénalisées très fortement : la nutrition prime)
 Préférences (objectif, à poids réglables)
     notes de la famille, saisonnalité, empreinte carbone, prix, répétition des
     semaines précédentes, restes de plats cuisinés en lot, utilisation du
-    placard, plaisirs sur les jokers, temps de préparation en semaine, et une
-    petite part de hasard pour varier les propositions.
+    placard (bonus fort pour le frigo à vider avant sa date limite), plaisirs
+    sur les jokers, temps de préparation en semaine, et une petite part de
+    hasard pour varier les propositions.
 
 L'algorithme est détaillé dans ``docs/algorithme.md``.
 """
@@ -70,10 +71,18 @@ class CreneauAPlanifier:
     joker: bool = False
     plat_impose: str | None = None
     dessert_impose: str | None = None
+    coefficients: float | None = None  # somme des coefficients de portion des convives
 
     @property
     def a_la_maison(self) -> bool:
         return bool(self.convives) or self.invites > 0
+
+    @property
+    def portions(self) -> float:
+        """Nombre de portions de référence servies (une par personne à défaut)."""
+        if self.coefficients is not None:
+            return self.coefficients
+        return len(self.convives) + self.invites
 
     @property
     def ordre(self) -> int:
@@ -91,7 +100,8 @@ class Poids:
     prix: float = 0  # par euro (portion de référence)
     repetition: tuple[float, ...] = (40, 20, 10)  # servi il y a 1, 2, 3 semaines
     cuisine_en_lot: float = 6  # par repas de restes (une cuisson pour plusieurs repas)
-    placard: float = 8  # par ingrédient du placard utilisé
+    placard: float = 20  # par ingrédient du placard entièrement consommé (au prorata)
+    frigo_a_vider: float = 200  # idem pour un produit consommé avant sa date limite
     plaisir_joker: float = 80  # pour un plat ou dessert plaisir sur un joker
     temps_semaine: float = 0.5  # par minute au-delà de 45 min en semaine
     hasard: float = 6  # amplitude du bruit aléatoire
@@ -103,6 +113,9 @@ class ContextePlanification:
     preferences: Preferences = field(default_factory=lambda: Preferences([]))
     semaines_depuis: dict[str, int] = field(default_factory=dict)
     stock: dict[str, float] = field(default_factory=dict)
+    # Produits à vider -> dernier jour (0 = lundi) où les consommer.
+    a_consommer_avant: dict[str, int] = field(default_factory=dict)
+    premier_jour: int = 0  # jours déjà passés : leurs repas ne puisent plus dans le placard
     poids: Poids = field(default_factory=Poids)
     reperes: Reperes = REPERES
     graine: int = 0
@@ -209,6 +222,7 @@ def _figer(creneau: CreneauAPlanifier, repas: RepasPlanifie, *, figer_plat: bool
         joker=creneau.joker,
         plat_impose=repas.plat if figer_plat else None,
         dessert_impose=repas.dessert,
+        coefficients=creneau.coefficients,
     )
 
 
@@ -241,6 +255,7 @@ class _Modele:
         self._contraintes_repetition()
         self._contraintes_nutrition()
         self._preferences()
+        self._placard()
         self.modele.maximize(sum(self.objectif))
 
         solveur = cp_model.CpSolver()
@@ -506,19 +521,43 @@ class _Modele:
         if semaines and semaines <= len(poids.repetition):
             interet -= poids.repetition[semaines - 1]
 
-        utiles = [
-            i
-            for i in recette.ingredients
-            if self.ctx.stock.get(i, 0) > 0 and not self.catalogue.ingredients[i].basique
-        ]
-        interet += poids.placard * len(utiles)
-
         if c.joker and recette.plaisir:
             interet += poids.plaisir_joker
         if c.jour in JOURS_OUVRES and recette.type == "plat" and recette.lot is None:
             interet -= poids.temps_semaine * max(0, recette.temps.total - TEMPS_SEMAINE_MAX_MIN)
 
         return interet + poids.hasard * self._bruit(c.cle, recette.id)
+
+    def _placard(self) -> None:
+        """Bonus pour la part du placard consommée par les repas de la semaine.
+
+        Pour chaque produit, la consommation (en g) est bornée par le stock ; le bonus est
+        proportionnel à la part consommée. Un produit à vider ne compte que sur les repas
+        servis au plus tard à sa date limite, avec un poids bien plus fort. Les restes d'un
+        plat cuisiné en lot sont comptés au jour où ils sont servis (estimation prudente).
+        """
+        creneau = {c.cle: c for c in self.creneaux}
+        for id_ing, quantite in self.ctx.stock.items():
+            ingredient = self.catalogue.ingredients.get(id_ing)
+            if quantite < 1 or ingredient is None or ingredient.basique:
+                continue
+            dernier_jour = self.ctx.a_consommer_avant.get(id_ing, 6)
+            usage = [
+                round(recette.ingredients[id_ing] * creneau[cle].portions) * var
+                for (cle, rid), var in (*self.plat.items(), *self.dessert.items())
+                if self.ctx.premier_jour <= creneau[cle].jour <= dernier_jour
+                and id_ing in (recette := self.catalogue.recettes[rid]).ingredients
+            ]
+            if not usage:
+                continue
+            consomme = self.modele.new_int_var(0, round(quantite), f"placard[{id_ing}]")
+            self.modele.add(consomme <= sum(usage))
+            poids = (
+                self.ctx.poids.frigo_a_vider
+                if id_ing in self.ctx.a_consommer_avant
+                else self.ctx.poids.placard
+            )
+            self.objectif.append(poids / round(quantite) * consomme)
 
     def _bruit(self, cle: str, recette_id: str) -> float:
         """Nombre pseudo-aléatoire dans [0, 1[, stable pour une graine, un créneau et un plat."""
