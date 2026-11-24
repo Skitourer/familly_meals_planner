@@ -52,7 +52,9 @@
 	<main><p class="erreur" role="alert">{erreurDemarrage}</p></main>
 {:else if verifie}
 	<header>
-		<a class="marque" href="/">🥗 Menu Famille</a>
+		<a class="marque" href="/">
+			<img src="/favicon.svg" alt="" width="28" height="28" />Menu Famille
+		</a>
 		<nav aria-label="Navigation principale">
 			{#each visibles as lien (lien.href)}
 				<a href={lien.href} aria-current={page.url.pathname === lien.href ? 'page' : undefined}>
@@ -85,7 +87,12 @@
 	}
 
 	.marque {
-		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: var(--police-titre);
+		font-size: 1.15rem;
+		font-weight: 600;
 		text-decoration: none;
 		color: var(--accent);
 		white-space: nowrap;

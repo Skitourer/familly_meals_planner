@@ -11,3 +11,4 @@ conséquences. Une décision remplacée n'est pas supprimée mais marquée « re
 | 4 | [Pas d'IA à l'exécution, import JSON à la place](0004-pas-d-ia-a-l-execution.md) | Acceptée |
 | 5 | [Comptes adulte et enfant](0005-comptes-adulte-enfant.md) | Acceptée |
 | 6 | [Liste de courses hors ligne (service worker)](0006-hors-ligne.md) | Acceptée |
+| 7 | [Thème « bol rigolo » et polices hébergées](0007-theme-bol-rigolo.md) | Acceptée |

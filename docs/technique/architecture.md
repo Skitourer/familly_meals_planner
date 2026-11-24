@@ -75,7 +75,10 @@ flowchart TB
 | `service-worker/` | Service worker : application et liste de courses sans réseau |
 
 L'interface est une application monopage (`adapter-static`), utilisable sur téléphone (barre
-de navigation en bas) et installable (manifeste web, icônes PNG pour Android et iPhone).
+de navigation en bas) et installable (manifeste web, icônes PNG pour Android et iPhone ;
+sources dans `frontend/icones/`). Le thème (couleurs claires et sombres, polices Fredoka et
+Nunito hébergées dans `static/polices/`) est défini par les variables de `src/app.css`
+([ADR 7](../adr/0007-theme-bol-rigolo.md)).
 
 Le service worker ([ADR 6](../adr/0006-hors-ligne.md)) garde dans le cache du navigateur :
 
