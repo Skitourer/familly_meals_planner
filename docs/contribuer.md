@@ -1,0 +1,59 @@
+# Contribuer
+
+Le processus est volontairement **professionnel mais léger** : une branche principale
+protégée, des pull requests vérifiées automatiquement, des versions générées à partir des
+messages de commit.
+
+## Flux de travail
+
+```mermaid
+gitGraph
+    commit id: "main"
+    branch feat/placard-peremption
+    commit id: "feat: ..."
+    commit id: "test: ..."
+    checkout main
+    merge feat/placard-peremption id: "PR (squash)"
+    commit id: "chore(main): release 1.1.0" type: HIGHLIGHT
+```
+
+1. Créer une branche depuis `main` : `feat/…`, `fix/…`, `docs/…`, `recette/…`.
+2. Développer avec des commits au format
+   [Conventional Commits](https://www.conventionalcommits.org/fr/) :
+    - `feat: ajouter les allergies par membre` → nouvelle version mineure ;
+    - `fix: arrondi des œufs par boîte de 6` → version corrective ;
+    - `docs:`, `test:`, `refactor:`, `chore:`, `ci:` → pas de nouvelle version ;
+    - `feat!:` ou `BREAKING CHANGE:` → version majeure.
+3. Vérifier localement : `uv run poe check` (backend) et
+   `npm run lint && npm run check && npm test` (interface).
+4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 85 %,
+   compilation de l'interface, de la documentation et de l'image Docker).
+5. **Fusion en squash** : le titre de la PR devient le message de commit sur `main`.
+
+## Versions
+
+[release-please](https://github.com/googleapis/release-please) tient à jour une PR
+« chore(main): release x.y.z » qui accumule le `CHANGELOG.md`. La fusionner crée le tag, la
+release GitHub et publie l'image Docker versionnée sur `ghcr.io`.
+
+## Automatisations
+
+| Workflow | Déclencheur | Rôle |
+|---|---|---|
+| `ci.yml` | chaque PR et `main` | qualité, tests, image Docker (publiée depuis `main`) |
+| `release.yml` | `main` | versions et changelog |
+| `docs.yml` | `main` (dossier `docs/`) | publication de cette documentation |
+| `donnees.yml` | le 1er du mois | mise à jour des données ouvertes (PR automatique) |
+| Dependabot | mensuel | mises à jour groupées des dépendances |
+
+## Conventions de code
+
+- **Python** : ruff (style et import), pyright (types), pytest. Noms en français, docstrings
+  qui expliquent le *pourquoi*, fonctions courtes.
+- **Interface** : Svelte 5 (runes), TypeScript strict, Prettier.
+- Les **décisions d'architecture** importantes sont consignées dans `docs/adr/`.
+
+## Ajouter une recette
+
+Voir le [format du catalogue](technique/catalogue.md). Les tests garantissent que la
+recette est cohérente (ingrédients connus, énergie plausible, saisonnalité).

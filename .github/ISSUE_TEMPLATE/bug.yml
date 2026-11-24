@@ -1,0 +1,20 @@
+name: 🐛 Bug
+description: Quelque chose ne fonctionne pas comme prévu
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Que se passe-t-il ?
+      description: Ce que vous avez fait, ce que vous attendiez, ce qui s'est produit.
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: "1. Aller sur…\n2. Cliquer sur…\n3. Constater…"
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Visible sur /api/sante

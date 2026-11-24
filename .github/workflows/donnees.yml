@@ -1,0 +1,36 @@
+# Mise à jour mensuelle des données ouvertes (Agribalyse, saisons, formats, prix) :
+# ouvre une PR si aliments.json change. CIQUAL (fichier Excel) reste mis à jour à la main.
+name: Données ouvertes
+
+on:
+  schedule:
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  importer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - name: Récupérer la table CIQUAL
+        run: |
+          mkdir -p donnees/sources/ciqual
+          curl -fsSL -o donnees/sources/ciqual/ciqual.xlsx "${{ vars.URL_CIQUAL_XLSX }}"
+      - name: Import
+        working-directory: backend
+        run: uv run repas-import && uv run python -m repas.catalogue.import_recettes
+      - name: Vérification
+        working-directory: backend
+        run: uv run pytest -q
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: donnees/mise-a-jour
+          commit-message: "chore(donnees): mise à jour des données ouvertes"
+          title: "chore(donnees): mise à jour des données ouvertes"
+          body: "Import automatique mensuel (Agribalyse, Impact CO2, Open Food Facts, Open Prices)."
+          labels: donnees

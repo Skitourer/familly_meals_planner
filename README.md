@@ -1,111 +1,74 @@
 # 🥗 Menu Famille
 
-Application de planification des repas pour la famille : chaque vendredi, on définit
-les repas de la semaine à venir (midi et soir), le nombre de personnes présentes,
-et l'application calcule une liste de courses adaptée aux besoins de chacun.
-La liste de courses s'exporte en PDF pour l'emporter au magasin.
+[![CI](https://github.com/Skitourer/familly_meals_planner/actions/workflows/ci.yml/badge.svg)](https://github.com/Skitourer/familly_meals_planner/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-2f6b40)](https://skitourer.github.io/familly_meals_planner/)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
-**Aucune IA à l'exécution** : la génération des repas est un algorithme explicable
-(saisonnalité, variété, adéquation aux besoins, notes passées).
+Planificateur de repas pour la famille : **équilibrés**, **de saison**, **bas carbone**, avec
+une **liste de courses adaptée aux paquets du magasin**.
+
+Le vendredi soir, on indique qui mange à la maison à chaque repas de la semaine suivante et
+on choisit ses jokers ; l'application compose les 14 repas (plat + dessert) en respectant les
+repères de l'ANSES et du PNNS, puis produit la liste de courses imprimable.
 
 ## Fonctionnalités
 
-- **Profils familiaux** : âge, taille, poids, sexe et activité de chaque membre ;
-  besoin énergétique calculé (formule Mifflin-St Jeor).
-- **Planning hebdomadaire** : midi/soir sur 7 jours, nombre de convives par repas,
-  `0 convive` = repas hors maison (exclu de la liste de courses).
-- **Génération algorithmique** : plats de saison, pas de catégorie répétée,
-  couverture du besoin familial, pondérés par les notes passées.
-- **Liste de courses** : agrégation des ingrédients, arrondie aux conditionnements
-  du magasin (ex. 800 g de pâtes -> 1 kg), **export PDF** en un clic.
-- **Notes a posteriori** : 1 à 5 étoiles par plat, moyennes cumulées ("favoris").
-- **Open Food Facts** : recherche de produits pour pré-remplir les ingrédients.
-- **PWA** : installable sur téléphone, tablette et ordinateur ; consultable hors
-  ligne au supermarché.
-- **Accès protégé** : un mot de passe partagé pour la famille (cookie de session).
+- **Portions individuelles** : besoins énergétiques selon l'âge, le poids, le sexe et
+  l'activité physique (équations de Henry).
+- **Optimisation sous contraintes** (OR-Tools CP-SAT) : nutrition d'abord, puis goûts de la
+  famille, saison, carbone, budget, temps de préparation.
+- **Repas modifiables** un par un, avec les meilleures alternatives calculées.
+- **Jokers** pour les repas plaisir, **cuisine en lot** (soupes, mijotés servis plusieurs jours).
+- **Notes après les repas**, par membre : elles guident les semaines suivantes ; les
+  répétitions sont évitées.
+- **Liste de courses** par rayon, arrondie aux conditionnements réels (350 g de pâtes →
+  paquet de 500 g), **PDF** imprimable, budget estimé.
+- **Placard** : les restes de paquets sont suivis et réutilisés.
+- **Données ouvertes** : CIQUAL (ANSES), Agribalyse et Impact CO2 (ADEME), Open Food Facts,
+  Open Prices.
+- **Recettes générées par IA, sans IA dans l'application** : un fichier d'instructions à
+  donner à l'IA de son choix, puis un import JSON validé.
+- Interface utilisable sur téléphone, **un seul mot de passe** pour la famille.
 
-## Architecture
+## Démarrage rapide
 
-```
-menu-famille/
-├── shared/              # Cœur métier pur (testé unitairement, sans dépendance)
-│   ├── types.ts         # Membres, plats, repas
-│   ├── besoins.ts       # Besoins énergétiques (Mifflin-St Jeor)
-│   ├── generation.ts    # Algorithme de planification
-│   ├── courses.ts       # Liste de courses + arrondi magasin
-│   ├── saison.ts        # Fruits et légumes de saison (France)
-│   ├── dates.ts         # Semaines ISO (lundi -> dimanche)
-│   └── tests/           # Tests unitaires (node:test)
-├── server/              # API Fastify + SQLite (better-sqlite3)
-│   └── src/
-│       ├── index.ts     # Point d'entrée
-│       ├── db.ts        # Base + schéma + données initiales
-│       ├── auth.ts      # Mot de passe partagé, cookie de session signé
-│       ├── pdf.ts       # Générateur PDF minimal (sans dépendance)
-│       └── routes.ts    # Routes REST (membres, plats, semaines, courses, notes)
-└── web/                 # Interface React + Vite (PWA)
-    └── src/
-        ├── api.ts       # Client HTTP typé
-        ├── App.tsx      # Navigation par onglets
-        └── pages/       # Planning, Courses, Famille, Plats, Notes
-```
-
-## Démarrage (développement)
-
-Prérequis : **Node.js 22 ou plus**.
+Prérequis : [uv](https://docs.astral.sh/uv/) et Node.js ≥ 24.
 
 ```bash
-npm install                 # installe les dépendances des workspaces
-npm run dev:server          # API sur http://localhost:3000
-npm run dev:web             # interface sur http://localhost:5173 (proxy /api)
+# API (http://127.0.0.1:8000, documentation sur /api/docs)
+cd backend && uv sync && uv run poe dev
+
+# Interface (http://localhost:5173), dans un second terminal
+cd frontend && npm ci && npm run dev
 ```
 
-La base SQLite se crée au premier lancement avec dix plats de démonstration,
-et le mot de passe par défaut est **« menu-famille »**
-(à changer dès la première connexion via `PUT /api/session/mot-de-passe`).
+Mot de passe par défaut en développement : `famille`. Détails :
+[docs/guide/demarrage.md](docs/guide/demarrage.md).
 
-## Tests
+## Organisation du dépôt
 
-```bash
-npm test
+```text
+backend/     API Python (FastAPI, OR-Tools, SQLite) — projet uv
+frontend/    Interface SvelteKit
+donnees/     Référentiel d'ingrédients, données ouvertes importées, recettes (YAML)
+docs/        Documentation (MkDocs) : guide, algorithme, données, architecture, ADR
+.github/     CI, versions automatiques, documentation, données mensuelles, Dependabot
 ```
 
-Exécute les tests du cœur métier (besoins, génération, liste de courses, dates)
-et du générateur PDF (structure, table xref, accents Latin-1, pagination).
+## Documentation
 
-## Export PDF de la liste de courses
+- [Utiliser l'application](docs/guide/utilisation.md)
+- [Ajouter des recettes avec une IA](docs/guide/recettes-ia.md)
+- [Algorithme de planification](docs/technique/algorithme.md)
+- [Données ouvertes](docs/technique/donnees-ouvertes.md)
+- [Architecture](docs/technique/architecture.md) et [décisions (ADR)](docs/adr/index.md)
+- [Déploiement](docs/exploitation/deploiement.md) (Raspberry Pi ou VPS)
+- [Contribuer](docs/contribuer.md)
 
-Le bouton « 📄 Exporter en PDF » de la page Courses appelle
-`GET /api/semaines/{id}/courses.pdf`. Le serveur construit le PDF avec un
-générateur maison (aucune dépendance, ~150 lignes commentées) : liste des
-articles avec « besoin -> quantité à acheter », pagination automatique.
-Le fichier se télécharge (`courses-2026-11-23.pdf`).
+## Licences
 
-## Mise en production (exemple self-hosting)
+Code sous licence [MIT](LICENSE). Données : CIQUAL, Agribalyse et Impact CO2 sous licence
+ouverte Etalab 2.0 ; données dérivées d'Open Food Facts et d'Open Prices sous ODbL. Police
+DejaVu (PDF) sous licence libre Bitstream Vera.
 
-```bash
-npm run build              # build Vite -> web/dist
-npm start -w server        # API en production directe
-```
-
-Configure un reverse proxy (Caddy, Nginx) qui sert le dossier statique `web/dist/`
-et transmet `/api/*` au port 3000 (avec HTTPS, ce qui active aussi l'installation
-PWA sur mobile). La base est un simple fichier SQLite : sauvegarde = copie du
-fichier `donnees/menu.db`.
-
-## Source des données
-
-- **Ingrédients et quantités du catalogue initial** : ce sont des *estimations de
-  portions* (ordres de grandeur), pas des recettes copiées d'un site. Elles servent
-  uniquement à calculer la liste de courses. À affiner plat par plat dans l'onglet
-  **Plats**, où l'on renseigne aussi son propre lien de recette.
-- **Liens de recette par défaut** : recherche Marmiton par nom du plat (plusieurs
-  recettes proposées) — à remplacer par la recette familiale.
-- **Besoins énergétiques** : formule de Mifflin-St Jeor (référence scientifique).
-- **Saisonnalité** : fruits et légumes de saison usuels pour la France.
-
-## Paramétrage accessible
-
-- Conditionnements magasin : table `emballages` (modifiable via la base ou une
-  future interface d'administration).
-- Plats, membres, notes : tout est éditable dans l'interface.
+La première maquette TypeScript est archivée sous le tag `v0-maquette`.
