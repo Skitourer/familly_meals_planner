@@ -53,6 +53,11 @@ export default function PlatsPage({ onError }: { onError: (e: unknown) => void }
                 Saison : {p.saison.length ? p.saison.map((m) => MOIS[m - 1]).join(", ") : "toute l'année"}
               </span>
             </div>
+            {p.lienRecette && (
+              <p className="mention" style={{ marginTop: "0.4rem" }}>
+                <a href={p.lienRecette} target="_blank" rel="noreferrer">📖 Voir la recette ↗</a>
+              </p>
+            )}
             <div className="ligne" style={{ marginTop: "0.6rem" }}>
               <button className="discret" onClick={() => setEnEdition(p.id)}>Modifier</button>
               <button className="discret danger" onClick={() => supprimer(p.id)}>Supprimer</button>
@@ -76,6 +81,7 @@ function FormulairePlat({ plat, onFerme, onSauve, onError }: {
   const [kcal, setKcal] = useState(plat?.kcalParPortion ?? 650);
   const [saison, setSaison] = useState<number[]>(plat?.saison ?? []);
   const [ingredients, setIngredients] = useState<Ingredient[]>(plat?.ingredients ?? []);
+  const [lienRecette, setLienRecette] = useState(plat?.lienRecette ?? "");
   const [recherche, setRecherche] = useState("");
   const [produits, setProduits] = useState<Array<{ nom: string; marque: string; kcalPour100g: number | null; quantite: string }>>([]);
 
@@ -90,7 +96,7 @@ function FormulairePlat({ plat, onFerme, onSauve, onError }: {
 
   const sauver = async () => {
     try {
-      const corps = { nom, categorie, kcalParPortion: kcal, saison, ingredients };
+      const corps = { nom, categorie, kcalParPortion: kcal, saison, ingredients, lienRecette: lienRecette || undefined };
       if (plat) await api.majPlat(plat.id, corps);
       else await api.ajouterPlat(corps);
       await onSauve();
@@ -114,6 +120,12 @@ function FormulairePlat({ plat, onFerme, onSauve, onError }: {
         <div>
           <label>kcal / portion</label>
           <input type="number" value={kcal} onChange={(e) => setKcal(Number(e.target.value) || 0)} />
+        </div>
+      </div>
+      <div className="ligne" style={{ marginTop: "0.6rem" }}>
+        <div style={{ flex: 1 }}>
+          <label>Lien vers la recette (URL, optionnel)</label>
+          <input placeholder="https://…" value={lienRecette} onChange={(e) => setLienRecette(e.target.value)} />
         </div>
       </div>
 

@@ -110,6 +110,11 @@ export default function PlanningPage({ semaine, setSemaine, onError }: {
                       <span>{plat.categorie}</span>
                       <span>{plat.kcalParPortion} kcal/portion</span>
                       {plat.saison.includes(mois) && <span className="saison">🌱 de saison</span>}
+                      {plat.lienRecette && (
+                        <a href={plat.lienRecette} target="_blank" rel="noreferrer" className="lien-recette">
+                          📖 recette ↗
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

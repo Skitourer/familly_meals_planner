@@ -5,15 +5,24 @@
 import type { Plat, Repas, Membre, NotePlat } from "@partage/types.ts";
 import type { LigneCourse } from "@partage/courses.ts";
 
-export class ErreurApi extends Error {}
+/** Erreur HTTP de l'API. `statut` vaut 401 quand la session est invalide. */
+export class ErreurApi extends Error {
+  statut: number;
+  constructor(statut: number, message: string) {
+    super(message);
+    this.statut = statut;
+  }
+}
 
 async function appel<T>(chemin: string, options: RequestInit = {}): Promise<T> {
   const rep = await fetch(`/api${chemin}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  if (rep.status === 401) throw new ErreurApi("Non authentifié");
-  if (!rep.ok) throw new ErreurApi((await rep.json().catch(() => ({ erreur: "Erreur serveur" }))).erreur ?? "Erreur serveur");
+  if (!rep.ok) {
+    const corps = await rep.json().catch(() => ({ erreur: "Erreur serveur" })) as { erreur?: string };
+    throw new ErreurApi(rep.status, corps.erreur ?? `Erreur HTTP ${rep.status}`);
+  }
   return rep.json();
 }
 

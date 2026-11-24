@@ -30,10 +30,11 @@ export default function App() {
     api.session().then((s) => setConnecte(s.connecte)).catch(() => setConnecte(false));
   }, []);
 
-  // Toute erreur 401 dans les pages déconnecte l'utilisateur
+  // Seule une erreur 401 (session expirée) déconnecte ; les autres erreurs
+  // (400, 500…) sont remontées à la console sans jeter l'utilisateur dehors.
   const surveille = (e: unknown) => {
-    if (e instanceof ErreurApi) setConnecte(false);
-    throw e;
+    if (e instanceof ErreurApi && e.statut === 401) setConnecte(false);
+    else console.error(e);
   };
 
   if (connecte === null) return <p style={{ textAlign: "center", marginTop: "3rem" }}>Chargement…</p>;

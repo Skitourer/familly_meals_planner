@@ -54,6 +54,9 @@ button.danger { color: var(--erreur); }
 .meta { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.4rem; }
 .meta span { font-size: 0.72rem; background: var(--fond); border-radius: 99px; padding: 0.15rem 0.55rem; }
 .meta span.saison { background: #e3f2e7; color: var(--vert); }
+.lien-recette { font-size: 0.72rem; background: #e8f0fe; color: #1a56c4; border-radius: 99px; padding: 0.15rem 0.55rem; text-decoration: none; }
+.lien-recette:hover { text-decoration: underline; }
+a { color: #1a56c4; }
 
 .jour { margin-bottom: 0.9rem; }
 .jour > .titre { font-weight: 600; margin-bottom: 0.4rem; text-transform: capitalize; }

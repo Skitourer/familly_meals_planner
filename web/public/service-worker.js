@@ -14,14 +14,18 @@ self.addEventListener("activate", (e) => {
 });
 
 // Stratégie : réseau d'abord ; repli sur le cache si hors ligne.
-// Les réponses /api ne sont mises en cache qu'en cas de succès, pour ne pas
-// servir des données périmées quand le réseau est disponible.
+// Seules les réponses GET en succès (200) sont mises en cache : jamais les
+// erreurs (401, 500…) ni les méthodes avec body (POST/PUT/DELETE), pour ne
+// pas servir de données périmées ou faussement "déconnecté".
 self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return; // laisser passer tel quel
   e.respondWith(
     fetch(e.request)
       .then((rep) => {
-        const copie = rep.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copie)).catch(() => {});
+        if (rep.ok) {
+          const copie = rep.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copie)).catch(() => {});
+        }
         return rep;
       })
       .catch(() => caches.match(e.request))

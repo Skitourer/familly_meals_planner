@@ -15,11 +15,12 @@ import { construirePdf, type LignePdf } from "./pdf.ts";
 
 /* ---------- Conversion lignes SQL -> objets du domaine ---------- */
 
-type LignePlat = { id: number; nom: string; categorie: Plat["categorie"]; kcal_par_portion: number; saison: string; ingredients: string };
+type LignePlat = { id: number; nom: string; categorie: Plat["categorie"]; kcal_par_portion: number; saison: string; ingredients: string; lien_recette: string | null };
 function versPlat(l: LignePlat): Plat {
   return {
     id: l.id, nom: l.nom, categorie: l.categorie, kcalParPortion: l.kcal_par_portion,
     saison: JSON.parse(l.saison), ingredients: JSON.parse(l.ingredients),
+    lienRecette: l.lien_recette ?? undefined,
   };
 }
 type LigneMembre = { id: number; nom: string; age: number; taille_cm: number | null; poids_kg: number | null; sexe: "F" | "H"; activite: Activite };
@@ -99,10 +100,10 @@ export async function routesApi(app: FastifyInstance): Promise<void> {
   app.get("/api/plats", async () => lirePlats());
 
   app.post("/api/plats", async (req, rep) => {
-    const { nom, categorie, kcalParPortion, saison = [], ingredients = [] } = req.body as Partial<Plat>;
+    const { nom, categorie, kcalParPortion, saison = [], ingredients = [], lienRecette } = req.body as Partial<Plat>;
     const r = db.prepare(
-      "INSERT INTO plats (nom, categorie, kcal_par_portion, saison, ingredients) VALUES (?,?,?,?,?)"
-    ).run(nom!, categorie!, kcalParPortion!, JSON.stringify(saison), JSON.stringify(ingredients));
+      "INSERT INTO plats (nom, categorie, kcal_par_portion, saison, ingredients, lien_recette) VALUES (?,?,?,?,?,?)"
+    ).run(nom!, categorie!, kcalParPortion!, JSON.stringify(saison), JSON.stringify(ingredients), lienRecette ?? null);
     rep.code(201);
     return { id: Number(r.lastInsertRowid) };
   });
@@ -111,9 +112,10 @@ export async function routesApi(app: FastifyInstance): Promise<void> {
     const { id } = req.params as { id: string };
     const b = req.body as Partial<Plat>;
     const actuel = versPlat(db.prepare("SELECT * FROM plats WHERE id = ?").get(Number(id)) as LignePlat);
-    db.prepare("UPDATE plats SET nom=?, categorie=?, kcal_par_portion=?, saison=?, ingredients=? WHERE id=?").run(
+    db.prepare("UPDATE plats SET nom=?, categorie=?, kcal_par_portion=?, saison=?, ingredients=?, lien_recette=? WHERE id=?").run(
       b.nom ?? actuel.nom, b.categorie ?? actuel.categorie, b.kcalParPortion ?? actuel.kcalParPortion,
-      JSON.stringify(b.saison ?? actuel.saison), JSON.stringify(b.ingredients ?? actuel.ingredients), Number(id));
+      JSON.stringify(b.saison ?? actuel.saison), JSON.stringify(b.ingredients ?? actuel.ingredients),
+      b.lienRecette ?? actuel.lienRecette ?? null, Number(id));
     return { ok: true };
   });
 
