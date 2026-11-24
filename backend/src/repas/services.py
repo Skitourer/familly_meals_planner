@@ -17,7 +17,7 @@ from repas.domaine.bilan import Bilan, RepasServi, bilan_semaine
 from repas.domaine.courses import ListeCourses, Portion, liste_de_courses, placard_apres_courses
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.reperes import REPERES
-from repas.modeles import Creneau, Membre, Note, Reglages, Semaine, Stock
+from repas.modeles import BilanCourses, Creneau, Membre, Note, Reglages, Semaine, Stock
 
 MOMENTS = ("midi", "soir")
 COEFFICIENT_INVITE = 1.0
@@ -260,6 +260,19 @@ def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
         s.add(stock)
     semaine.courses_validees_le = datetime.now(UTC)
     s.add(semaine)
+    s.add(
+        BilanCourses(
+            semaine_id=semaine.id or 0,
+            budget_eur=liste.total_eur,
+            depuis_placard_g=sum(ligne.depuis_placard_g for ligne in liste.lignes),
+            surplus_placard_g=sum(
+                ligne.surplus_g for ligne in liste.a_acheter if ligne.surplus_au_placard
+            ),
+            surplus_perdu_g=sum(
+                ligne.surplus_g for ligne in liste.a_acheter if not ligne.surplus_au_placard
+            ),
+        )
+    )
     s.commit()
 
 

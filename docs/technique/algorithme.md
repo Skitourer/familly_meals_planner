@@ -71,6 +71,7 @@ journée, le petit-déjeuner et le goûter apportant le reste.
 | Fruits et légumes | ≥ 200 g | PNNS : ≥ 5 portions/jour |
 | Poisson | ≥ 2 repas/semaine, dont 1 gras | PNNS |
 | Légumineuses | ≥ 2 repas/semaine | PNNS |
+| Produits laitiers | ≥ 1 par jour sur le déjeuner et le dîner (fromage ≥ 25 g dans le plat ou laitage en dessert) | PNNS : 2 par jour pour un adulte, le petit-déjeuner apportant le second |
 | Viande hors volaille | ≤ 500 g/semaine | PNNS |
 | Charcuterie | ≤ 150 g/semaine | PNNS |
 
@@ -117,7 +118,23 @@ Pour **remplacer un repas**, tous les autres repas sont figés et le créneau es
 plusieurs fois en interdisant à chaque fois les plats déjà trouvés : on obtient les 5
 meilleurs plats de remplacement, classés par perte de score.
 
-## 7. Liste de courses
+## 7. Nutri-Score d'un repas
+
+Fichier : `domaine/nutriscore.py`. L'algorithme **2023** du Nutri-Score (aliments
+généraux) est appliqué, à titre indicatif, au repas plat + dessert ramené à 100 g :
+
+- points négatifs : énergie (0-10), sucres (0-15), acides gras saturés (0-10), sel (0-20) ;
+- points positifs : protéines (0-7), fibres (0-5), fruits, légumes et légumineuses (0-5) ;
+  les protéines ne comptent pas si les points négatifs atteignent 11 (sauf 5 points de
+  fruits et légumes) ;
+- classes : A ≤ 0, B 1-2, C 3-10, D 11-18, E ≥ 19.
+
+Le poids du repas tient compte de l'eau absorbée par les féculents et légumes secs
+(`rendement_cuisson`, ex. 2,2 pour les pâtes) ; l'eau des soupes n'est pas comptée, ce qui
+rend leur score un peu sévère. Le Nutri-Score n'entre pas dans l'optimisation : les repères
+nutritionnels, plus complets, la pilotent déjà.
+
+## 8. Liste de courses
 
 Fichier : `domaine/courses.py`.
 
@@ -129,7 +146,7 @@ Fichier : `domaine/courses.py`.
    → 1 kg ; 9 œufs → une boîte de 12).
 5. Le surplus va au placard si l'ingrédient se conserve au moins 7 jours.
 
-## 8. Vérification
+## 9. Vérification
 
 Les tests (`backend/tests/test_planificateur.py`) vérifient notamment que :
 

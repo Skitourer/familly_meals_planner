@@ -11,6 +11,7 @@
 		{ href: '/courses', libelle: 'Courses', icone: '🛒' },
 		{ href: '/notes', libelle: 'Notes', icone: '⭐' },
 		{ href: '/placard', libelle: 'Placard', icone: '🥫' },
+		{ href: '/bilan', libelle: 'Bilan', icone: '📊' },
 		{ href: '/plats', libelle: 'Plats', icone: '📖' },
 		{ href: '/famille', libelle: 'Famille', icone: '👪' }
 	];

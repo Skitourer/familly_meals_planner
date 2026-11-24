@@ -20,7 +20,8 @@ Contraintes strictes
 Contraintes souples (pénalisées très fortement : la nutrition prime)
     Repères ANSES/PNNS de ``reperes.py`` sur les créneaux non joker : énergie
     par repas, part des protéines, lipides et graisses saturées, fibres, sel,
-    fruits et légumes, poisson, légumineuses, viande rouge, charcuterie.
+    fruits et légumes, poisson, légumineuses, produits laitiers, viande rouge,
+    charcuterie.
 
 Préférences (objectif, à poids réglables)
     notes de la famille, saisonnalité, empreinte carbone, prix, répétition des
@@ -424,6 +425,16 @@ class _Modele:
             self._au_moins(
                 "legumineuses_min", legumineuses, hebdo.legumineuses_min, hebdo.legumineuses_min
             )
+        # Produits laitiers : au moins un par jour (plat au fromage ou laitage en dessert).
+        jours = len({c.jour for c in suivis})
+        laitiers = sum(
+            v
+            for (k, rid), v in (*self.plat.items(), *self.dessert.items())
+            if k in cles_suivies and self.catalogue.profils[rid].est_laitier
+        )
+        minimum_laitiers = r.produits_laitiers_min_par_jour * jours
+        self._au_moins("laitiers_min", laitiers, minimum_laitiers, minimum_laitiers)
+
         rouge = grammes(lambda p: p.viande_rouge_g)
         self._au_plus("viande_rouge_max", rouge, hebdo.viande_rouge_max_g, r.viande_rouge_max_g)
         charcuterie = grammes(lambda p: p.charcuterie_g)

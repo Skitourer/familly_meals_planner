@@ -43,8 +43,10 @@ La nutrition reste toujours prioritaire : ces réglages départagent les plats �
    nutritionnels.
 3. **Générer les repas** : en quelques secondes, l'application choisit un plat et un dessert
    par repas.
-4. Cliquez sur un plat pour voir **pourquoi** il a été choisi (de saison, apprécié, poisson
-   gras, utilise le placard...).
+4. Cliquez sur un plat pour voir son **Nutri-Score** (indicatif, calculé pour le repas
+   plat + dessert), ses calories, protéines, fibres, fruits et légumes, son **empreinte
+   carbone** et son **coût** pour les convives, ainsi que **pourquoi** il a été choisi (de
+   saison, apprécié, poisson gras, utilise le placard...).
 5. **📖 Recette** ouvre la fiche du plat avec les **quantités calculées pour les convives de
    ce repas**, les étapes et le lien vers la recette détaillée en ligne.
 6. **Changer** un repas : l'application calcule les meilleures alternatives compte tenu du
@@ -77,6 +79,26 @@ sur le frigo.
 
 Une fois les courses faites, **Courses faites** met à jour le placard : les restes des paquets
 entamés (si le produit se conserve au moins 7 jours) y sont ajoutés avec une date limite.
+
+## Le bilan
+
+L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :
+
+- **chiffres clés** : repas planifiés, Nutri-Score moyen, CO₂ évité (et son équivalent en
+  kilomètres de voiture), budget des courses et coût par repas et par personne ;
+- **nutrition dans le temps** : chaque repère ANSES/PNNS semaine par semaine (✓ atteint,
+  ≈ proche, ✗ hors cible), le Nutri-Score moyen et la part de semaines conformes ;
+- **couverture des besoins** de chaque membre (énergie, protéines) par les repas pris à la
+  maison ;
+- **carbone et budget** semaine par semaine (survolez une barre pour le détail) ;
+- **goûts et variété** : plats préférés et moins aimés de chacun, part de repas
+  végétariens, nombre de légumes différents, sources de protéines, plats bien notés à
+  redécouvrir et plats jamais servis ;
+- **saisonnalité** et **anti-gaspillage** : part des fruits et légumes de saison, quantités
+  reprises dans le placard, surplus de produits frais, produits périmés.
+
+Le budget d'une semaine est estimé tant que les courses ne sont pas validées ; il devient
+celui de la liste réellement achetée ensuite.
 
 ## Le placard
 

@@ -187,3 +187,28 @@ def test_lien_de_recette(client: TestClient):
     assert recettes["avec-lien"]["recette"]["lien"] == "https://exemple.fr/recette"
     assert recettes["dahl-lentilles-corail"]["recette"]["lien"].startswith("https://")
     assert recettes["dahl-lentilles-corail"]["ingredients_unites"]["lait-coco"] == "ml"
+
+
+def test_infos_du_repas_et_bilan(client: TestClient):
+    ajouter_famille(client)
+    lundi = date.today() - timedelta(days=date.today().weekday() + 7)
+    client.get(f"/api/semaines/{lundi}")
+    semaine = client.post(f"/api/semaines/{lundi}/generer").json()
+    infos = next(c["infos"] for c in semaine["creneaux"] if c["plat_id"])
+    assert infos["nutriscore"] in "ABCDE"
+    assert infos["co2_kg"] > 0 and infos["prix_eur"] > 0 and infos["energie_kcal"] > 300
+
+    bilan = client.get("/api/bilan", params={"semaines": 4}).json()
+    assert len(bilan["semaines"]) == 1
+    hebdo = bilan["semaines"][0]
+    assert hebdo["budget_estime"] and hebdo["nutriscore_moyen"] in "ABCDE"
+    assert "laitiers" in hebdo["reperes"] and 0 <= hebdo["part_saison"] <= 100
+    assert sum(hebdo["proteines"].values()) == hebdo["nb_repas"]
+    assert bilan["nb_plats_differents"] > 5 and bilan["jamais_servis"]
+    assert {m["prenom"] for m in bilan["membres"]} == {"Alex", "Sam", "Léo"}
+    assert all(50 < m["couverture_energie"] < 200 for m in bilan["membres"])
+
+    client.post(f"/api/semaines/{lundi}/courses/valider")
+    apres = client.get("/api/bilan", params={"semaines": 4}).json()
+    assert not apres["semaines"][0]["budget_estime"]
+    assert apres["gaspillage"]["semaines_validees"] == 1
