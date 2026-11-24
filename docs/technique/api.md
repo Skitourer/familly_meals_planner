@@ -23,7 +23,7 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `POST` | `/api/import/recettes?appliquer=` | Vérifier (puis importer) un fichier JSON |
 | `GET` | `/api/semaines/{lundi}` | Semaine (créée si besoin avec toute la famille) |
 | `PUT` | `/api/semaines/{lundi}/creneaux/{jour}/{moment}` | Présences, invités, joker, verrou, plat ou dessert |
-| `POST` | `/api/semaines/{lundi}/generer?varier=` | Générer (ou proposer une autre combinaison) |
+| `POST` | `/api/semaines/{lundi}/generer?varier=&a_partir_du_jour=` | Générer (ou proposer une autre combinaison) ; `a_partir_du_jour` (0 à 6) garde les jours précédents |
 | `GET` | `/api/semaines/{lundi}/creneaux/{jour}/{moment}/alternatives` | Meilleurs plats de remplacement |
 | `GET` | `/api/semaines/{lundi}/bilan` | Bilan nutritionnel et carbone |
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
@@ -33,7 +33,8 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/notes/a-noter?jours=14&jours_a_venir=7` | Repas récents et à venir, notes déjà données |
 | `PUT` | `/api/notes` | Noter un plat (crée ou met à jour ; un enfant pour lui-même) |
 | `GET` | `/api/placard` | Contenu du placard |
-| `PUT` | `/api/placard/{ingredient}` | Corriger une quantité (0 = retirer) |
+| `GET` | `/api/placard/idees` | Plats qui consomment le mieux les produits à vider |
+| `PUT` | `/api/placard/{ingredient}` | Corriger une quantité ou une date limite (0 = retirer) |
 
 `{lundi}` est une date `AAAA-MM-JJ` qui doit tomber un lundi ; `{jour}` va de 0 (lundi) à 6 ;
 `{moment}` vaut `midi` ou `soir`.

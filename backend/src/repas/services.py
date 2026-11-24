@@ -16,6 +16,7 @@ from repas.domaine.besoins import ProfilPhysique, coefficient_portion
 from repas.domaine.bilan import Bilan, RepasServi, bilan_semaine
 from repas.domaine.courses import ListeCourses, Portion, liste_de_courses, placard_apres_courses
 from repas.domaine.notes import NoteDonnee, Preferences
+from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
 from repas.domaine.reperes import REPERES
 from repas.modeles import BilanCourses, Creneau, Membre, Note, Reglages, Semaine, Stock
 
@@ -87,10 +88,17 @@ def somme_coefficients(creneau: Creneau, coefs: dict[int, float]) -> float:
 # --- Génération -------------------------------------------------------------------
 
 
-def contexte(s: Session, semaine: Semaine, catalogue: Catalogue) -> plan.ContextePlanification:
-    """Rassemble tout ce que l'algorithme doit savoir sur la famille."""
+def contexte(
+    s: Session, semaine: Semaine, catalogue: Catalogue, *, premier_jour: int = 0
+) -> plan.ContextePlanification:
+    """Rassemble tout ce que l'algorithme doit savoir sur la famille.
+
+    ``premier_jour`` : en cours de semaine, le placard est celui de ce jour-là.
+    """
     reglages = obtenir_reglages(s)
     notes = [NoteDonnee(n.membre_id, n.recette_id, n.valeur) for n in s.exec(select(Note)).all()]
+    debut = semaine.lundi + timedelta(days=premier_jour)
+    peremptions = {st.ingredient_id: st.peremption for st in s.exec(select(Stock)).all()}
     poids = plan.Poids(
         prix=[0, 3, 8, 15][reglages.priorite_budget],
         carbone=[0, 10, 25, 50][reglages.priorite_carbone],
@@ -100,7 +108,9 @@ def contexte(s: Session, semaine: Semaine, catalogue: Catalogue) -> plan.Context
         mois=(semaine.lundi + timedelta(days=3)).month,
         preferences=Preferences(notes),
         semaines_depuis=historique(s, semaine.lundi),
-        stock=stock_disponible(s, semaine.lundi),
+        stock=stock_disponible(s, debut),
+        a_consommer_avant=jours_limites(peremptions, semaine.lundi),
+        premier_jour=premier_jour,
         poids=poids,
         graine=semaine.graine,
         restes_max=reglages.restes_max,
@@ -121,7 +131,18 @@ def historique(s: Session, lundi: date) -> dict[str, int]:
     return resultat
 
 
-def en_creneaux_a_planifier(creneaux: list[Creneau], *, garder_verrous: bool = True):
+def en_creneaux_a_planifier(
+    creneaux: list[Creneau],
+    coefs: dict[int, float],
+    *,
+    garder_verrous: bool = True,
+    figes_avant: int = 0,
+):
+    """Créneaux pour le solveur ; les repas des jours avant ``figes_avant`` sont conservés."""
+
+    def impose(c: Creneau) -> bool:
+        return (garder_verrous and c.verrouille) or c.jour < figes_avant
+
     return [
         plan.CreneauAPlanifier(
             cle=c.cle,
@@ -130,25 +151,40 @@ def en_creneaux_a_planifier(creneaux: list[Creneau], *, garder_verrous: bool = T
             convives=tuple(c.convives),
             invites=c.invites,
             joker=c.joker,
-            plat_impose=c.plat_id if garder_verrous and c.verrouille else None,
-            dessert_impose=c.dessert_id if garder_verrous and c.verrouille else None,
+            plat_impose=c.plat_id if impose(c) else None,
+            dessert_impose=c.dessert_id if impose(c) else None,
+            coefficients=somme_coefficients(c, coefs),
         )
         for c in creneaux
+        if c.jour >= figes_avant or c.plat_id
     ]
 
 
-def generer(s: Session, semaine: Semaine, catalogue: Catalogue, *, varier: bool) -> Semaine:
-    """(Re)génère les repas non verrouillés de la semaine."""
+def generer(
+    s: Session, semaine: Semaine, catalogue: Catalogue, *, varier: bool, a_partir_du_jour: int = 0
+) -> Semaine:
+    """(Re)génère les repas non verrouillés de la semaine.
+
+    ``a_partir_du_jour`` (0 = lundi) : réajuste seulement la fin de la semaine en cours ;
+    les repas des jours précédents sont gardés tels quels.
+    """
     if varier:
         semaine.graine += 1
     creneaux = creneaux_de(s, semaine)
+    a_planifier = en_creneaux_a_planifier(
+        creneaux, coefficients(s, semaine.lundi), figes_avant=a_partir_du_jour
+    )
     try:
         resultat = plan.planifier(
-            en_creneaux_a_planifier(creneaux), catalogue, contexte(s, semaine, catalogue)
+            a_planifier,
+            catalogue,
+            contexte(s, semaine, catalogue, premier_jour=a_partir_du_jour),
         )
     except plan.ErreurPlanification as erreur:
         raise ErreurMetier(str(erreur)) from erreur
     for c in creneaux:
+        if c.jour < a_partir_du_jour:
+            continue
         repas = resultat.repas.get(c.cle)
         c.plat_id = repas.plat if repas else None
         c.dessert_id = repas.dessert if repas else None
@@ -191,7 +227,7 @@ def alternatives(
     if creneau.cle not in plan_actuel:
         raise ErreurMetier("Ce repas n'a pas encore été généré")
     return plan.alternatives(
-        en_creneaux_a_planifier(creneaux, garder_verrous=False),
+        en_creneaux_a_planifier(creneaux, coefficients(s, semaine.lundi), garder_verrous=False),
         catalogue,
         contexte(s, semaine, catalogue),
         plan_actuel,
@@ -275,6 +311,20 @@ def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
         )
     )
     s.commit()
+
+
+def idees_frigo_a_vider(s: Session, catalogue: Catalogue, le: date) -> list[IdeePlat]:
+    """Plats qui consomment le mieux les produits du placard à vider, pour toute la famille."""
+    a_consommer = {
+        st.ingredient_id: st.quantite_g
+        for st in s.exec(select(Stock)).all()
+        if st.ingredient_id in catalogue.ingredients
+        and le <= st.peremption
+        and a_vider(st.peremption, le)
+    }
+    coefs = coefficients(s, le)
+    portions = sum(coefs[m.id] for m in membres_actifs(s) if m.id is not None)
+    return idees_pour_vider(a_consommer, catalogue, portions or 1.0)
 
 
 def stock_disponible(s: Session, le: date) -> dict[str, float]:

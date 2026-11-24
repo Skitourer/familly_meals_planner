@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
@@ -203,10 +203,20 @@ def modifier_creneau(
 
 
 @router.post("/{lundi}/generer", dependencies=ADULTE)
-def generer(lundi: date, varier: bool = False, s: Session = Depends(session)) -> SemaineSortie:
-    """Génère les repas non verrouillés. ``varier=true`` propose une autre combinaison."""
+def generer(
+    lundi: date,
+    varier: bool = False,
+    a_partir_du_jour: int = Query(0, ge=0, le=6),
+    s: Session = Depends(session),
+) -> SemaineSortie:
+    """Génère les repas non verrouillés. ``varier=true`` propose une autre combinaison.
+
+    ``a_partir_du_jour`` (0 = lundi) réajuste la fin de la semaine sans toucher aux jours passés.
+    """
     try:
-        semaine = services.generer(s, _semaine(s, lundi), catalogue(), varier=varier)
+        semaine = services.generer(
+            s, _semaine(s, lundi), catalogue(), varier=varier, a_partir_du_jour=a_partir_du_jour
+        )
     except services.ErreurMetier as erreur:
         raise HTTPException(422, str(erreur)) from erreur
     return _sortie(s, semaine)

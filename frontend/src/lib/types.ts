@@ -153,6 +153,14 @@ export interface Stock {
 	bientot_perime: boolean;
 }
 
+/** Plat qui consomme les produits du placard à vider (frigo à vider). */
+export interface IdeeFrigo {
+	plat: string;
+	nom: string;
+	ingredients: string[];
+	part_videe: number;
+}
+
 export interface Ingredient {
 	id: string;
 	nom: string;

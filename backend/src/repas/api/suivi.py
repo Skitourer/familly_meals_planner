@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
+from repas import services
 from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
+from repas.domaine.placard import a_vider
 from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
 
 router = APIRouter(tags=["suivi"])
@@ -126,7 +128,7 @@ class StockSortie(BaseModel):
     quantite_g: float
     unite: str
     peremption: date
-    bientot_perime: bool
+    bientot_perime: bool  # à vider : à consommer dans les 7 jours
 
 
 class StockEntree(BaseModel):
@@ -137,7 +139,7 @@ class StockEntree(BaseModel):
 @router.get("/placard", dependencies=ADULTE)
 def placard(s: Session = Depends(session)) -> list[StockSortie]:
     cat = catalogue()
-    limite = date.today() + timedelta(days=7)
+    aujourd_hui = date.today()
     return [
         StockSortie(
             ingredient_id=st.ingredient_id,
@@ -145,10 +147,32 @@ def placard(s: Session = Depends(session)) -> list[StockSortie]:
             quantite_g=st.quantite_g,
             unite=cat.ingredients[st.ingredient_id].unite,
             peremption=st.peremption,
-            bientot_perime=st.peremption <= limite,
+            bientot_perime=a_vider(st.peremption, aujourd_hui),
         )
         for st in s.exec(select(Stock).order_by(col(Stock.peremption))).all()
         if st.ingredient_id in cat.ingredients
+    ]
+
+
+class IdeeSortie(BaseModel):
+    plat: str
+    nom: str
+    ingredients: list[str]  # noms des produits à vider utilisés
+    part_videe: float
+
+
+@router.get("/placard/idees", dependencies=ADULTE)
+def idees(s: Session = Depends(session)) -> list[IdeeSortie]:
+    """Plats qui consomment le mieux les produits à vider (frigo à vider)."""
+    cat = catalogue()
+    return [
+        IdeeSortie(
+            plat=idee.plat,
+            nom=cat.recettes[idee.plat].nom,
+            ingredients=[cat.ingredients[i].nom for i in idee.ingredients],
+            part_videe=idee.part_videe,
+        )
+        for idee in services.idees_frigo_a_vider(s, cat, date.today())
     ]
 
 
