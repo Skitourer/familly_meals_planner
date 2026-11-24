@@ -26,7 +26,7 @@ gitGraph
     - `feat!:` ou `BREAKING CHANGE:` → version majeure.
 3. Vérifier localement : `uv run poe check` (backend) et
    `npm run lint && npm run check && npm test` (interface).
-4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 85 %,
+4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 90 %,
    compilation de l'interface, de la documentation et de l'image Docker).
 5. **Fusion en squash** : le titre de la PR devient le message de commit sur `main`.
 

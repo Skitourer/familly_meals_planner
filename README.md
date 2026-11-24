@@ -71,4 +71,7 @@ Code sous licence [MIT](LICENSE). Données : CIQUAL, Agribalyse et Impact CO2 so
 ouverte Etalab 2.0 ; données dérivées d'Open Food Facts et d'Open Prices sous ODbL. Police
 DejaVu (PDF) sous licence libre Bitstream Vera.
 
+Projet développé avec l'aide de [Claude Code](https://claude.com/claude-code) : les
+consignes suivies par l'agent sont dans [AGENTS.md](AGENTS.md).
+
 La première maquette TypeScript est archivée sous le tag `v0-maquette`.

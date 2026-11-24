@@ -25,7 +25,7 @@ par l'assistant de votre choix, puis les **importer** sous forme de fichier JSON
       énergie, peu de légumes ou de protéines, trop de sel, pas d'étapes.
 5. **Importer N recettes** pour confirmer.
 
-Les recettes importées reçoivent automatiquement leurs valeurs nutritionnelles, leur
+Les plats importés reçoivent automatiquement leurs valeurs nutritionnelles, leur
 empreinte carbone, leur saisonnalité et leur coût à partir des bases ouvertes : l'IA ne
 fournit que la composition, jamais les chiffres.
 
