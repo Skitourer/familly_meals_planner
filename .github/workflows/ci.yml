@@ -35,7 +35,7 @@ jobs:
       - name: Types (pyright)
         run: uv run pyright
       - name: Tests et couverture (catalogue, algorithme, API)
-        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=85
+        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
 
   frontend:
     name: Interface (SvelteKit)

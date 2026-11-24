@@ -29,7 +29,7 @@ gitGraph
    `uvx pre-commit install` font une partie de ces contrôles à chaque commit, et
    [gitleaks](https://github.com/gitleaks/gitleaks) y refuse tout commit contenant un
    secret (jeton, clé privée, mot de passe).
-4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 85 %,
+4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 90 %,
    compilation de l'interface, de la documentation et de l'image Docker, absence de
    secret dans tout l'historique).
 5. **Fusion en squash** : le titre de la PR devient le message de commit sur `main`.

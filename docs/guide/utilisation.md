@@ -34,8 +34,8 @@ au contraire définitivement le membre, ses notes et sa présence aux repas plan
 
 ### Réglages de l'algorithme
 
-- **Budget** : favorise les recettes économiques (prix médians Open Prices).
-- **Empreinte carbone** : favorise les recettes peu émettrices (Agribalyse).
+- **Budget** : favorise les plats économiques (prix médians Open Prices).
+- **Empreinte carbone** : favorise les plats peu émetteurs (Agribalyse).
 - **Cuisine en lot** : favorise les soupes et mijotés servis sur plusieurs repas.
 - **Repas de restes au plus** : limite le nombre de repas « réchauffés » par semaine.
 
@@ -67,7 +67,7 @@ La nutrition reste toujours prioritaire : ces réglages départagent les plats �
 
 ### Restes et cuisine en lot
 
-Les recettes marquées « en lot » (soupes, chili, dahl, bœuf carottes...) peuvent être servies
+Les plats marqués « en lot » (soupes, chili, dahl, bœuf carottes...) peuvent être servies
 sur 2 à 4 repas, dans leur durée de conservation. Le premier repas est celui où l'on cuisine,
 les suivants affichent « ♻️ restes du lundi soir ». La liste de courses compte bien toutes les
 portions.
@@ -121,7 +121,7 @@ celui de la liste réellement achetée ensuite.
 
 L'onglet **Placard** liste les restes avec leur date limite estimée. Les quantités sont
 modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter un produit à la main.
-L'algorithme favorise les recettes qui utilisent le placard.
+L'algorithme favorise les plats qui utilisent le placard.
 
 ## Avis sur les repas
 
@@ -138,6 +138,6 @@ servis les trois semaines précédentes sont aussi évités pour limiter la rép
 
 ## Le catalogue des plats
 
-L'onglet **Plats** présente toutes les recettes avec leurs valeurs nutritionnelles, leur
+L'onglet **Plats** présente tous les plats avec leurs valeurs nutritionnelles, leur
 empreinte carbone, leur coût estimé, leur saisonnalité et la note de la famille. On peut en
 ajouter grâce à une IA : voir [Ajouter des recettes avec une IA](recettes-ia.md).
