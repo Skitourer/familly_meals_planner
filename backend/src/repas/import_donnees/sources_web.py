@@ -24,6 +24,8 @@ from typing import Any
 
 import httpx
 
+from repas.domaine.produits import quantite_en_grammes
+
 # Les API Open Food Facts demandent un User-Agent identifiant l'application.
 USER_AGENT = "MenuFamille/1.0 (planificateur de repas open source)"
 
@@ -112,17 +114,6 @@ def calendrier_saisons(client: ClientCache) -> dict[str, list[int]]:
 
 
 # --- Open Food Facts : formats de vente ----------------------------------------------------
-
-
-def quantite_en_grammes(quantite: Any, unite: Any) -> float | None:
-    """Convertit une quantité Open Food Facts en g (ou ml, densité ~1)."""
-    try:
-        valeur = float(quantite)
-    except (TypeError, ValueError):
-        return None
-    facteurs = {"g": 1, "ml": 1, "kg": 1000, "l": 1000, "cl": 10}
-    facteur = facteurs.get(str(unite).lower())
-    return valeur * facteur if facteur and valeur > 0 else None
 
 
 def formats_courants(

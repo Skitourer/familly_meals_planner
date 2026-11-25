@@ -162,6 +162,21 @@ export interface IdeeFrigo {
 	part_videe: number;
 }
 
+export interface PropositionProduit {
+	ingredient_id: string;
+	nom: string;
+	quantite_g: number | null;
+}
+
+/** Produit lu par son code-barres (fiche Open Food Facts). */
+export interface ProduitScanne {
+	code: string;
+	nom: string;
+	marque: string;
+	quantite_g: number | null;
+	propositions: PropositionProduit[];
+}
+
 export interface Ingredient {
 	id: string;
 	nom: string;

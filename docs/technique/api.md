@@ -35,6 +35,7 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `PUT` | `/api/notes` | Noter un plat (crée ou met à jour ; un enfant pour lui-même) |
 | `GET` | `/api/placard` | Contenu du placard |
 | `GET` | `/api/placard/idees` | Plats qui consomment le mieux les produits à vider |
+| `GET` | `/api/placard/produit/{code}` | Produit scanné (Open Food Facts) et ingrédients correspondants |
 | `PUT` | `/api/placard/{ingredient}` | Corriger une quantité ou une date limite (0 = retirer) |
 
 `{lundi}` est une date `AAAA-MM-JJ` qui doit tomber un lundi ; `{jour}` va de 0 (lundi) à 6 ;

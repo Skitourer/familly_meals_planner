@@ -7,7 +7,9 @@
 	import { goto } from '$app/navigation';
 	import { api, messageErreur } from '#lib/api.ts';
 	import { iso, lundiDe } from '#lib/dates.ts';
-	import type { IdeeFrigo, Ingredient, Stock } from '#lib/types.ts';
+	import Modale from '#lib/composants/Modale.svelte';
+	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
+	import type { IdeeFrigo, Ingredient, ProduitScanne, Stock } from '#lib/types.ts';
 
 	let stock = $state<Stock[]>([]);
 	let ingredients = $state<Ingredient[]>([]);
@@ -18,7 +20,20 @@
 	let nouvelleQuantite = $state(100);
 	let nouvellePeremption = $state('');
 
+	// Scan d'un produit : lecture du code-barres, puis confirmation avant l'ajout au placard.
+	let scanOuvert = $state(false);
+	let produit = $state<ProduitScanne | null>(null);
+	let rechercheEnCours = $state(false);
+	let messageScan = $state('');
+	let ingredientScanne = $state('');
+	let quantiteScannee = $state(100);
+	let peremptionScannee = $state('');
+
 	const aVider = $derived(stock.filter((s) => s.bientot_perime));
+	const suivis = $derived(ingredients.filter((i) => !i.basique));
+	const autresIngredients = $derived(
+		suivis.filter((i) => !produit?.propositions.some((p) => p.ingredient_id === i.id))
+	);
 
 	$effect(() => {
 		charger();
@@ -36,15 +51,18 @@
 		}
 	}
 
-	async function ajuster(id: string, quantite: number, peremption?: string) {
+	/** Enregistre la quantité d'un ingrédient ; renvoie false (erreur affichée) en cas d'échec. */
+	async function ajuster(id: string, quantite: number, peremption?: string): Promise<boolean> {
 		try {
 			await api.modifier(`/placard/${id}`, {
 				quantite_g: Math.max(0, quantite),
 				peremption: peremption || null
 			});
 			await charger();
+			return true;
 		} catch (e) {
 			erreur = messageErreur(e);
+			return false;
 		}
 	}
 
@@ -55,6 +73,52 @@
 		await ajuster(nouvelIngredient, existant + nouvelleQuantite, nouvellePeremption);
 		nouvelIngredient = '';
 		nouvellePeremption = '';
+	}
+
+	function ouvrirScan() {
+		produit = null;
+		messageScan = '';
+		scanOuvert = true;
+	}
+
+	async function rechercherProduit(code: string) {
+		rechercheEnCours = true;
+		messageScan = '';
+		try {
+			produit = await api.lire<ProduitScanne>(`/placard/produit/${code}`);
+			choisirIngredient(produit.propositions[0]?.ingredient_id ?? '');
+			peremptionScannee = '';
+		} catch (e) {
+			messageScan = messageErreur(e);
+		} finally {
+			rechercheEnCours = false;
+		}
+	}
+
+	/** Quantité pré-remplie : part comestible du paquet pour cet ingrédient, sinon contenu du paquet. */
+	function choisirIngredient(id: string) {
+		ingredientScanne = id;
+		const proposition = produit?.propositions.find((p) => p.ingredient_id === id);
+		quantiteScannee = Math.round(proposition?.quantite_g ?? produit?.quantite_g ?? 100);
+	}
+
+	async function ajouterProduitScanne(event: SubmitEvent) {
+		event.preventDefault();
+		if (!ingredientScanne) return;
+		const existant = stock.find((s) => s.ingredient_id === ingredientScanne);
+		// Sans date saisie, on garde celle du produit déjà rangé : le plus ancien d'abord.
+		const ajoute = await ajuster(
+			ingredientScanne,
+			(existant?.quantite_g ?? 0) + quantiteScannee,
+			peremptionScannee || existant?.peremption
+		);
+		if (!ajoute) {
+			messageScan = erreur;
+			return;
+		}
+		const nom = ingredients.find((i) => i.id === ingredientScanne)?.nom ?? ingredientScanne;
+		messageScan = `Ajouté au placard : ${nom}, ${quantiteScannee} g. Scannez le produit suivant.`;
+		produit = null;
 	}
 
 	/** Régénère les repas non verrouillés de la semaine en cours, d'aujourd'hui à dimanche. */
@@ -117,6 +181,10 @@
 {/if}
 
 <div class="carte">
+	<div class="ligne entete">
+		<button class="principal" onclick={ouvrirScan}>📷 Scanner un produit</button>
+		<span class="doux">Le code-barres remplit le produit et sa quantité.</span>
+	</div>
 	{#if !stock.length}
 		<p class="doux">Le placard est vide.</p>
 	{:else}
@@ -172,7 +240,7 @@
 	<form class="ligne ajout" onsubmit={ajouter}>
 		<select bind:value={nouvelIngredient} aria-label="Ingrédient à ajouter">
 			<option value="">Ajouter un ingrédient…</option>
-			{#each ingredients.filter((i) => !i.basique) as ing (ing.id)}
+			{#each suivis as ing (ing.id)}
 				<option value={ing.id}>{ing.nom}</option>
 			{/each}
 		</select>
@@ -187,7 +255,74 @@
 	</form>
 </div>
 
+<Modale titre="Scanner un produit" bind:ouverte={scanOuvert}>
+	{#if messageScan}<p class:erreur={!messageScan.startsWith('Ajouté')}>{messageScan}</p>{/if}
+	{#if rechercheEnCours}
+		<p class="doux">Recherche dans Open Food Facts…</p>
+	{:else if produit}
+		<p>
+			<strong>{produit.nom || 'Produit sans nom'}</strong>
+			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
+			{#if produit.quantite_g}<span class="doux">({produit.quantite_g} g)</span>{/if}
+		</p>
+		{#if !produit.propositions.length}
+			<p class="doux">Aucun ingrédient ne correspond d'office : choisissez-le dans la liste.</p>
+		{/if}
+		<form class="formulaire-scan" onsubmit={ajouterProduitScanne}>
+			<label>
+				Ingrédient
+				<select
+					value={ingredientScanne}
+					onchange={(e) => choisirIngredient((e.target as HTMLSelectElement).value)}
+				>
+					<option value="">Choisir…</option>
+					{#if produit.propositions.length}
+						<optgroup label="Correspondances">
+							{#each produit.propositions as p (p.ingredient_id)}
+								<option value={p.ingredient_id}>{p.nom}</option>
+							{/each}
+						</optgroup>
+					{/if}
+					<optgroup label="Autres ingrédients">
+						{#each autresIngredients as ing (ing.id)}
+							<option value={ing.id}>{ing.nom}</option>
+						{/each}
+					</optgroup>
+				</select>
+			</label>
+			<label>
+				Quantité (g, part comestible)
+				<input type="number" min="1" step="any" bind:value={quantiteScannee} />
+			</label>
+			<label>
+				À utiliser avant (facultatif)
+				<input type="date" bind:value={peremptionScannee} />
+			</label>
+			<div class="ligne">
+				<button class="principal" disabled={!ingredientScanne}>Ajouter au placard</button>
+				<button type="button" onclick={() => (produit = null)}>Scanner un autre produit</button>
+			</div>
+		</form>
+	{:else}
+		<ScannerCodeBarres onCode={rechercherProduit} />
+	{/if}
+</Modale>
+
 <style>
+	.entete {
+		margin-bottom: 1rem;
+	}
+
+	.formulaire-scan {
+		display: grid;
+		gap: 0.8rem;
+	}
+
+	.formulaire-scan label {
+		display: grid;
+		gap: 0.3rem;
+	}
+
 	table {
 		width: 100%;
 		border-collapse: collapse;

@@ -10,6 +10,7 @@ grammages) est éditoriale.
 | Empreinte carbone (kg CO₂e/kg) | **AGRIBALYSE 4**, ADEME | Licence ouverte Etalab 2.0 | [agribalyse.ademe.fr](https://agribalyse.ademe.fr/) |
 | Calendrier des fruits et légumes de saison | **Impact CO2**, ADEME | Licence ouverte | [impactco2.fr](https://impactco2.fr/outils/fruitsetlegumes) |
 | Formats de vente (500 g, 1 kg...) | **Open Food Facts** | ODbL | [world.openfoodfacts.org](https://world.openfoodfacts.org/) |
+| Produits scannés (nom, paquet, catégories), à l'exécution | **Open Food Facts** | ODbL | [world.openfoodfacts.org](https://world.openfoodfacts.org/) |
 | Prix (médiane des relevés récents) | **Open Prices** | ODbL | [prices.openfoodfacts.org](https://prices.openfoodfacts.org/) |
 | Repères nutritionnels | ANSES, Santé publique France (PNNS 4), OMS | — | [mangerbouger.fr](https://www.mangerbouger.fr/) |
 

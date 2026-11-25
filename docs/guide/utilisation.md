@@ -143,6 +143,20 @@ dates sont modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter
 la main, avec sa date limite si on la connaît. L'algorithme favorise les plats qui utilisent
 le placard.
 
+### Scanner un produit
+
+**📷 Scanner un produit** ouvre la caméra du téléphone : visez le code-barres. Le produit est
+cherché dans [Open Food Facts](https://world.openfoodfacts.org/) et l'ingrédient
+correspondant est proposé (des penne complètes → « Pâtes complètes »), avec la quantité du
+paquet. Vérifiez, ajoutez la date limite si vous la connaissez, puis **Ajouter au placard** ;
+la caméra se rouvre pour le produit suivant.
+
+- Si la caméra n'est pas disponible (Safari sur iPhone, Firefox, page sans HTTPS), tapez les
+  chiffres imprimés sous le code-barres.
+- Produit inconnu d'Open Food Facts ou réseau absent : ajoutez-le à la main.
+- Sans date saisie, un produit déjà au placard garde sa date limite (le plus ancien d'abord).
+- Les produits de fond de placard (huile, sel, épices) ne sont pas suivis.
+
 ### Frigo à vider
 
 Un produit dont la date limite tombe dans les 7 jours est marqué **à vider**. Le cadre
