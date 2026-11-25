@@ -2,12 +2,13 @@
 	Liste de courses de la semaine : par rayon, arrondie aux conditionnements du magasin.
 	Les coches sont partagées entre appareils ; sans réseau, elles attendent sur l'appareil
 	et partent au retour de la connexion (voir lib/coches.ts).
-	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés.
+	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés ;
+	hors liste, il rejoint le placard à la validation, ou compte dans le budget seulement.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { articleCorrespondant, prixPropose } from '#lib/achats.ts';
+	import { articleCorrespondant, AUTRE_ACHAT, groupesDeChoix, prixPropose } from '#lib/achats.ts';
 	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
 	import {
 		ajouterAFile,
@@ -21,7 +22,7 @@
 	import Modale from '#lib/composants/Modale.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
-	import type { Courses, LigneCourses, ProduitScanne } from '#lib/types.ts';
+	import type { Courses, Ingredient, LigneCourses, ProduitScanne } from '#lib/types.ts';
 
 	const lundi = $derived(lundiDepuisUrl(page.url));
 	let courses = $state<Courses | null>(null);
@@ -38,10 +39,14 @@
 	let article = $state('');
 	let quantiteAchetee = $state(0);
 	let prixPaye = $state(0);
+	let libelle = $state('');
+	let ingredients = $state<Ingredient[]>([]);
 
 	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
 	const lignes = $derived<LigneCourses[]>(courses?.rayons.flatMap(([, l]) => l) ?? []);
 	const enAttente = $derived(Object.keys(file).length);
+	const choix = $derived(produit ? groupesDeChoix(produit, lignes, ingredients) : null);
+	const nomsIngredients = $derived(new Map(ingredients.map((i) => [i.id, i.nom])));
 
 	// Recharger seulement quand la semaine change (charger lit et modifie la file d'attente).
 	$effect(() => {
@@ -105,10 +110,17 @@
 		}
 	}
 
-	function ouvrirScan() {
+	async function ouvrirScan() {
 		produit = null;
 		messageScan = '';
 		scanOuvert = true;
+		if (!ingredients.length) {
+			try {
+				ingredients = await api.lire<Ingredient[]>('/ingredients');
+			} catch (e) {
+				messageScan = messageErreur(e);
+			}
+		}
 	}
 
 	async function rechercherProduit(code: string) {
@@ -117,6 +129,7 @@
 		try {
 			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
 			quantiteAchetee = Math.round(produit.quantite_g ?? 0);
+			libelle = [produit.nom, produit.marque].filter(Boolean).join(' — ') || 'Autre achat';
 			choisirArticle(articleCorrespondant(produit, lignes));
 		} catch (e) {
 			messageScan = messageErreur(e);
@@ -130,33 +143,41 @@
 		if (!produit) return;
 		const ligne = lignes.find((l) => l.ingredient_id === id);
 		if (!quantiteAchetee && ligne) quantiteAchetee = ligne.achete_g;
-		prixPaye = prixPropose(produit, ligne, quantiteAchetee);
+		prixPaye = prixPropose(produit, id, lignes, quantiteAchetee);
 	}
 
 	async function enregistrerAchat(event: SubmitEvent) {
 		event.preventDefault();
 		if (!produit || !article) return;
+		const autre = article === AUTRE_ACHAT;
 		try {
-			await api.creer(`/semaines/${lundi}/courses/achats`, {
-				ingredient_id: article,
-				quantite_g: quantiteAchetee,
-				prix_eur: prixPaye,
-				code: produit.code
-			});
+			await api.creer(
+				`/semaines/${lundi}/courses/${autre ? 'autres-achats' : 'achats'}`,
+				autre
+					? { libelle, prix_eur: prixPaye, code: produit.code }
+					: {
+							ingredient_id: article,
+							quantite_g: quantiteAchetee,
+							prix_eur: prixPaye,
+							code: produit.code
+						}
+			);
 		} catch (e) {
 			messageScan = messageErreur(e);
 			return;
 		}
-		if (!coches.has(article)) cocher(article);
-		const nom = lignes.find((l) => l.ingredient_id === article)?.nom ?? article;
+		const prevu = lignes.some((l) => l.ingredient_id === article);
+		if (prevu && !coches.has(article)) cocher(article);
+		const nom = autre ? libelle : (nomsIngredients.get(article) ?? article);
 		messageScan = `Enregistré : ${nom}, ${euros(prixPaye)}. Scannez le produit suivant.`;
 		produit = null;
 		await charger(lundi);
 	}
 
-	async function annulerAchat(id: string) {
+	/** Annule un achat scanné : `achats/{ingrédient}` ou `autres-achats/{id}`. */
+	async function annulerAchat(chemin: string) {
 		try {
-			await api.supprimer(`/semaines/${lundi}/courses/achats/${id}`);
+			await api.supprimer(`/semaines/${lundi}/courses/${chemin}`);
 			await charger(lundi);
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -254,7 +275,7 @@
 										{#if !courses.validees}
 											<button
 												class="discret"
-												onclick={() => annulerAchat(ligne.ingredient_id)}
+												onclick={() => annulerAchat(`achats/${ligne.ingredient_id}`)}
 												aria-label={`Annuler l'achat de ${ligne.nom}`}
 											>
 												✕
@@ -267,6 +288,47 @@
 					</ul>
 				</section>
 			{/each}
+			{#if courses.hors_liste.length || courses.autres_achats.length}
+				<section class="carte">
+					<h2>Hors liste</h2>
+					<ul>
+						{#each courses.hors_liste as ligne (ligne.ingredient_id)}
+							<li>
+								<span class="nom">{ligne.nom}</span>
+								<span class="detail reel">
+									✓ acheté {ligne.achat_reel} · {euros(ligne.prix_reel_eur ?? 0)} → placard
+									{#if !courses.validees}
+										<button
+											class="discret"
+											onclick={() => annulerAchat(`achats/${ligne.ingredient_id}`)}
+											aria-label={`Annuler l'achat de ${ligne.nom}`}
+										>
+											✕
+										</button>
+									{/if}
+								</span>
+							</li>
+						{/each}
+						{#each courses.autres_achats as autre (autre.id)}
+							<li>
+								<span class="nom">{autre.libelle}</span>
+								<span class="detail reel">
+									✓ {euros(autre.prix_eur)} · budget seulement
+									{#if !courses.validees}
+										<button
+											class="discret"
+											onclick={() => annulerAchat(`autres-achats/${autre.id}`)}
+											aria-label={`Annuler l'achat de ${autre.libelle}`}
+										>
+											✕
+										</button>
+									{/if}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
 			{#if courses.a_verifier.length}
 				<section class="carte">
 					<h2>À vérifier dans le placard</h2>
@@ -289,25 +351,56 @@
 			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
 		</p>
 		{#if !article}
-			<p class="doux">Ce produit ne correspond à aucun article de la liste : choisissez-le.</p>
+			<p class="doux">
+				Aucun ingrédient ne correspond d'office : choisissez-le, ou « Autre achat » pour le compter
+				dans le budget seulement.
+			</p>
+		{:else if article === AUTRE_ACHAT}
+			<p class="doux">Compté dans le budget, sans aller au placard.</p>
+		{:else if !lignes.some((l) => l.ingredient_id === article)}
+			<p class="doux">Hors liste : il rejoindra le placard quand les courses seront validées.</p>
 		{/if}
 		<form class="formulaire-scan" onsubmit={enregistrerAchat}>
 			<label>
-				Article de la liste
+				Article
 				<select
 					value={article}
 					onchange={(e) => choisirArticle((e.target as HTMLSelectElement).value)}
 				>
 					<option value="">Choisir…</option>
-					{#each lignes as l (l.ingredient_id)}
-						<option value={l.ingredient_id}>{l.nom} ({l.achat})</option>
-					{/each}
+					{#if choix}
+						<optgroup label="Sur la liste">
+							{#each choix.surLaListe as l (l.ingredient_id)}
+								<option value={l.ingredient_id}>{l.nom} ({l.achat})</option>
+							{/each}
+						</optgroup>
+						{#if choix.horsListe.length}
+							<optgroup label="Hors liste : correspondances">
+								{#each choix.horsListe as p (p.id)}
+									<option value={p.id}>{p.nom}</option>
+								{/each}
+							</optgroup>
+						{/if}
+						<optgroup label="Hors liste : autres ingrédients">
+							{#each choix.autres as i (i.id)}
+								<option value={i.id}>{i.nom}</option>
+							{/each}
+						</optgroup>
+					{/if}
+					<option value={AUTRE_ACHAT}>Autre achat (budget seulement)</option>
 				</select>
 			</label>
-			<label>
-				Quantité achetée (g ou ml)
-				<input type="number" min="1" step="any" bind:value={quantiteAchetee} />
-			</label>
+			{#if article === AUTRE_ACHAT}
+				<label>
+					Libellé
+					<input type="text" maxlength="120" bind:value={libelle} />
+				</label>
+			{:else}
+				<label>
+					Quantité achetée (g ou ml)
+					<input type="number" min="1" step="any" bind:value={quantiteAchetee} />
+				</label>
+			{/if}
 			<label>
 				Prix payé (€)
 				<input type="number" min="0" step="0.01" bind:value={prixPaye} />
@@ -317,7 +410,12 @@
 				</span>
 			</label>
 			<div class="ligne">
-				<button class="principal" disabled={!article || quantiteAchetee <= 0}>Enregistrer</button>
+				<button
+					class="principal"
+					disabled={!article || (article === AUTRE_ACHAT ? !libelle.trim() : quantiteAchetee <= 0)}
+				>
+					Enregistrer
+				</button>
 				<button type="button" onclick={() => (produit = null)}>Scanner un autre produit</button>
 			</div>
 		</form>

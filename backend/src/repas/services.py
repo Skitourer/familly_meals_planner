@@ -34,6 +34,7 @@ from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_lim
 from repas.domaine.reperes import REPERES
 from repas.modeles import (
     AchatReel,
+    AutreAchat,
     BilanCourses,
     Coche,
     Creneau,
@@ -358,11 +359,42 @@ def enregistrer_achat(
     ligne.prix_eur = round(ligne.prix_eur + achat.prix_eur, 2)
     ligne.modifie_le = datetime.now(UTC)
     s.add(ligne)
-    if code:
-        prix = s.get(PrixProduit, code) or PrixProduit(code=code, prix_eur=achat.prix_eur)
-        prix.prix_eur, prix.releve_le = achat.prix_eur, datetime.now(UTC)
-        s.add(prix)
+    _retenir_prix(s, code, achat.prix_eur)
     s.commit()
+
+
+def _retenir_prix(s: Session, code: str | None, prix_eur: float) -> None:
+    if code:
+        prix = s.get(PrixProduit, code) or PrixProduit(code=code, prix_eur=prix_eur)
+        prix.prix_eur, prix.releve_le = prix_eur, datetime.now(UTC)
+        s.add(prix)
+
+
+def autres_achats(s: Session, semaine: Semaine) -> list[AutreAchat]:
+    """Achats sans ingrédient du référentiel, comptés dans le budget seulement."""
+    requete = select(AutreAchat).where(AutreAchat.semaine_id == semaine.id)
+    return list(s.exec(requete.order_by(col(AutreAchat.id))).all())
+
+
+def enregistrer_autre_achat(
+    s: Session, semaine: Semaine, libelle: str, prix_eur: float, code: str | None = None
+) -> None:
+    """Ajoute un achat compté dans le budget mais pas dans le placard."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    s.add(AutreAchat(semaine_id=semaine.id or 0, libelle=libelle, prix_eur=prix_eur))
+    _retenir_prix(s, code, prix_eur)
+    s.commit()
+
+
+def annuler_autre_achat(s: Session, semaine: Semaine, achat_id: int) -> None:
+    """Retire un achat « budget seulement »."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    achat = s.get(AutreAchat, achat_id)
+    if achat and achat.semaine_id == semaine.id:
+        s.delete(achat)
+        s.commit()
 
 
 def annuler_achat(s: Session, semaine: Semaine, ingredient_id: str) -> None:
@@ -385,7 +417,10 @@ def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
     """Courses faites : le placard est mis à jour (consommations et surplus)."""
     if semaine.courses_validees_le:
         raise ErreurMetier("Les courses de cette semaine ont déjà été validées")
-    liste = appliquer_achats_reels(courses(s, semaine, catalogue), achats_reels(s, semaine))
+    liste = appliquer_achats_reels(
+        courses(s, semaine, catalogue), achats_reels(s, semaine), catalogue
+    )
+    autres_eur = sum(a.prix_eur for a in autres_achats(s, semaine))
     nouveau = placard_apres_courses(liste, stock_disponible(s, semaine.lundi), catalogue)
     anciens = {st.ingredient_id: st for st in s.exec(select(Stock)).all()}
     for id_ing, stock in anciens.items():
@@ -409,7 +444,7 @@ def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
     s.add(
         BilanCourses(
             semaine_id=semaine.id or 0,
-            budget_eur=liste.total_eur,
+            budget_eur=round(liste.total_eur + autres_eur, 2),
             depuis_placard_g=sum(ligne.depuis_placard_g for ligne in liste.lignes),
             surplus_placard_g=sum(
                 ligne.surplus_g for ligne in liste.a_acheter if ligne.surplus_au_placard

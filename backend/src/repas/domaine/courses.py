@@ -64,6 +64,7 @@ class LigneCourses:
     surplus_au_placard: bool
     prix_eur: float
     basique: bool = False
+    hors_liste: bool = False  # acheté sans être prévu (produit scanné au magasin)
 
 
 @dataclass
@@ -72,7 +73,15 @@ class ListeCourses:
 
     @property
     def a_acheter(self) -> list[LigneCourses]:
-        return [ligne for ligne in self.lignes if ligne.achats and not ligne.basique]
+        return [
+            ligne
+            for ligne in self.lignes
+            if ligne.achats and not ligne.basique and not ligne.hors_liste
+        ]
+
+    @property
+    def hors_liste(self) -> list[LigneCourses]:
+        return [ligne for ligne in self.lignes if ligne.hors_liste]
 
     @property
     def a_verifier(self) -> list[LigneCourses]:
@@ -80,7 +89,7 @@ class ListeCourses:
 
     @property
     def total_eur(self) -> float:
-        return round(sum(ligne.prix_eur for ligne in self.a_acheter), 2)
+        return round(sum(ligne.prix_eur for ligne in self.a_acheter + self.hors_liste), 2)
 
     def par_rayon(self) -> list[tuple[str, list[LigneCourses]]]:
         """Lignes à acheter regroupées dans l'ordre du parcours en magasin."""
@@ -210,28 +219,64 @@ class AchatConstate:
     prix_eur: float
 
 
-def appliquer_achats_reels(liste: ListeCourses, achats: dict[str, AchatConstate]) -> ListeCourses:
+def appliquer_achats_reels(
+    liste: ListeCourses, achats: dict[str, AchatConstate], catalogue: Catalogue
+) -> ListeCourses:
     """Liste corrigée par les achats réels : quantité achetée, surplus et prix payés.
 
     La consommation de la semaine ne change pas : seul le reste du paquet (et donc ce qui
-    rejoint le placard) dépend de ce qui a vraiment été acheté.
+    rejoint le placard) dépend de ce qui a vraiment été acheté. Un ingrédient acheté sans
+    être prévu devient une ligne « hors liste » qui rejoint entièrement le placard, même
+    un produit frais : c'est un achat voulu, et le frigo à vider le signalera à temps.
     """
+    prevus = {ligne.ingredient_id for ligne in liste.a_acheter}
     lignes = []
     for ligne in liste.lignes:
         achat = achats.get(ligne.ingredient_id)
         if achat is None:
             lignes.append(ligne)
-            continue
-        utilise_g = ligne.achete_g - ligne.surplus_g  # brut consommé dans la semaine
-        lignes.append(
-            replace(
-                ligne,
-                achete_g=achat.quantite_g,
-                surplus_g=round(max(achat.quantite_g - utilise_g, 0)),
-                prix_eur=round(achat.prix_eur, 2),
+        elif ligne.ingredient_id in prevus:
+            utilise_g = ligne.achete_g - ligne.surplus_g  # brut consommé dans la semaine
+            lignes.append(
+                replace(
+                    ligne,
+                    achete_g=achat.quantite_g,
+                    surplus_g=round(max(achat.quantite_g - utilise_g, 0)),
+                    prix_eur=round(achat.prix_eur, 2),
+                )
             )
-        )
+        else:  # besoin couvert par le placard : l'achat s'y ajoute en entier
+            lignes.append(_ligne_hors_liste(ligne.ingredient_id, achat, catalogue, ligne))
+    deja = {ligne.ingredient_id for ligne in liste.lignes}
+    lignes += [
+        _ligne_hors_liste(id_ing, achat, catalogue)
+        for id_ing, achat in sorted(achats.items())
+        if id_ing not in deja
+    ]
     return ListeCourses(lignes)
+
+
+def _ligne_hors_liste(
+    id_ing: str,
+    achat: AchatConstate,
+    catalogue: Catalogue,
+    ligne: LigneCourses | None = None,
+) -> LigneCourses:
+    ingredient = catalogue.ingredients[id_ing]
+    return LigneCourses(
+        ingredient_id=id_ing,
+        nom=ingredient.nom,
+        rayon=ingredient.rayon,
+        unite=ingredient.unite,
+        besoin_g=ligne.besoin_g if ligne else 0,
+        depuis_placard_g=ligne.depuis_placard_g if ligne else 0,
+        achats=[Achat(1, achat.quantite_g, "hors liste")],
+        achete_g=achat.quantite_g,
+        surplus_g=round(achat.quantite_g),
+        surplus_au_placard=True,
+        prix_eur=round(achat.prix_eur, 2),
+        hors_liste=True,
+    )
 
 
 def placard_apres_courses(

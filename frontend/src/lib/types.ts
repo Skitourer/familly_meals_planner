@@ -140,10 +140,18 @@ export interface LigneCourses {
 	prix_reel_eur: number | null;
 }
 
+export interface AutreAchat {
+	id: number;
+	libelle: string;
+	prix_eur: number;
+}
+
 export interface Courses {
 	rayons: [string, LigneCourses[]][];
 	a_verifier: string[];
 	total_eur: number;
+	hors_liste: LigneCourses[]; // ingrédients achetés sans être prévus
+	autres_achats: AutreAchat[]; // budget seulement
 	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
 	nb_achats_reels: number;
 	validees: boolean;
@@ -171,6 +179,7 @@ export interface PropositionProduit {
 	ingredient_id: string;
 	nom: string;
 	quantite_g: number | null;
+	prix_estime_eur: number | null;
 }
 
 /** Produit lu par son code-barres (fiche Open Food Facts). */

@@ -115,6 +115,13 @@ prix : le dernier prix payé pour ce produit, sinon l'estimation. Corrigez le pr
 l'étiquette, puis **Enregistrer** : l'article est coché et la ligne affiche « ✓ acheté 1 kg ·
 2,35 € ». Deux paquets scannés pour le même article s'additionnent ; ✕ annule.
 
+**Produit qui n'est pas sur la liste** : choisissez l'ingrédient dans « Hors liste »
+(correspondances proposées, puis tous les ingrédients). Il apparaît dans la section **Hors
+liste** et rejoint **en entier** le placard quand les courses sont validées, même un produit
+frais : le cadre « Frigo à vider » le signalera à temps. Pour un produit sans ingrédient
+correspondant (gâteaux, boissons, produits ménagers), **Autre achat (budget seulement)**
+garde son nom et son prix : il compte dans le budget, pas dans le placard.
+
 Le total « avec les prix payés » s'affiche à côté du budget estimé. Le scan n'est pas
 obligatoire : les articles non scannés gardent leur estimation.
 
@@ -148,7 +155,8 @@ L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :
     repas pris à la maison).
 
 Le budget d'une semaine est estimé tant que les courses ne sont pas validées. À la
-validation, il retient les prix payés des articles scannés et l'estimation des autres.
+validation, il retient les prix payés des articles scannés, les achats hors liste et les
+« autres achats », et l'estimation des articles non scannés.
 
 ## Le placard
 

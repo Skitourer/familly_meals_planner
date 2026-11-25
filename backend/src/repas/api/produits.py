@@ -21,6 +21,7 @@ class PropositionSortie(BaseModel):
     ingredient_id: str
     nom: str
     quantite_g: float | None  # part comestible du paquet, None si contenu inconnu
+    prix_estime_eur: float | None  # prix médian au kg × contenu du paquet
 
 
 class ProduitSortie(BaseModel):
@@ -65,6 +66,9 @@ def produit_scanne(
                 ingredient_id=i,
                 nom=cat.ingredients[i].nom,
                 quantite_g=quantite_comestible(fiche.quantite_g, cat.ingredients[i])
+                if fiche.quantite_g
+                else None,
+                prix_estime_eur=round(cat.prix_kg(i) * fiche.quantite_g / 1000, 2)
                 if fiche.quantite_g
                 else None,
             )

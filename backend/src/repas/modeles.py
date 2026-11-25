@@ -105,6 +105,16 @@ class AchatReel(SQLModel, table=True):
     modifie_le: datetime = Field(default_factory=maintenant)
 
 
+class AutreAchat(SQLModel, table=True):
+    """Achat sans ingrédient du référentiel (gâteaux, boissons...) : budget seulement."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    semaine_id: int = Field(foreign_key="semaine.id", index=True)
+    libelle: str = Field(max_length=120)
+    prix_eur: float = Field(ge=0)
+    cree_le: datetime = Field(default_factory=maintenant)
+
+
 class PrixProduit(SQLModel, table=True):
     """Dernier prix payé par la famille pour un produit (code-barres), proposé au scan suivant."""
 

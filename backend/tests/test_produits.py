@@ -1,5 +1,7 @@
 """Produits scannés : code-barres, fiche Open Food Facts et ajout au placard (sans réseau)."""
 
+from datetime import date
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -15,6 +17,7 @@ from repas.domaine.produits import (
     quantite_comestible,
 )
 from repas.open_food_facts import OpenFoodFactsIndisponible, chercher_produit
+from repas.services import lundi_de
 
 # Codes fictifs avec une clé de contrôle correcte.
 EAN13 = "3000000000007"
@@ -208,3 +211,42 @@ def test_api_achats_reels(client: TestClient):
     assert client.post(f"/api/semaines/{lundi}/courses/valider").status_code == 204
     assert client.post(url, json=achat).status_code == 409
     assert client.delete(f"{url}/{achat['ingredient_id']}").status_code == 409
+
+
+def test_api_achats_hors_liste_et_budget_seulement(client: TestClient):
+    lundi = lundi_de(date.today()).isoformat()  # semaine retenue par le bilan
+    ajouter_famille(client)
+    client.post(f"/api/semaines/{lundi}/generer")
+    avant = client.get(f"/api/semaines/{lundi}/courses").json()
+    prevus = {x["ingredient_id"] for _, xs in avant["rayons"] for x in xs}
+    hors = next(i["id"] for i in client.get("/api/ingredients").json()
+                if i["id"] not in prevus and not i["basique"])  # fmt: skip
+    url = f"/api/semaines/{lundi}/courses"
+    achat = {"ingredient_id": hors, "quantite_g": 400, "prix_eur": 3}
+    assert client.post(f"{url}/achats", json=achat).status_code == 204
+    autre = {"libelle": "Biscuits", "prix_eur": 2.5, "code": EAN8}
+    assert client.post(f"{url}/autres-achats", json=autre).status_code == 204
+    sans_nom = {"libelle": "", "prix_eur": 1}
+    assert client.post(f"{url}/autres-achats", json=sans_nom).status_code == 422
+
+    courses = client.get(url).json()
+    assert [x["ingredient_id"] for x in courses["hors_liste"]] == [hors]
+    assert courses["hors_liste"][0]["achat_reel"] is not None
+    assert [a["libelle"] for a in courses["autres_achats"]] == ["Biscuits"]
+    assert courses["total_reel_eur"] == round(avant["total_eur"] + 3 + 2.5, 2)
+    assert courses["nb_achats_reels"] == 2
+
+    # Retrait puis remise de l'achat « budget seulement ».
+    id_autre = courses["autres_achats"][0]["id"]
+    assert client.delete(f"{url}/autres-achats/{id_autre}").status_code == 204
+    assert client.get(url).json()["autres_achats"] == []
+    client.post(f"{url}/autres-achats", json=autre)
+
+    # Validation : l'achat hors liste rejoint le placard, le budget compte tout.
+    assert client.post(f"{url}/valider").status_code == 204
+    placard = {p["ingredient_id"] for p in client.get("/api/placard").json()}
+    assert hors in placard
+    semaine = next(x for x in client.get("/api/bilan").json()["semaines"] if x["lundi"] == lundi)
+    assert (semaine["budget_eur"], semaine["budget_estime"]) == (courses["total_reel_eur"], False)
+    assert client.post(f"{url}/autres-achats", json=autre).status_code == 409
+    assert client.delete(f"{url}/autres-achats/{id_autre}").status_code == 409
