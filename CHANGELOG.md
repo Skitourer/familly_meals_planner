@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.3.1...v1.4.0) (2026-11-25)
+
+
+### Nouveautés
+
+* scanner un produit pour l'ajouter au placard ([#42](https://github.com/Skitourer/familly_meals_planner/issues/42)) ([b8bfcef](https://github.com/Skitourer/familly_meals_planner/commit/b8bfcefa3e38d64bf8fdee1c8da9dd7e05fa9b18))
+
 ## [1.3.1](https://github.com/Skitourer/familly_meals_planner/compare/v1.3.0...v1.3.1) (2026-11-24)
 
 
