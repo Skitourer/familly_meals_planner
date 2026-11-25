@@ -28,6 +28,10 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/semaines/{lundi}/bilan` | Bilan nutritionnel et carbone |
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
 | `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus) ; la plus récente gagne ; renvoie les articles cochés |
+| `POST` | `/api/semaines/{lundi}/courses/achats` | Produit acheté (`{ingredient_id, quantite_g, prix_eur, code?}`), prévu sur la liste ou non (hors liste : au placard à la validation) ; s'ajoute aux précédents |
+| `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |
+| `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Achat sans ingrédient (`{libelle, prix_eur, code?}`) : budget seulement |
+| `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un « autre achat » |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |
 | `GET` | `/api/bilan?semaines=12` | Bilan sur plusieurs semaines (onglet Bilan) |
@@ -35,8 +39,8 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `PUT` | `/api/notes` | Noter un plat (crée ou met à jour ; un enfant pour lui-même) |
 | `GET` | `/api/placard` | Contenu du placard |
 | `GET` | `/api/placard/idees` | Plats qui consomment le mieux les produits à vider |
-| `GET` | `/api/placard/produit/{code}` | Produit scanné (Open Food Facts) et ingrédients correspondants |
 | `PUT` | `/api/placard/{ingredient}` | Corriger une quantité ou une date limite (0 = retirer) |
+| `GET` | `/api/produits/{code}` | Produit scanné (Open Food Facts), ingrédients correspondants et dernier prix payé |
 
 `{lundi}` est une date `AAAA-MM-JJ` qui doit tomber un lundi ; `{jour}` va de 0 (lundi) à 6 ;
 `{moment}` vaut `midi` ou `soir`.

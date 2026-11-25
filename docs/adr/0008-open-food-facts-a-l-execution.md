@@ -4,7 +4,8 @@
 
 ## Contexte
 
-La famille veut remplir le placard en scannant le code-barres des produits (#16). Un
+La famille veut scanner le code-barres des produits pour remplir le placard et suivre les
+courses réelles (#16). Un
 code-barres ne dit rien du produit : il faut une base de produits. Jusqu'ici, les bases
 ouvertes n'étaient lues qu'à l'import (`repas-import`), jamais par l'application en marche.
 
@@ -16,6 +17,9 @@ ouvertes n'étaient lues qu'à l'import (`repas-import`), jamais par l'applicati
   la famille. Le code est validé (chiffres, longueur, clé de contrôle) avant l'appel.
 - L'ingrédient est proposé grâce à la catégorie Open Food Facts déjà renseignée dans le
   référentiel (`categorie_off`), la plus précise d'abord ; la personne confirme toujours.
+- Aux courses, la quantité et le prix payés sont enregistrés par article ; le dernier prix
+  payé pour chaque code-barres est gardé **dans la base de la famille** pour être proposé
+  au scan suivant. Rien n'est envoyé à Open Prices.
 - Lecture par la caméra avec l'API **BarcodeDetector** du navigateur, sans bibliothèque ;
   la saisie des chiffres reste toujours possible.
 

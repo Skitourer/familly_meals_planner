@@ -1,6 +1,8 @@
 from repas.catalogue import Catalogue
 from repas.domaine.courses import (
+    AchatConstate,
     Portion,
+    appliquer_achats_reels,
     format_quantite,
     liste_de_courses,
     meilleure_combinaison,
@@ -64,3 +66,42 @@ def test_rayons_ordonnes_et_budget(cat: Catalogue):
     rayons = [rayon for rayon, _ in liste.par_rayon()]
     assert rayons[0] == "Fruits et légumes"
     assert liste.total_eur > 0
+
+
+def test_achat_reel_change_le_surplus_et_le_prix(cat: Catalogue):
+    # 350 g de pâtes prévus en paquet de 500 g ; le magasin n'avait que des paquets de 1 kg.
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 350 / 90)], cat)
+    estime = liste.total_eur
+    reelle = appliquer_achats_reels(liste, {"pates": AchatConstate(1000, 2.345)}, cat)
+    pates = next(ligne for ligne in reelle.lignes if ligne.ingredient_id == "pates")
+    assert (pates.achete_g, pates.surplus_g, pates.prix_eur) == (1000, 650, 2.35)
+    assert placard_apres_courses(reelle, {}, cat)["pates"] == 650
+    avant = next(ligne for ligne in liste.lignes if ligne.ingredient_id == "pates")
+    assert reelle.total_eur == round(estime - avant.prix_eur + 2.35, 2)
+
+
+def test_achat_reel_insuffisant_sans_surplus(cat: Catalogue):
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 350 / 90)], cat)
+    reelle = appliquer_achats_reels(liste, {"pates": AchatConstate(250, 1)}, cat)
+    pates = next(ligne for ligne in reelle.lignes if ligne.ingredient_id == "pates")
+    assert pates.surplus_g == 0 and "pates" not in placard_apres_courses(reelle, {}, cat)
+
+
+def test_achat_hors_liste_va_au_placard(cat: Catalogue):
+    # Des poireaux achetés sans être prévus : tout va au placard (part comestible).
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 350 / 90)], cat)
+    reelle = appliquer_achats_reels(liste, {"poireau": AchatConstate(1000, 1.5)}, cat)
+    (poireaux,) = reelle.hors_liste
+    assert (poireaux.nom, poireaux.surplus_g, poireaux.prix_eur) == ("Poireaux", 1000, 1.5)
+    assert poireaux not in reelle.a_acheter
+    assert reelle.total_eur == round(liste.total_eur + 1.5, 2)
+    assert placard_apres_courses(reelle, {}, cat)["poireau"] == 650
+
+
+def test_achat_d_un_besoin_couvert_par_le_placard(cat: Catalogue):
+    # Pâtes prévues mais déjà au placard : le paquet acheté s'ajoute au reste.
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 2)], cat, {"pates": 300})
+    reelle = appliquer_achats_reels(liste, {"pates": AchatConstate(500, 0.9)}, cat)
+    (pates,) = reelle.hors_liste
+    assert pates.depuis_placard_g == 180
+    assert placard_apres_courses(reelle, {"pates": 300}, cat)["pates"] == 620

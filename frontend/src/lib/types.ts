@@ -135,12 +135,25 @@ export interface LigneCourses {
 	surplus: string | null;
 	surplus_au_placard: boolean;
 	prix_eur: number;
+	achete_g: number; // quantité prévue (brute)
+	achat_reel: string | null; // quantité vraiment achetée (produits scannés)
+	prix_reel_eur: number | null;
+}
+
+export interface AutreAchat {
+	id: number;
+	libelle: string;
+	prix_eur: number;
 }
 
 export interface Courses {
 	rayons: [string, LigneCourses[]][];
 	a_verifier: string[];
 	total_eur: number;
+	hors_liste: LigneCourses[]; // ingrédients achetés sans être prévus
+	autres_achats: AutreAchat[]; // budget seulement
+	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
+	nb_achats_reels: number;
 	validees: boolean;
 	coches: string[]; // articles cochés, partagés entre appareils
 }
@@ -166,6 +179,7 @@ export interface PropositionProduit {
 	ingredient_id: string;
 	nom: string;
 	quantite_g: number | null;
+	prix_estime_eur: number | null;
 }
 
 /** Produit lu par son code-barres (fiche Open Food Facts). */
@@ -175,6 +189,7 @@ export interface ProduitScanne {
 	marque: string;
 	quantite_g: number | null;
 	propositions: PropositionProduit[];
+	dernier_prix_eur: number | null; // dernier prix payé par la famille pour ce produit
 }
 
 export interface Ingredient {

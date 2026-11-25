@@ -119,7 +119,9 @@ def test_un_enfant_consulte_le_menu(client: TestClient, famille_avec_repas):
     [("post", "/api/semaines/{lundi}/generer"), ("get", "/api/semaines/{lundi}/courses"),
      ("put", "/api/semaines/{lundi}/creneaux/0/soir"), ("get", "/api/placard"),
      ("get", "/api/bilan"), ("get", "/api/comptes"), ("post", "/api/membres"),
-     ("get", "/api/reglages"), ("post", "/api/import/recettes")],
+     ("get", "/api/reglages"), ("post", "/api/import/recettes"),
+     ("get", "/api/produits/3000000000007"), ("post", "/api/semaines/{lundi}/courses/achats"),
+     ("delete", "/api/semaines/{lundi}/courses/achats/pates")],
 )  # fmt: skip
 def test_un_enfant_ne_modifie_rien(client: TestClient, famille, methode: str, chemin: str):
     assert connecter(client, "leo", "leo-123") == 200

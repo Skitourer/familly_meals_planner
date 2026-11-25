@@ -14,8 +14,15 @@ from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
 from repas.domaine.coches import ModificationCoche
-from repas.domaine.courses import ListeCourses, format_quantite
-from repas.modeles import Creneau, Semaine
+from repas.domaine.courses import (
+    AchatConstate,
+    LigneCourses,
+    ListeCourses,
+    appliquer_achats_reels,
+    format_quantite,
+)
+from repas.domaine.produits import code_barres_valide
+from repas.modeles import AutreAchat, Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
@@ -72,12 +79,25 @@ class LigneCoursesSortie(BaseModel):
     surplus: str | None
     surplus_au_placard: bool
     prix_eur: float
+    achete_g: float  # quantité brute prévue (estimation du prix d'un produit scanné)
+    achat_reel: str | None = None  # quantité vraiment achetée (produits scannés)
+    prix_reel_eur: float | None = None
+
+
+class AutreAchatSortie(BaseModel):
+    id: int
+    libelle: str
+    prix_eur: float
 
 
 class CoursesSortie(BaseModel):
     rayons: list[tuple[str, list[LigneCoursesSortie]]]
     a_verifier: list[str]
     total_eur: float
+    hors_liste: list[LigneCoursesSortie]  # ingrédients achetés sans être prévus
+    autres_achats: list[AutreAchatSortie]  # budget seulement
+    total_reel_eur: float  # prix payés quand ils sont connus, estimation sinon
+    nb_achats_reels: int
     validees: bool
     coches: list[str]  # articles cochés, partagés entre appareils
 
@@ -89,6 +109,19 @@ class CocheEntree(BaseModel):
 
 
 MAX_COCHES_PAR_ENVOI = 500
+
+
+class AchatEntree(BaseModel):
+    ingredient_id: str = Field(max_length=80)
+    quantite_g: float = Field(gt=0, le=100_000)  # quantité brute du produit acheté
+    prix_eur: float = Field(ge=0, le=1_000)
+    code: str | None = Field(default=None, max_length=14)  # code-barres, pour le prix suivant
+
+
+class AutreAchatEntree(BaseModel):
+    libelle: str = Field(min_length=1, max_length=120)
+    prix_eur: float = Field(ge=0, le=1_000)
+    code: str | None = Field(default=None, max_length=14)
 
 
 # --- Utilitaires ---------------------------------------------------------------------
@@ -152,9 +185,16 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
     )
 
 
-def _courses_sortie(liste: ListeCourses, validees: bool, coches: list[str]) -> CoursesSortie:
-    def ligne(x) -> LigneCoursesSortie:
-        achat = " + ".join(
+def _courses_sortie(
+    liste: ListeCourses,
+    validees: bool,
+    coches: list[str],
+    achats: dict[str, AchatConstate],
+    autres: list[AutreAchat],
+) -> CoursesSortie:
+    def ligne(x: LigneCourses) -> LigneCoursesSortie:
+        reel = achats.get(x.ingredient_id)
+        achat = format_quantite(x.achete_g, x.unite) if x.hors_liste else " + ".join(
             format_quantite(a.total_g, x.unite) if a.libelle == "au poids"
             else f"{a.nombre} × {a.libelle}"
             for a in x.achats
@@ -170,12 +210,22 @@ def _courses_sortie(liste: ListeCourses, validees: bool, coches: list[str]) -> C
             surplus=format_quantite(x.surplus_g, x.unite) if x.surplus_g else None,
             surplus_au_placard=x.surplus_au_placard,
             prix_eur=x.prix_eur,
+            achete_g=x.achete_g,
+            achat_reel=format_quantite(reel.quantite_g, x.unite) if reel else None,
+            prix_reel_eur=round(reel.prix_eur, 2) if reel else None,
         )
 
+    reelle = appliquer_achats_reels(liste, achats, catalogue())
     return CoursesSortie(
         rayons=[(rayon, [ligne(x) for x in lignes]) for rayon, lignes in liste.par_rayon()],
         a_verifier=[x.nom for x in liste.a_verifier],
         total_eur=liste.total_eur,
+        hors_liste=[ligne(x) for x in sorted(reelle.hors_liste, key=lambda x: x.nom)],
+        autres_achats=[
+            AutreAchatSortie(id=a.id or 0, libelle=a.libelle, prix_eur=a.prix_eur) for a in autres
+        ],
+        total_reel_eur=round(reelle.total_eur + sum(a.prix_eur for a in autres), 2),
+        nb_achats_reels=len(achats) + len(autres),
         validees=validees,
         coches=coches,
     )
@@ -257,8 +307,59 @@ def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
     semaine = _semaine(s, lundi)
     liste = services.courses(s, semaine, catalogue())
     return _courses_sortie(
-        liste, semaine.courses_validees_le is not None, services.coches(s, semaine)
+        liste,
+        semaine.courses_validees_le is not None,
+        services.coches(s, semaine),
+        services.achats_reels(s, semaine),
+        services.autres_achats(s, semaine),
     )
+
+
+@router.post("/{lundi}/courses/achats", status_code=204, dependencies=ADULTE)
+def acheter(lundi: date, entree: AchatEntree, s: Session = Depends(session)) -> None:
+    """Enregistre un produit acheté (scanné), prévu sur la liste ou non."""
+    if entree.code is not None and not code_barres_valide(entree.code):
+        raise HTTPException(422, "Code-barres invalide")
+    ingredient = catalogue().ingredients.get(entree.ingredient_id)
+    if ingredient is None or ingredient.basique:
+        raise HTTPException(400, "Ingrédient inconnu ou non suivi au placard")
+    semaine = _semaine(s, lundi)
+    achat = AchatConstate(entree.quantite_g, entree.prix_eur)
+    try:
+        services.enregistrer_achat(s, semaine, entree.ingredient_id, achat, entree.code)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete("/{lundi}/courses/achats/{ingredient_id}", status_code=204, dependencies=ADULTE)
+def annuler_achat(lundi: date, ingredient_id: str, s: Session = Depends(session)) -> None:
+    """Oublie les achats réels d'un article : son prix estimé reprend sa place."""
+    try:
+        services.annuler_achat(s, _semaine(s, lundi), ingredient_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.post("/{lundi}/courses/autres-achats", status_code=204, dependencies=ADULTE)
+def acheter_autre(lundi: date, entree: AutreAchatEntree, s: Session = Depends(session)) -> None:
+    """Enregistre un achat sans ingrédient du référentiel : budget seulement."""
+    if entree.code is not None and not code_barres_valide(entree.code):
+        raise HTTPException(422, "Code-barres invalide")
+    try:
+        services.enregistrer_autre_achat(
+            s, _semaine(s, lundi), entree.libelle.strip(), entree.prix_eur, entree.code
+        )
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete("/{lundi}/courses/autres-achats/{achat_id}", status_code=204, dependencies=ADULTE)
+def annuler_autre_achat(lundi: date, achat_id: int, s: Session = Depends(session)) -> None:
+    """Retire un achat « budget seulement »."""
+    try:
+        services.annuler_autre_achat(s, _semaine(s, lundi), achat_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
 
 
 @router.put("/{lundi}/courses/coches", dependencies=ADULTE)

@@ -11,13 +11,7 @@ from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.placard import a_vider
-from repas.domaine.produits import (
-    code_barres_valide,
-    ingredients_correspondants,
-    quantite_comestible,
-)
 from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
-from repas.open_food_facts import ChercheurProduit, OpenFoodFactsIndisponible, chercher_produit
 
 router = APIRouter(tags=["suivi"])
 ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
@@ -203,57 +197,3 @@ def ajuster(ingredient_id: str, entree: StockEntree, s: Session = Depends(sessio
     )  # fmt: skip
     s.add(stock)
     s.commit()
-
-
-class PropositionSortie(BaseModel):
-    ingredient_id: str
-    nom: str
-    quantite_g: float | None  # part comestible du paquet, None si contenu inconnu
-
-
-class ProduitSortie(BaseModel):
-    code: str
-    nom: str
-    marque: str
-    quantite_g: float | None  # contenu du paquet
-    propositions: list[PropositionSortie]  # ingrédients correspondants, le plus probable d'abord
-
-
-def chercheur_produit() -> ChercheurProduit:
-    """Dépendance : recherche Open Food Facts (remplaçable dans les tests)."""
-    return chercher_produit
-
-
-@router.get("/placard/produit/{code}", dependencies=ADULTE)
-def produit_scanne(
-    code: str, chercher: ChercheurProduit = Depends(chercheur_produit)
-) -> ProduitSortie:
-    """Produit lu par son code-barres et ingrédients du placard qui lui correspondent."""
-    if not code_barres_valide(code):
-        raise HTTPException(422, "Code-barres invalide : vérifiez les chiffres saisis")
-    try:
-        fiche = chercher(code)
-    except OpenFoodFactsIndisponible as erreur:
-        raise HTTPException(
-            503, "Open Food Facts est injoignable : réessayez ou ajoutez le produit à la main"
-        ) from erreur
-    if fiche is None:
-        raise HTTPException(404, "Produit absent d'Open Food Facts : ajoutez-le à la main")
-    cat = catalogue()
-    return ProduitSortie(
-        code=fiche.code,
-        nom=fiche.nom,
-        marque=fiche.marque,
-        quantite_g=fiche.quantite_g,
-        propositions=[
-            PropositionSortie(
-                ingredient_id=i,
-                nom=cat.ingredients[i].nom,
-                quantite_g=quantite_comestible(fiche.quantite_g, cat.ingredients[i])
-                if fiche.quantite_g
-                else None,
-            )
-            for i in ingredients_correspondants(fiche.categories, cat.ingredients)
-            if not cat.ingredients[i].basique  # produits de fond de placard : non suivis
-        ],
-    )

@@ -106,8 +106,29 @@ Les autres onglets demandent le réseau. La **déconnexion** efface la liste gar
 téléphone. Hors ligne, l'application nécessite HTTPS (c'est le cas avec Tailscale) ; une
 nouvelle version est prise en compte quand l'application a été complètement fermée.
 
+### Scanner les produits achetés
+
+Au magasin (avec le réseau) ou au retour, **📷 Scanner** lit le code-barres d'un produit mis
+dans le caddie. L'article correspondant de la liste est proposé (des penne complètes →
+« Pâtes complètes » ou « Pâtes sèches », selon la liste), avec la quantité du paquet et un
+prix : le dernier prix payé pour ce produit, sinon l'estimation. Corrigez le prix selon
+l'étiquette, puis **Enregistrer** : l'article est coché et la ligne affiche « ✓ acheté 1 kg ·
+2,35 € ». Deux paquets scannés pour le même article s'additionnent ; ✕ annule.
+
+**Produit qui n'est pas sur la liste** : choisissez l'ingrédient dans « Hors liste »
+(correspondances proposées, puis tous les ingrédients). Il apparaît dans la section **Hors
+liste** et rejoint **en entier** le placard quand les courses sont validées, même un produit
+frais : le cadre « Frigo à vider » le signalera à temps. Pour un produit sans ingrédient
+correspondant (gâteaux, boissons, produits ménagers), **Autre achat (budget seulement)**
+garde son nom et son prix : il compte dans le budget, pas dans le placard.
+
+Le total « avec les prix payés » s'affiche à côté du budget estimé. Le scan n'est pas
+obligatoire : les articles non scannés gardent leur estimation.
+
 Une fois les courses faites, **Courses faites** met à jour le placard : les restes des paquets
 entamés (si le produit se conserve au moins 7 jours) y sont ajoutés avec une date limite.
+Pour un article scanné, le reste est calculé à partir de la quantité vraiment achetée (un
+paquet de 1 kg au lieu de 500 g laisse 650 g au placard au lieu de 150 g).
 
 ## Le bilan
 
@@ -133,8 +154,9 @@ L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :
     au nombre de repas pris à la maison), ni dans la couverture des besoins (moyenne par
     repas pris à la maison).
 
-Le budget d'une semaine est estimé tant que les courses ne sont pas validées ; il devient
-celui de la liste réellement achetée ensuite.
+Le budget d'une semaine est estimé tant que les courses ne sont pas validées. À la
+validation, il retient les prix payés des articles scannés, les achats hors liste et les
+« autres achats », et l'estimation des articles non scannés.
 
 ## Le placard
 
