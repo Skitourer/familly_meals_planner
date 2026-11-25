@@ -135,12 +135,17 @@ export interface LigneCourses {
 	surplus: string | null;
 	surplus_au_placard: boolean;
 	prix_eur: number;
+	achete_g: number; // quantité prévue (brute)
+	achat_reel: string | null; // quantité vraiment achetée (produits scannés)
+	prix_reel_eur: number | null;
 }
 
 export interface Courses {
 	rayons: [string, LigneCourses[]][];
 	a_verifier: string[];
 	total_eur: number;
+	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
+	nb_achats_reels: number;
 	validees: boolean;
 	coches: string[]; // articles cochés, partagés entre appareils
 }
@@ -175,6 +180,7 @@ export interface ProduitScanne {
 	marque: string;
 	quantite_g: number | null;
 	propositions: PropositionProduit[];
+	dernier_prix_eur: number | null; // dernier prix payé par la famille pour ce produit
 }
 
 export interface Ingredient {

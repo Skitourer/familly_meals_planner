@@ -2,7 +2,7 @@
 
 Le catalogue (recettes, ingrédients) n'est PAS en base : il vit dans des
 fichiers versionnés (``donnees/``). La base ne contient que les données de la
-famille : membres, semaines planifiées, notes, placard, coches des courses et réglages.
+famille : membres, semaines planifiées, notes, placard, coches et achats des courses, réglages.
 """
 
 from __future__ import annotations
@@ -93,6 +93,24 @@ class Coche(SQLModel, table=True):
     ingredient_id: str = Field(primary_key=True)
     cochee: bool
     modifiee_le: datetime  # heure de l'action sur l'appareil : la plus récente l'emporte
+
+
+class AchatReel(SQLModel, table=True):
+    """Ce qui a vraiment été acheté pour un article de la liste (produits scannés au magasin)."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    ingredient_id: str = Field(primary_key=True)
+    quantite_g: float = Field(gt=0)  # quantité brute, comme les conditionnements
+    prix_eur: float = Field(ge=0)
+    modifie_le: datetime = Field(default_factory=maintenant)
+
+
+class PrixProduit(SQLModel, table=True):
+    """Dernier prix payé par la famille pour un produit (code-barres), proposé au scan suivant."""
+
+    code: str = Field(primary_key=True)
+    prix_eur: float = Field(ge=0)
+    releve_le: datetime = Field(default_factory=maintenant)
 
 
 class Stock(SQLModel, table=True):

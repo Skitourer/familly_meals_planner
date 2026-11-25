@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import combinations_with_replacement
 
 from repas.catalogue import Catalogue
@@ -200,6 +200,38 @@ def format_quantite(grammes: float, unite: str = "g") -> str:
     if grammes >= 1000:
         return f"{grammes / 1000:g} kg".replace(".", ",")
     return f"{grammes:g} g"
+
+
+@dataclass(frozen=True)
+class AchatConstate:
+    """Achat réel d'un article : quantité brute et prix payé (somme des produits scannés)."""
+
+    quantite_g: float
+    prix_eur: float
+
+
+def appliquer_achats_reels(liste: ListeCourses, achats: dict[str, AchatConstate]) -> ListeCourses:
+    """Liste corrigée par les achats réels : quantité achetée, surplus et prix payés.
+
+    La consommation de la semaine ne change pas : seul le reste du paquet (et donc ce qui
+    rejoint le placard) dépend de ce qui a vraiment été acheté.
+    """
+    lignes = []
+    for ligne in liste.lignes:
+        achat = achats.get(ligne.ingredient_id)
+        if achat is None:
+            lignes.append(ligne)
+            continue
+        utilise_g = ligne.achete_g - ligne.surplus_g  # brut consommé dans la semaine
+        lignes.append(
+            replace(
+                ligne,
+                achete_g=achat.quantite_g,
+                surplus_g=round(max(achat.quantite_g - utilise_g, 0)),
+                prix_eur=round(achat.prix_eur, 2),
+            )
+        )
+    return ListeCourses(lignes)
 
 
 def placard_apres_courses(

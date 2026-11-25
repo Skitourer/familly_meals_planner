@@ -85,7 +85,7 @@
 		rechercheEnCours = true;
 		messageScan = '';
 		try {
-			produit = await api.lire<ProduitScanne>(`/placard/produit/${code}`);
+			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
 			choisirIngredient(produit.propositions[0]?.ingredient_id ?? '');
 			peremptionScannee = '';
 		} catch (e) {
@@ -313,14 +313,20 @@
 		margin-bottom: 1rem;
 	}
 
-	.formulaire-scan {
+	/* minmax(0, 1fr) : une longue option de liste ne doit pas élargir la fenêtre. */
+	.formulaire-scan,
+	.formulaire-scan label {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: 0.8rem;
 	}
 
 	.formulaire-scan label {
-		display: grid;
 		gap: 0.3rem;
+	}
+
+	.formulaire-scan :is(input, select) {
+		width: 100%;
 	}
 
 	table {

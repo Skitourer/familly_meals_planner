@@ -21,11 +21,29 @@ from repas.domaine.coches import (
     en_utc,
     fusionner_coches,
 )
-from repas.domaine.courses import ListeCourses, Portion, liste_de_courses, placard_apres_courses
+from repas.domaine.courses import (
+    AchatConstate,
+    ListeCourses,
+    Portion,
+    appliquer_achats_reels,
+    liste_de_courses,
+    placard_apres_courses,
+)
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
 from repas.domaine.reperes import REPERES
-from repas.modeles import BilanCourses, Coche, Creneau, Membre, Note, Reglages, Semaine, Stock
+from repas.modeles import (
+    AchatReel,
+    BilanCourses,
+    Coche,
+    Creneau,
+    Membre,
+    Note,
+    PrixProduit,
+    Reglages,
+    Semaine,
+    Stock,
+)
 
 MOMENTS = ("midi", "soir")
 COEFFICIENT_INVITE = 1.0
@@ -316,11 +334,58 @@ def _etat(lignes: dict[str, Coche]) -> dict[str, ModificationCoche]:
     }
 
 
+def achats_reels(s: Session, semaine: Semaine) -> dict[str, AchatConstate]:
+    """Achats réels enregistrés pour la liste de la semaine, par ingrédient."""
+    lignes = s.exec(select(AchatReel).where(AchatReel.semaine_id == semaine.id)).all()
+    return {a.ingredient_id: AchatConstate(a.quantite_g, a.prix_eur) for a in lignes}
+
+
+def enregistrer_achat(
+    s: Session,
+    semaine: Semaine,
+    ingredient_id: str,
+    achat: AchatConstate,
+    code: str | None = None,
+) -> None:
+    """Ajoute un produit acheté à l'article (deux paquets scannés s'additionnent)."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    ligne = s.get(AchatReel, (semaine.id, ingredient_id))
+    if ligne is None:
+        ligne = AchatReel(semaine_id=semaine.id or 0, ingredient_id=ingredient_id,
+                          quantite_g=0, prix_eur=0)  # fmt: skip
+    ligne.quantite_g += achat.quantite_g
+    ligne.prix_eur = round(ligne.prix_eur + achat.prix_eur, 2)
+    ligne.modifie_le = datetime.now(UTC)
+    s.add(ligne)
+    if code:
+        prix = s.get(PrixProduit, code) or PrixProduit(code=code, prix_eur=achat.prix_eur)
+        prix.prix_eur, prix.releve_le = achat.prix_eur, datetime.now(UTC)
+        s.add(prix)
+    s.commit()
+
+
+def annuler_achat(s: Session, semaine: Semaine, ingredient_id: str) -> None:
+    """Oublie les achats réels d'un article (l'estimation reprend sa place)."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    ligne = s.get(AchatReel, (semaine.id, ingredient_id))
+    if ligne:
+        s.delete(ligne)
+        s.commit()
+
+
+def dernier_prix(s: Session, code: str) -> float | None:
+    """Dernier prix payé par la famille pour ce code-barres."""
+    prix = s.get(PrixProduit, code)
+    return prix.prix_eur if prix else None
+
+
 def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
     """Courses faites : le placard est mis à jour (consommations et surplus)."""
     if semaine.courses_validees_le:
         raise ErreurMetier("Les courses de cette semaine ont déjà été validées")
-    liste = courses(s, semaine, catalogue)
+    liste = appliquer_achats_reels(courses(s, semaine, catalogue), achats_reels(s, semaine))
     nouveau = placard_apres_courses(liste, stock_disponible(s, semaine.lundi), catalogue)
     anciens = {st.ingredient_id: st for st in s.exec(select(Stock)).all()}
     for id_ing, stock in anciens.items():

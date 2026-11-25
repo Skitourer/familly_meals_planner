@@ -14,7 +14,13 @@ from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
 from repas.domaine.coches import ModificationCoche
-from repas.domaine.courses import ListeCourses, format_quantite
+from repas.domaine.courses import (
+    AchatConstate,
+    ListeCourses,
+    appliquer_achats_reels,
+    format_quantite,
+)
+from repas.domaine.produits import code_barres_valide
 from repas.modeles import Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
@@ -72,12 +78,17 @@ class LigneCoursesSortie(BaseModel):
     surplus: str | None
     surplus_au_placard: bool
     prix_eur: float
+    achete_g: float  # quantité brute prévue (estimation du prix d'un produit scanné)
+    achat_reel: str | None = None  # quantité vraiment achetée (produits scannés)
+    prix_reel_eur: float | None = None
 
 
 class CoursesSortie(BaseModel):
     rayons: list[tuple[str, list[LigneCoursesSortie]]]
     a_verifier: list[str]
     total_eur: float
+    total_reel_eur: float  # prix payés quand ils sont connus, estimation sinon
+    nb_achats_reels: int
     validees: bool
     coches: list[str]  # articles cochés, partagés entre appareils
 
@@ -89,6 +100,13 @@ class CocheEntree(BaseModel):
 
 
 MAX_COCHES_PAR_ENVOI = 500
+
+
+class AchatEntree(BaseModel):
+    ingredient_id: str = Field(max_length=80)
+    quantite_g: float = Field(gt=0, le=100_000)  # quantité brute du produit acheté
+    prix_eur: float = Field(ge=0, le=1_000)
+    code: str | None = Field(default=None, max_length=14)  # code-barres, pour le prix suivant
 
 
 # --- Utilitaires ---------------------------------------------------------------------
@@ -152,8 +170,14 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
     )
 
 
-def _courses_sortie(liste: ListeCourses, validees: bool, coches: list[str]) -> CoursesSortie:
+def _courses_sortie(
+    liste: ListeCourses,
+    validees: bool,
+    coches: list[str],
+    achats: dict[str, AchatConstate],
+) -> CoursesSortie:
     def ligne(x) -> LigneCoursesSortie:
+        reel = achats.get(x.ingredient_id)
         achat = " + ".join(
             format_quantite(a.total_g, x.unite) if a.libelle == "au poids"
             else f"{a.nombre} × {a.libelle}"
@@ -170,12 +194,18 @@ def _courses_sortie(liste: ListeCourses, validees: bool, coches: list[str]) -> C
             surplus=format_quantite(x.surplus_g, x.unite) if x.surplus_g else None,
             surplus_au_placard=x.surplus_au_placard,
             prix_eur=x.prix_eur,
+            achete_g=x.achete_g,
+            achat_reel=format_quantite(reel.quantite_g, x.unite) if reel else None,
+            prix_reel_eur=round(reel.prix_eur, 2) if reel else None,
         )
 
+    a_acheter = {x.ingredient_id for x in liste.a_acheter}
     return CoursesSortie(
         rayons=[(rayon, [ligne(x) for x in lignes]) for rayon, lignes in liste.par_rayon()],
         a_verifier=[x.nom for x in liste.a_verifier],
         total_eur=liste.total_eur,
+        total_reel_eur=appliquer_achats_reels(liste, achats).total_eur,
+        nb_achats_reels=len(achats.keys() & a_acheter),
         validees=validees,
         coches=coches,
     )
@@ -257,8 +287,36 @@ def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
     semaine = _semaine(s, lundi)
     liste = services.courses(s, semaine, catalogue())
     return _courses_sortie(
-        liste, semaine.courses_validees_le is not None, services.coches(s, semaine)
+        liste,
+        semaine.courses_validees_le is not None,
+        services.coches(s, semaine),
+        services.achats_reels(s, semaine),
     )
+
+
+@router.post("/{lundi}/courses/achats", status_code=204, dependencies=ADULTE)
+def acheter(lundi: date, entree: AchatEntree, s: Session = Depends(session)) -> None:
+    """Enregistre un produit acheté (scanné) pour un article de la liste."""
+    if entree.code is not None and not code_barres_valide(entree.code):
+        raise HTTPException(422, "Code-barres invalide")
+    semaine = _semaine(s, lundi)
+    liste = services.courses(s, semaine, catalogue())
+    if entree.ingredient_id not in {x.ingredient_id for x in liste.a_acheter}:
+        raise HTTPException(400, "Cet ingrédient n'est pas sur la liste de courses")
+    achat = AchatConstate(entree.quantite_g, entree.prix_eur)
+    try:
+        services.enregistrer_achat(s, semaine, entree.ingredient_id, achat, entree.code)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete("/{lundi}/courses/achats/{ingredient_id}", status_code=204, dependencies=ADULTE)
+def annuler_achat(lundi: date, ingredient_id: str, s: Session = Depends(session)) -> None:
+    """Oublie les achats réels d'un article : son prix estimé reprend sa place."""
+    try:
+        services.annuler_achat(s, _semaine(s, lundi), ingredient_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
 
 
 @router.put("/{lundi}/courses/coches", dependencies=ADULTE)

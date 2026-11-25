@@ -2,10 +2,12 @@
 	Liste de courses de la semaine : par rayon, arrondie aux conditionnements du magasin.
 	Les coches sont partagées entre appareils ; sans réseau, elles attendent sur l'appareil
 	et partent au retour de la connexion (voir lib/coches.ts).
+	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
+	import { articleCorrespondant, prixPropose } from '#lib/achats.ts';
 	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
 	import {
 		ajouterAFile,
@@ -16,8 +18,10 @@
 		type FileCoches
 	} from '#lib/coches.ts';
 	import ChoixSemaine from '#lib/composants/ChoixSemaine.svelte';
+	import Modale from '#lib/composants/Modale.svelte';
+	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
-	import type { Courses } from '#lib/types.ts';
+	import type { Courses, LigneCourses, ProduitScanne } from '#lib/types.ts';
 
 	const lundi = $derived(lundiDepuisUrl(page.url));
 	let courses = $state<Courses | null>(null);
@@ -26,7 +30,17 @@
 	let enLigne = $state(true);
 	let envoiEnCours = false;
 
+	// Scan au magasin : produit lu, puis article de la liste, quantité et prix payés.
+	let scanOuvert = $state(false);
+	let produit = $state<ProduitScanne | null>(null);
+	let rechercheEnCours = $state(false);
+	let messageScan = $state('');
+	let article = $state('');
+	let quantiteAchetee = $state(0);
+	let prixPaye = $state(0);
+
 	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
+	const lignes = $derived<LigneCourses[]>(courses?.rayons.flatMap(([, l]) => l) ?? []);
 	const enAttente = $derived(Object.keys(file).length);
 
 	// Recharger seulement quand la semaine change (charger lit et modifie la file d'attente).
@@ -91,6 +105,64 @@
 		}
 	}
 
+	function ouvrirScan() {
+		produit = null;
+		messageScan = '';
+		scanOuvert = true;
+	}
+
+	async function rechercherProduit(code: string) {
+		rechercheEnCours = true;
+		messageScan = '';
+		try {
+			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
+			quantiteAchetee = Math.round(produit.quantite_g ?? 0);
+			choisirArticle(articleCorrespondant(produit, lignes));
+		} catch (e) {
+			messageScan = messageErreur(e);
+		} finally {
+			rechercheEnCours = false;
+		}
+	}
+
+	function choisirArticle(id: string) {
+		article = id;
+		if (!produit) return;
+		const ligne = lignes.find((l) => l.ingredient_id === id);
+		if (!quantiteAchetee && ligne) quantiteAchetee = ligne.achete_g;
+		prixPaye = prixPropose(produit, ligne, quantiteAchetee);
+	}
+
+	async function enregistrerAchat(event: SubmitEvent) {
+		event.preventDefault();
+		if (!produit || !article) return;
+		try {
+			await api.creer(`/semaines/${lundi}/courses/achats`, {
+				ingredient_id: article,
+				quantite_g: quantiteAchetee,
+				prix_eur: prixPaye,
+				code: produit.code
+			});
+		} catch (e) {
+			messageScan = messageErreur(e);
+			return;
+		}
+		if (!coches.has(article)) cocher(article);
+		const nom = lignes.find((l) => l.ingredient_id === article)?.nom ?? article;
+		messageScan = `Enregistré : ${nom}, ${euros(prixPaye)}. Scannez le produit suivant.`;
+		produit = null;
+		await charger(lundi);
+	}
+
+	async function annulerAchat(id: string) {
+		try {
+			await api.supprimer(`/semaines/${lundi}/courses/achats/${id}`);
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
 	async function valider() {
 		if (!confirm('Courses faites ? Les restes de paquets seront ajoutés au placard.')) return;
 		try {
@@ -116,6 +188,7 @@
 				🖨 Imprimer (PDF)
 			</a>
 			{#if !courses.validees}
+				<button onclick={ouvrirScan} disabled={!enLigne}>📷 Scanner</button>
 				<button class="principal" onclick={valider} disabled={!enLigne}>✅ Courses faites</button>
 			{:else}
 				<span class="badge vert">Courses faites, placard à jour</span>
@@ -147,6 +220,11 @@
 			{coches.size} / {nbLignes} articles · budget estimé
 			<strong>{euros(courses.total_eur)}</strong>
 			(prix médians Open Prices)
+			{#if courses.nb_achats_reels}
+				· avec les prix payés <strong>{euros(courses.total_reel_eur)}</strong>
+				({courses.nb_achats_reels}
+				{courses.nb_achats_reels > 1 ? 'articles scannés' : 'article scanné'})
+			{/if}
 		</p>
 		<div class="rayons">
 			{#each courses.rayons as [rayon, lignes] (rayon)}
@@ -170,6 +248,20 @@
 											? ' → placard'
 											: ' ⚠️ à consommer'}{/if}
 								</span>
+								{#if ligne.achat_reel}
+									<span class="detail reel">
+										✓ acheté {ligne.achat_reel} · {euros(ligne.prix_reel_eur ?? 0)}
+										{#if !courses.validees}
+											<button
+												class="discret"
+												onclick={() => annulerAchat(ligne.ingredient_id)}
+												aria-label={`Annuler l'achat de ${ligne.nom}`}
+											>
+												✕
+											</button>
+										{/if}
+									</span>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -185,7 +277,76 @@
 	{/if}
 {/if}
 
+<Modale titre="Scanner un produit acheté" bind:ouverte={scanOuvert}>
+	{#if messageScan}
+		<p class:erreur={!messageScan.startsWith('Enregistré')}>{messageScan}</p>
+	{/if}
+	{#if rechercheEnCours}
+		<p class="doux">Recherche dans Open Food Facts…</p>
+	{:else if produit}
+		<p>
+			<strong>{produit.nom || 'Produit sans nom'}</strong>
+			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
+		</p>
+		{#if !article}
+			<p class="doux">Ce produit ne correspond à aucun article de la liste : choisissez-le.</p>
+		{/if}
+		<form class="formulaire-scan" onsubmit={enregistrerAchat}>
+			<label>
+				Article de la liste
+				<select
+					value={article}
+					onchange={(e) => choisirArticle((e.target as HTMLSelectElement).value)}
+				>
+					<option value="">Choisir…</option>
+					{#each lignes as l (l.ingredient_id)}
+						<option value={l.ingredient_id}>{l.nom} ({l.achat})</option>
+					{/each}
+				</select>
+			</label>
+			<label>
+				Quantité achetée (g ou ml)
+				<input type="number" min="1" step="any" bind:value={quantiteAchetee} />
+			</label>
+			<label>
+				Prix payé (€)
+				<input type="number" min="0" step="0.01" bind:value={prixPaye} />
+				<span class="doux">
+					{produit.dernier_prix_eur !== null ? 'Dernier prix payé' : 'Estimation'}, à corriger selon
+					l'étiquette.
+				</span>
+			</label>
+			<div class="ligne">
+				<button class="principal" disabled={!article || quantiteAchetee <= 0}>Enregistrer</button>
+				<button type="button" onclick={() => (produit = null)}>Scanner un autre produit</button>
+			</div>
+		</form>
+	{:else}
+		<ScannerCodeBarres onCode={rechercherProduit} />
+	{/if}
+</Modale>
+
 <style>
+	.reel {
+		color: var(--texte);
+	}
+
+	/* minmax(0, 1fr) : une longue option de liste ne doit pas élargir la fenêtre. */
+	.formulaire-scan,
+	.formulaire-scan label {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.8rem;
+	}
+
+	.formulaire-scan label {
+		gap: 0.3rem;
+	}
+
+	.formulaire-scan :is(input, select) {
+		width: 100%;
+	}
+
 	.attente {
 		display: inline-block;
 		margin: 0.5rem 0;
@@ -217,7 +378,7 @@
 		gap: 0.5rem;
 	}
 
-	label {
+	li label {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		gap: 0.5rem;

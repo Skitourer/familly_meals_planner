@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from repas.api import bilan, catalogue, comptes, famille, semaines, session, suivi
+from repas.api import bilan, catalogue, comptes, famille, produits, semaines, session, suivi
 from repas.base import moteur
 from repas.catalogue import catalogue as charger_catalogue
 from repas.config import parametres
@@ -55,7 +55,7 @@ def creer_application() -> FastAPI:
     for module in (famille, catalogue, semaines, suivi):
         api.include_router(module.router, dependencies=protege)
     # Modules entièrement réservés aux adultes.
-    for module in (bilan, comptes):
+    for module in (bilan, comptes, produits):
         api.include_router(module.router, dependencies=adulte)
 
     @api.get("/sante", tags=["session"])

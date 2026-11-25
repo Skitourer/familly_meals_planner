@@ -3,8 +3,9 @@
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from outils import ajouter_famille
 
-from repas.api.suivi import chercheur_produit
+from repas.api.produits import chercheur_produit
 from repas.catalogue import Catalogue
 from repas.domaine.produits import (
     FicheProduit,
@@ -135,7 +136,7 @@ def simuler(client: TestClient, chercher) -> None:
 
 def test_api_produit_scanne(client: TestClient):
     simuler(client, lambda code: lire_fiche(code, PATES_COMPLETES))
-    reponse = client.get(f"/api/placard/produit/{EAN13}")
+    reponse = client.get(f"/api/produits/{EAN13}")
     assert reponse.status_code == 200
     produit = reponse.json()
     assert (produit["nom"], produit["marque"], produit["quantite_g"]) == (
@@ -148,7 +149,7 @@ def test_api_produit_scanne(client: TestClient):
 def test_api_produit_basique_non_propose(client: TestClient):
     huile = {"status": 1, "product": {"categories_tags": ["en:extra-virgin-olive-oils"]}}
     simuler(client, lambda code: lire_fiche(code, huile))
-    produit = client.get(f"/api/placard/produit/{EAN13}").json()
+    produit = client.get(f"/api/produits/{EAN13}").json()
     assert produit["propositions"] == []
     assert produit["quantite_g"] is None
 
@@ -158,13 +159,52 @@ def test_api_produit_erreurs(client: TestClient):
         raise OpenFoodFactsIndisponible("délai dépassé")
 
     simuler(client, lambda code: None)
-    assert client.get("/api/placard/produit/3000000000008").status_code == 422
-    assert client.get(f"/api/placard/produit/{EAN13}").status_code == 404
+    assert client.get("/api/produits/3000000000008").status_code == 422
+    assert client.get(f"/api/produits/{EAN13}").status_code == 404
     simuler(client, indisponible)
-    reponse = client.get(f"/api/placard/produit/{EAN13}")
+    reponse = client.get(f"/api/produits/{EAN13}")
     assert reponse.status_code == 503
     assert "délai" not in reponse.text  # pas de détail interne renvoyé au client
 
 
 def test_dependance_par_defaut_interroge_open_food_facts():
     assert chercheur_produit() is chercher_produit
+
+
+# --- Achats réels aux courses -----------------------------------------------------------
+
+
+def test_api_achats_reels(client: TestClient):
+    lundi = "2026-11-30"
+    ajouter_famille(client)
+    client.post(f"/api/semaines/{lundi}/generer")
+    courses = client.get(f"/api/semaines/{lundi}/courses").json()
+    ligne = courses["rayons"][0][1][0]
+    url = f"/api/semaines/{lundi}/courses/achats"
+    achat = {"ingredient_id": ligne["ingredient_id"], "quantite_g": 500, "prix_eur": 1.2}
+
+    assert client.post(url, json={**achat, "code": EAN13}).status_code == 204
+    assert client.post(url, json=achat).status_code == 204  # deuxième paquet : s'additionne
+    apres = client.get(f"/api/semaines/{lundi}/courses").json()
+    lignes = [x for _, xs in apres["rayons"] for x in xs]
+    reelle = next(x for x in lignes if x["ingredient_id"] == achat["ingredient_id"])
+    assert (reelle["achat_reel"], reelle["prix_reel_eur"]) == ("1 kg", 2.4)
+    assert apres["nb_achats_reels"] == 1
+    assert apres["total_reel_eur"] == round(apres["total_eur"] - ligne["prix_eur"] + 2.4, 2)
+
+    # Le prix payé est proposé au prochain scan du même produit.
+    simuler(client, lambda code: lire_fiche(code, PATES_COMPLETES))
+    assert client.get(f"/api/produits/{EAN13}").json()["dernier_prix_eur"] == 1.2
+
+    # Refus : hors liste, code invalide, quantité nulle.
+    assert client.post(url, json={**achat, "ingredient_id": "huile-olive"}).status_code == 400
+    assert client.post(url, json={**achat, "code": "3000000000008"}).status_code == 422
+    assert client.post(url, json={**achat, "quantite_g": 0}).status_code == 422
+
+    # Annulation, puis validation : achats figés.
+    assert client.delete(f"{url}/{achat['ingredient_id']}").status_code == 204
+    assert client.get(f"/api/semaines/{lundi}/courses").json()["nb_achats_reels"] == 0
+    client.post(url, json=achat)
+    assert client.post(f"/api/semaines/{lundi}/courses/valider").status_code == 204
+    assert client.post(url, json=achat).status_code == 409
+    assert client.delete(f"{url}/{achat['ingredient_id']}").status_code == 409
