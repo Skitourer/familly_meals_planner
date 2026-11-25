@@ -105,6 +105,16 @@ class AchatReel(SQLModel, table=True):
     modifie_le: datetime = Field(default_factory=maintenant)
 
 
+class EcartPlacard(SQLModel, table=True):
+    """Changement du placard fait par la validation des courses, pour pouvoir la défaire."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    ingredient_id: str = Field(primary_key=True)
+    avant_g: float  # 0 si l'ingrédient n'était pas au placard
+    peremption_avant: date | None
+    apres_g: float  # 0 si la validation l'a retiré
+
+
 class AutreAchat(SQLModel, table=True):
     """Achat sans ingrédient du référentiel (gâteaux, boissons...) : budget seulement."""
 

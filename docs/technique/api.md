@@ -32,7 +32,8 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |
 | `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Achat sans ingrédient (`{libelle, prix_eur, code?}`) : budget seulement |
 | `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un « autre achat » |
-| `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard |
+| `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard ; corps facultatif `{tout_achete}` (faux : les articles ni cochés ni scannés n'ont pas été achetés) |
+| `POST` | `/api/semaines/{lundi}/courses/rouvrir` | Défaire la validation (placard et budget) |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |
 | `GET` | `/api/bilan?semaines=12` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `GET` | `/api/notes/a-noter?jours=14&jours_a_venir=7` | Repas récents et à venir, notes déjà données |
