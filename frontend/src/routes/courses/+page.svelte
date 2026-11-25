@@ -42,6 +42,10 @@
 	let libelle = $state('');
 	let ingredients = $state<Ingredient[]>([]);
 
+	// Validation : articles ni cochés ni scannés, à confirmer comme achetés ou non.
+	let confirmationOuverte = $state(false);
+	let nonCoches = $state<LigneCourses[]>([]);
+
 	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
 	const lignes = $derived<LigneCourses[]>(courses?.rayons.flatMap(([, l]) => l) ?? []);
 	const enAttente = $derived(Object.keys(file).length);
@@ -184,10 +188,45 @@
 		}
 	}
 
+	/** Courses faites : demande quoi faire des articles ni cochés ni scannés, s'il en reste. */
 	async function valider() {
-		if (!confirm('Courses faites ? Les restes de paquets seront ajoutés au placard.')) return;
+		await envoyer(lundi);
+		if (Object.keys(file).length) {
+			erreur = 'Des coches attendent encore le réseau : validez une fois la connexion revenue.';
+			return;
+		}
+		nonCoches = lignes.filter((l) => !coches.has(l.ingredient_id) && !l.achat_reel);
+		if (nonCoches.length) {
+			confirmationOuverte = true;
+		} else if (confirm('Courses faites ? Les restes de paquets seront ajoutés au placard.')) {
+			await envoyerValidation(true);
+		}
+	}
+
+	async function toutAchete() {
+		const maintenant = new Date();
+		for (const ligne of nonCoches) file = ajouterAFile(file, ligne.ingredient_id, true, maintenant);
+		ecrireFile(localStorage, lundi, file);
+		await envoyer(lundi);
+		await envoyerValidation(true);
+	}
+
+	async function envoyerValidation(toutAcheteConfirme: boolean) {
+		confirmationOuverte = false;
 		try {
-			await api.creer(`/semaines/${lundi}/courses/valider`);
+			await api.creer(`/semaines/${lundi}/courses/valider`, { tout_achete: toutAcheteConfirme });
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function rouvrir() {
+		const message =
+			'Rouvrir les courses ? Ce que la validation a changé dans le placard et le budget est défait ; vos corrections faites depuis sont gardées.';
+		if (!confirm(message)) return;
+		try {
+			await api.creer(`/semaines/${lundi}/courses/rouvrir`);
 			await charger(lundi);
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -213,6 +252,7 @@
 				<button class="principal" onclick={valider} disabled={!enLigne}>✅ Courses faites</button>
 			{:else}
 				<span class="badge vert">Courses faites, placard à jour</span>
+				<button onclick={rouvrir} disabled={!enLigne}>↩ Rouvrir les courses</button>
 			{/if}
 		</div>
 	{/if}
@@ -258,6 +298,7 @@
 									<input
 										type="checkbox"
 										checked={coches.has(ligne.ingredient_id)}
+										disabled={courses.validees}
 										onchange={() => cocher(ligne.ingredient_id)}
 									/>
 									<span class="nom">{ligne.nom}</span>
@@ -338,6 +379,23 @@
 		</div>
 	{/if}
 {/if}
+
+<Modale titre="Courses faites ?" bind:ouverte={confirmationOuverte}>
+	<p>
+		{nonCoches.length}
+		{nonCoches.length > 1 ? 'articles ne sont pas cochés' : "article n'est pas coché"} :
+		{nonCoches.map((l) => l.nom).join(', ')}.
+	</p>
+	<div class="ligne">
+		<button class="principal" onclick={toutAchete}>Tout a été acheté</button>
+		<button onclick={() => envoyerValidation(false)}>Ils n'ont pas été achetés</button>
+		<button class="discret" onclick={() => (confirmationOuverte = false)}>Annuler</button>
+	</div>
+	<p class="doux">
+		Non achetés : rien n'est ajouté au placard ni au budget pour eux. Vous pourrez rouvrir les
+		courses pour corriger.
+	</p>
+</Modale>
 
 <Modale titre="Scanner un produit acheté" bind:ouverte={scanOuvert}>
 	{#if messageScan}

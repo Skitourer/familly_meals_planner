@@ -29,6 +29,8 @@ from repas.domaine.courses import (
     appliquer_achats_reels,
     liste_de_courses,
     placard_apres_courses,
+    retirer_non_achetes,
+    stock_avant_validation,
 )
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
@@ -39,6 +41,7 @@ from repas.modeles import (
     BilanCourses,
     Coche,
     Creneau,
+    EcartPlacard,
     Membre,
     Note,
     PrixProduit,
@@ -309,7 +312,16 @@ def courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> ListeCourses:
         for _, r in repas_servis(s, semaine)
         for recette in (r.plat, r.dessert)
     ]
-    return liste_de_courses(portions, catalogue, stock_disponible(s, semaine.lundi))
+    stock = stock_disponible(s, semaine.lundi)
+    if semaine.courses_validees_le:
+        # Liste telle qu'au moment des courses, sans les surplus qu'elles ont rangés.
+        stock = stock_avant_validation(stock, _ecarts(s, semaine))
+    return liste_de_courses(portions, catalogue, stock)
+
+
+def _ecarts(s: Session, semaine: Semaine) -> dict[str, tuple[float, float]]:
+    lignes = s.exec(select(EcartPlacard).where(EcartPlacard.semaine_id == semaine.id)).all()
+    return {e.ingredient_id: (e.avant_g, e.apres_g) for e in lignes}
 
 
 def coches(s: Session, semaine: Semaine) -> list[str]:
@@ -427,16 +439,40 @@ def dernier_prix(s: Session, code: str) -> float | None:
     return prix.prix_eur if prix else None
 
 
-def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
-    """Courses faites : le placard est mis à jour (consommations et surplus)."""
+def articles_non_coches(s: Session, semaine: Semaine, catalogue: Catalogue) -> list[str]:
+    """Articles de la liste ni cochés ni scannés : achetés ou non, la famille le dira."""
+    faits = set(coches(s, semaine)) | achats_reels(s, semaine).keys()
+    return [x.ingredient_id for x in courses(s, semaine, catalogue).a_acheter
+            if x.ingredient_id not in faits]  # fmt: skip
+
+
+def valider_courses(
+    s: Session, semaine: Semaine, catalogue: Catalogue, *, tout_achete: bool
+) -> None:
+    """Courses faites : le placard est mis à jour (consommations et surplus).
+
+    ``tout_achete`` faux : les articles ni cochés ni scannés n'ont pas été achetés.
+    Les changements du placard sont gardés pour pouvoir rouvrir les courses.
+    """
     if semaine.courses_validees_le:
         raise ErreurMetier("Les courses de cette semaine ont déjà été validées")
-    liste = appliquer_achats_reels(
-        courses(s, semaine, catalogue), achats_reels(s, semaine), catalogue
+    non_achetes = set() if tout_achete else set(articles_non_coches(s, semaine, catalogue))
+    liste = retirer_non_achetes(
+        appliquer_achats_reels(courses(s, semaine, catalogue), achats_reels(s, semaine), catalogue),
+        non_achetes,
     )
     autres_eur = sum(a.prix_eur for a in autres_achats(s, semaine))
     nouveau = placard_apres_courses(liste, stock_disponible(s, semaine.lundi), catalogue)
     anciens = {st.ingredient_id: st for st in s.exec(select(Stock)).all()}
+    for id_ing in anciens.keys() | nouveau.keys():
+        ancien = anciens.get(id_ing)
+        avant_g = ancien.quantite_g if ancien else 0.0
+        if nouveau.get(id_ing, 0.0) != avant_g:
+            s.add(EcartPlacard(
+                semaine_id=semaine.id or 0, ingredient_id=id_ing, avant_g=avant_g,
+                peremption_avant=ancien.peremption if ancien else None,
+                apres_g=nouveau.get(id_ing, 0.0),
+            ))  # fmt: skip
     for id_ing, stock in anciens.items():
         if id_ing not in nouveau:
             s.delete(stock)
@@ -468,6 +504,47 @@ def valider_courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> None:
             ),
         )
     )
+    s.commit()
+
+
+def rouvrir_courses(s: Session, semaine: Semaine) -> None:
+    """Défait la validation des courses : placard rendu, budget validé oublié.
+
+    Les changements faits depuis à la main dans le placard sont conservés.
+    """
+    if not semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine ne sont pas validées")
+    lignes = s.exec(select(EcartPlacard).where(EcartPlacard.semaine_id == semaine.id)).all()
+    bilan = s.get(BilanCourses, semaine.id)
+    # Une validation qui a touché le placard sans en garder trace date d'avant la réouverture.
+    if not lignes and bilan and bilan.depuis_placard_g + bilan.surplus_placard_g > 0:
+        raise ErreurMetier(
+            "Ces courses ont été validées avant la version qui permet de les rouvrir"
+        )
+    stock_actuel = {st.ingredient_id: st for st in s.exec(select(Stock)).all()}
+    rendu = stock_avant_validation(
+        {i: st.quantite_g for i, st in stock_actuel.items()},
+        {e.ingredient_id: (e.avant_g, e.apres_g) for e in lignes},
+    )
+    for ecart in lignes:
+        stock = stock_actuel.get(ecart.ingredient_id)
+        quantite = rendu.get(ecart.ingredient_id)
+        if quantite is None:
+            if stock:
+                s.delete(stock)
+        else:
+            stock = stock or Stock(ingredient_id=ecart.ingredient_id, quantite_g=0,
+                                   peremption=ecart.peremption_avant or semaine.lundi)  # fmt: skip
+            stock.quantite_g = quantite
+            if ecart.peremption_avant:
+                stock.peremption = ecart.peremption_avant
+            stock.mis_a_jour_le = datetime.now(UTC)
+            s.add(stock)
+        s.delete(ecart)
+    if bilan:
+        s.delete(bilan)
+    semaine.courses_validees_le = None
+    s.add(semaine)
     s.commit()
 
 

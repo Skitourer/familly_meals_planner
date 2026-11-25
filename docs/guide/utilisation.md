@@ -130,6 +130,17 @@ entamés (si le produit se conserve au moins 7 jours) y sont ajoutés avec une d
 Pour un article scanné, le reste est calculé à partir de la quantité vraiment achetée (un
 paquet de 1 kg au lieu de 500 g laisse 650 g au placard au lieu de 150 g).
 
+S'il reste des articles ni cochés ni scannés, l'application les liste et demande :
+
+- **Tout a été acheté** : ils sont cochés, puis les courses validées ;
+- **Ils n'ont pas été achetés** : rien n'est ajouté au placard ni au budget pour eux (ce
+  que les repas prennent déjà dans le placard reste déduit) ;
+- **Annuler**.
+
+Une fois les courses validées, les cases sont verrouillées. **↩ Rouvrir les courses** défait
+ce que la validation a changé dans le placard et le budget (les corrections faites depuis à
+la main sont gardées) : on peut alors corriger les coches ou les scans, puis revalider.
+
 ## Le bilan
 
 L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from itertools import combinations_with_replacement
 
@@ -277,6 +278,39 @@ def _ligne_hors_liste(
         prix_eur=round(achat.prix_eur, 2),
         hors_liste=True,
     )
+
+
+def retirer_non_achetes(liste: ListeCourses, non_achetes: set[str]) -> ListeCourses:
+    """Liste sans les articles déclarés non achetés : ni surplus au placard, ni prix.
+
+    Ce que les repas prennent dans le placard reste déduit : seul l'achat n'a pas eu lieu.
+    """
+    return ListeCourses(
+        [
+            replace(ligne, achats=[], achete_g=0, surplus_g=0, prix_eur=0)
+            if ligne.ingredient_id in non_achetes and not ligne.hors_liste
+            else ligne
+            for ligne in liste.lignes
+        ]
+    )
+
+
+def stock_avant_validation(
+    stock: Mapping[str, float], ecarts: Mapping[str, tuple[float, float]]
+) -> dict[str, float]:
+    """Placard tel qu'avant la validation : on retire ce qu'elle a ajouté, on rend le reste.
+
+    ``ecarts`` donne, par ingrédient, la quantité avant et après la validation ; les
+    changements faits depuis à la main sont conservés.
+    """
+    resultat = dict(stock)
+    for id_ing, (avant_g, apres_g) in ecarts.items():
+        quantite = resultat.get(id_ing, 0.0) + avant_g - apres_g
+        if quantite > 1:
+            resultat[id_ing] = round(quantite)
+        else:
+            resultat.pop(id_ing, None)
+    return resultat
 
 
 def placard_apres_courses(

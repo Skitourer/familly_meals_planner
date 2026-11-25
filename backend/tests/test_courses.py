@@ -7,6 +7,8 @@ from repas.domaine.courses import (
     liste_de_courses,
     meilleure_combinaison,
     placard_apres_courses,
+    retirer_non_achetes,
+    stock_avant_validation,
 )
 
 
@@ -105,3 +107,21 @@ def test_achat_d_un_besoin_couvert_par_le_placard(cat: Catalogue):
     (pates,) = reelle.hors_liste
     assert pates.depuis_placard_g == 180
     assert placard_apres_courses(reelle, {"pates": 300}, cat)["pates"] == 620
+
+
+def test_article_non_achete_sans_surplus_ni_prix(cat: Catalogue):
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 350 / 90)], cat, {"carotte": 50})
+    reelle = retirer_non_achetes(liste, {"pates", "carotte"})
+    pates = next(ligne for ligne in reelle.lignes if ligne.ingredient_id == "pates")
+    carotte = next(ligne for ligne in reelle.lignes if ligne.ingredient_id == "carotte")
+    assert (pates.achats, pates.surplus_g, pates.prix_eur) == ([], 0, 0)
+    assert pates not in reelle.a_acheter
+    assert carotte.depuis_placard_g == 50  # ce que les repas prennent au placard reste déduit
+    assert "pates" not in placard_apres_courses(reelle, {}, cat)
+
+
+def test_stock_avant_validation():
+    ecarts = {"pates": (0, 150), "riz": (300, 120), "lait": (200, 0)}
+    # Depuis la validation, la famille a fini le riz à la main et ajouté des œufs.
+    actuel = {"pates": 150, "riz": 0, "oeufs": 6}
+    assert stock_avant_validation(actuel, ecarts) == {"riz": 180, "lait": 200, "oeufs": 6}

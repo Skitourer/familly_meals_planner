@@ -379,10 +379,28 @@ def cocher(
     return services.enregistrer_coches(s, _semaine(s, lundi), modifications)
 
 
+class ValidationEntree(BaseModel):
+    # Faux : les articles ni cochés ni scannés n'ont pas été achetés (ni placard, ni budget).
+    tout_achete: bool = True
+
+
 @router.post("/{lundi}/courses/valider", status_code=204, dependencies=ADULTE)
-def valider_courses(lundi: date, s: Session = Depends(session)) -> None:
+def valider_courses(
+    lundi: date, entree: ValidationEntree | None = None, s: Session = Depends(session)
+) -> None:
+    """Courses faites : met à jour le placard et enregistre le budget de la semaine."""
+    tout_achete = entree.tout_achete if entree else True
     try:
-        services.valider_courses(s, _semaine(s, lundi), catalogue())
+        services.valider_courses(s, _semaine(s, lundi), catalogue(), tout_achete=tout_achete)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.post("/{lundi}/courses/rouvrir", status_code=204, dependencies=ADULTE)
+def rouvrir_courses(lundi: date, s: Session = Depends(session)) -> None:
+    """Défait la validation : le placard et le budget reviennent à leur état d'avant."""
+    try:
+        services.rouvrir_courses(s, _semaine(s, lundi))
     except services.ErreurMetier as erreur:
         raise HTTPException(409, str(erreur)) from erreur
 
