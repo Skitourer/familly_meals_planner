@@ -2,8 +2,8 @@
 
 import pytest
 
+from repas.domaine.produits import quantite_en_grammes
 from repas.import_donnees.ciqual import valeur_numerique
-from repas.import_donnees.sources_web import quantite_en_grammes
 
 
 @pytest.mark.parametrize(

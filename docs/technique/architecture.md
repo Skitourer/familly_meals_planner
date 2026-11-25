@@ -53,6 +53,8 @@ flowchart TB
 | `domaine/courses.py` | Liste de courses, conditionnements, placard |
 | `domaine/coches.py` | Coches de la liste de courses : la plus récente l'emporte |
 | `domaine/placard.py` | Frigo à vider : produits à consommer vite, idées de plats |
+| `domaine/produits.py` | Produits scannés : code-barres, fiche Open Food Facts, ingrédients correspondants |
+| `open_food_facts.py` | Appel à Open Food Facts pour un produit scanné (ADR 8) |
 | `modeles.py`, `base.py` | Tables SQLModel et connexion SQLite |
 | `services.py` | Cas d'usage (générer, valider les courses...) |
 | `securite.py` | Hachage des mots de passe, limitation des essais de connexion |
