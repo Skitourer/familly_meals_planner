@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from repas.catalogue import Catalogue
@@ -47,12 +48,21 @@ def obtenir_semaine(s: Session, lundi: date) -> Semaine:
     """Semaine du lundi donné, créée avec 14 créneaux (toute la famille) si besoin."""
     if lundi.weekday() != 0:
         raise ErreurMetier("La date doit être un lundi")
-    semaine = s.exec(select(Semaine).where(Semaine.lundi == lundi)).first()
+    semaine = _semaine_existante(s, lundi)
     if semaine:
         return semaine
     semaine = Semaine(lundi=lundi)
     s.add(semaine)
-    s.flush()
+    try:
+        s.flush()
+    except IntegrityError:
+        # Une requête simultanée a créé la semaine entre la lecture et l'insertion (issue #45).
+        # Elle l'a enregistrée avec ses créneaux dans la même transaction : on la relit.
+        s.rollback()
+        existante = _semaine_existante(s, lundi)
+        if existante is None:
+            raise
+        return existante
     tous = [m.id for m in membres_actifs(s) if m.id is not None]
     for jour in range(7):
         for moment in MOMENTS:
@@ -60,6 +70,10 @@ def obtenir_semaine(s: Session, lundi: date) -> Semaine:
     s.commit()
     s.refresh(semaine)
     return semaine
+
+
+def _semaine_existante(s: Session, lundi: date) -> Semaine | None:
+    return s.exec(select(Semaine).where(Semaine.lundi == lundi)).first()
 
 
 def creneaux_de(s: Session, semaine: Semaine) -> list[Creneau]:
