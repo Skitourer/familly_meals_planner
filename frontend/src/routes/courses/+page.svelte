@@ -3,12 +3,19 @@
 	Les coches sont partagées entre appareils ; sans réseau, elles attendent sur l'appareil
 	et partent au retour de la connexion (voir lib/coches.ts).
 	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés ;
-	hors liste, il rejoint le placard à la validation, ou compte dans le budget seulement.
+	hors liste, il rejoint le placard à la validation ; un autre produit (hors repas) est rangé
+	parmi les autres produits du placard, sauf s'il est marqué « ne pas ranger ».
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { articleCorrespondant, AUTRE_ACHAT, groupesDeChoix, prixPropose } from '#lib/achats.ts';
+	import {
+		articleCorrespondant,
+		AUTRE_PRODUIT,
+		ficheDuProduit,
+		groupesDeChoix,
+		prixPropose
+	} from '#lib/achats.ts';
 	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
 	import {
 		ajouterAFile,
@@ -39,8 +46,11 @@
 	let article = $state('');
 	let quantiteAchetee = $state(0);
 	let prixPaye = $state(0);
-	let libelle = $state('');
+	let nomProduit = $state('');
+	let categorie = $state('');
+	let ranger = $state(true);
 	let ingredients = $state<Ingredient[]>([]);
+	let categories = $state<string[]>([]);
 
 	// Validation : articles ni cochés ni scannés, à confirmer comme achetés ou non.
 	let confirmationOuverte = $state(false);
@@ -120,7 +130,10 @@
 		scanOuvert = true;
 		if (!ingredients.length) {
 			try {
-				ingredients = await api.lire<Ingredient[]>('/ingredients');
+				[ingredients, categories] = await Promise.all([
+					api.lire<Ingredient[]>('/ingredients'),
+					api.lire<string[]>('/produits/categories')
+				]);
 			} catch (e) {
 				messageScan = messageErreur(e);
 			}
@@ -133,8 +146,10 @@
 		try {
 			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
 			quantiteAchetee = Math.round(produit.quantite_g ?? 0);
-			libelle = [produit.nom, produit.marque].filter(Boolean).join(' — ') || 'Autre achat';
-			choisirArticle(articleCorrespondant(produit, lignes));
+			nomProduit = produit.nom || 'Produit sans nom';
+			categorie = produit.categorie;
+			ranger = true;
+			choisirArticle(articleCorrespondant(produit, lignes) || AUTRE_PRODUIT);
 		} catch (e) {
 			messageScan = messageErreur(e);
 		} finally {
@@ -153,12 +168,12 @@
 	async function enregistrerAchat(event: SubmitEvent) {
 		event.preventDefault();
 		if (!produit || !article) return;
-		const autre = article === AUTRE_ACHAT;
+		const autre = article === AUTRE_PRODUIT;
 		try {
 			await api.creer(
 				`/semaines/${lundi}/courses/${autre ? 'autres-achats' : 'achats'}`,
 				autre
-					? { libelle, prix_eur: prixPaye, code: produit.code }
+					? { ...ficheDuProduit(produit, nomProduit, categorie), prix_eur: prixPaye, ranger }
 					: {
 							ingredient_id: article,
 							quantite_g: quantiteAchetee,
@@ -172,7 +187,7 @@
 		}
 		const prevu = lignes.some((l) => l.ingredient_id === article);
 		if (prevu && !coches.has(article)) cocher(article);
-		const nom = autre ? libelle : (nomsIngredients.get(article) ?? article);
+		const nom = autre ? nomProduit : (nomsIngredients.get(article) ?? article);
 		messageScan = `Enregistré : ${nom}, ${euros(prixPaye)}. Scannez le produit suivant.`;
 		produit = null;
 		await charger(lundi);
@@ -352,14 +367,15 @@
 						{/each}
 						{#each courses.autres_achats as autre (autre.id)}
 							<li>
-								<span class="nom">{autre.libelle}</span>
+								<span class="nom">{autre.nom}</span>
 								<span class="detail reel">
-									✓ {euros(autre.prix_eur)} · budget seulement
+									✓ {autre.contenu ? `${autre.contenu} · ` : ''}{euros(autre.prix_eur)}
+									{autre.ranger ? '→ placard' : '· budget seulement'}
 									{#if !courses.validees}
 										<button
 											class="discret"
 											onclick={() => annulerAchat(`autres-achats/${autre.id}`)}
-											aria-label={`Annuler l'achat de ${autre.libelle}`}
+											aria-label={`Annuler l'achat de ${autre.nom}`}
 										>
 											✕
 										</button>
@@ -409,12 +425,12 @@
 			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
 		</p>
 		{#if !article}
+			<p class="doux">Choisissez l'article.</p>
+		{:else if article === AUTRE_PRODUIT}
 			<p class="doux">
-				Aucun ingrédient ne correspond d'office : choisissez-le, ou « Autre achat » pour le compter
-				dans le budget seulement.
+				Produit hors repas : compté dans le budget et rangé parmi les autres produits du placard
+				quand les courses seront validées.
 			</p>
-		{:else if article === AUTRE_ACHAT}
-			<p class="doux">Compté dans le budget, sans aller au placard.</p>
 		{:else if !lignes.some((l) => l.ingredient_id === article)}
 			<p class="doux">Hors liste : il rejoindra le placard quand les courses seront validées.</p>
 		{/if}
@@ -445,13 +461,23 @@
 							{/each}
 						</optgroup>
 					{/if}
-					<option value={AUTRE_ACHAT}>Autre achat (budget seulement)</option>
+					<option value={AUTRE_PRODUIT}>Autre produit (hors repas)</option>
 				</select>
 			</label>
-			{#if article === AUTRE_ACHAT}
+			{#if article === AUTRE_PRODUIT}
 				<label>
-					Libellé
-					<input type="text" maxlength="120" bind:value={libelle} />
+					Nom
+					<input type="text" maxlength="120" bind:value={nomProduit} />
+				</label>
+				<label>
+					Catégorie
+					<select bind:value={categorie}>
+						{#each categories as c (c)}<option value={c}>{c}</option>{/each}
+					</select>
+				</label>
+				<label class="case">
+					<input type="checkbox" bind:checked={ranger} />
+					Ranger au placard (décocher pour un produit consommé tout de suite)
 				</label>
 			{:else}
 				<label>
@@ -470,7 +496,8 @@
 			<div class="ligne">
 				<button
 					class="principal"
-					disabled={!article || (article === AUTRE_ACHAT ? !libelle.trim() : quantiteAchetee <= 0)}
+					disabled={!article ||
+						(article === AUTRE_PRODUIT ? !nomProduit.trim() || !categorie : quantiteAchetee <= 0)}
 				>
 					Enregistrer
 				</button>
@@ -499,8 +526,13 @@
 		gap: 0.3rem;
 	}
 
-	.formulaire-scan :is(input, select) {
+	.formulaire-scan :is(input:not([type='checkbox']), select) {
 		width: 100%;
+	}
+
+	.formulaire-scan label.case {
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: center;
 	}
 
 	.attente {

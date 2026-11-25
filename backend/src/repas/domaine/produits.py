@@ -8,8 +8,10 @@ fiche Open Food Facts et propose les ingrédients du référentiel correspondant
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from repas.catalogue.schemas import Ingredient
@@ -18,6 +20,24 @@ from repas.catalogue.schemas import Ingredient
 LONGUEURS_CODE = (8, 12, 13, 14)
 
 FACTEURS_GRAMMES = {"g": 1, "ml": 1, "kg": 1000, "l": 1000, "cl": 10}
+
+# Catégories simples des autres produits du placard (hors repas), avec les catégories
+# Open Food Facts qui y mènent ; la première qui correspond l'emporte.
+CATEGORIES_PRODUITS: dict[str, tuple[str, ...]] = {
+    "Petit-déjeuner": ("en:breakfast-cereals", "en:breakfasts", "en:spreads", "en:jams",
+                       "en:honeys", "en:sweet-spreads"),
+    "Biscuits et goûters": ("en:biscuits-and-cakes", "en:biscuits", "en:cakes",
+                            "en:chocolates", "en:confectioneries", "en:sweet-snacks"),
+    "Apéritif": ("en:salty-snacks", "en:appetizers", "en:crisps"),
+    "Boissons": ("en:beverages",),
+    "Surgelés": ("en:frozen-foods",),
+    "Conserves": ("en:canned-foods",),
+    "Produits frais": ("en:dairies", "en:meats", "en:fresh-foods"),
+}  # fmt: skip
+CATEGORIE_PAR_DEFAUT = "Épicerie"
+CATEGORIES = (*CATEGORIES_PRODUITS, CATEGORIE_PAR_DEFAUT)
+
+NUTRISCORES = ("a", "b", "c", "d", "e")
 
 
 @dataclass(frozen=True)
@@ -29,6 +49,10 @@ class FicheProduit:
     marque: str
     quantite_g: float | None  # contenu du paquet en g (ou ml), None si inconnu
     categories: tuple[str, ...]  # étiquettes Open Food Facts, de la plus générale à la plus précise
+    contenu: str = ""  # tel qu'imprimé sur le paquet, ex. « 400 g »
+    nutriscore: str | None = None  # a à e
+    nova: int | None = None  # 1 à 4 (degré de transformation)
+    green_score: str | None = None  # a à e (impact environnemental)
 
 
 def code_barres_valide(code: str) -> bool:
@@ -73,7 +97,40 @@ def lire_fiche(code: str, reponse: Mapping[str, Any]) -> FicheProduit | None:
             produit.get("product_quantity"), produit.get("product_quantity_unit") or "g"
         ),
         categories=tuple(str(c) for c in categories),
+        contenu=_contenu(produit.get("quantity")),
+        nutriscore=_note(produit.get("nutriscore_grade")),
+        nova=_nova(produit.get("nova_group")),
+        # Le Green-Score s'appelait Eco-Score : Open Food Facts garde les deux noms.
+        green_score=_note(produit.get("environmental_score_grade"))
+        or _note(produit.get("ecoscore_grade")),
     )
+
+
+def _contenu(valeur: Any) -> str:
+    """Contenu imprimé, sans le « ℮ » (quantité estimée) que les fiches recopient souvent."""
+    return re.sub(r"\s+[℮e]$", "", str(valeur or "").strip())[:40]
+
+
+def _note(valeur: Any) -> str | None:
+    """Note de A à E, en minuscule ; None si absente ou inconnue (« unknown »)."""
+    note = str(valeur or "").lower()
+    return note if note in NUTRISCORES else None
+
+
+def _nova(valeur: Any) -> int | None:
+    try:
+        groupe = int(valeur)
+    except (TypeError, ValueError):
+        return None
+    return groupe if 1 <= groupe <= 4 else None
+
+
+def categorie_produit(categories: tuple[str, ...]) -> str:
+    """Catégorie simple d'un produit hors repas, d'après ses catégories Open Food Facts."""
+    for categorie, etiquettes in CATEGORIES_PRODUITS.items():
+        if any(e in categories for e in etiquettes):
+            return categorie
+    return CATEGORIE_PAR_DEFAUT
 
 
 def ingredients_correspondants(
@@ -94,3 +151,16 @@ def ingredients_correspondants(
 def quantite_comestible(quantite_g: float, ingredient: Ingredient) -> float:
     """Part comestible d'un paquet (le placard compte en grammes comestibles)."""
     return round(quantite_g * ingredient.part_comestible)
+
+
+def meme_produit(code_a: str | None, nom_a: str, code_b: str | None, nom_b: str) -> bool:
+    """Deux fiches désignent le même produit : même code-barres, sinon même nom (sans casse)."""
+    if code_a or code_b:
+        return code_a == code_b
+    return nom_a.strip().casefold() == nom_b.strip().casefold()
+
+
+def date_la_plus_proche(a: date | None, b: date | None) -> date | None:
+    """Date limite d'un stock de plusieurs paquets : celle du paquet à finir en premier."""
+    dates = [d for d in (a, b) if d is not None]
+    return min(dates) if dates else None

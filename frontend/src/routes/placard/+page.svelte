@@ -1,17 +1,22 @@
 <!--
-	Placard : restes de paquets entamés et frigo à vider, utilisés en priorité par l'algorithme.
+	Placard : restes de paquets entamés et frigo à vider, utilisés en priorité par l'algorithme,
+	et autres produits hors repas (comptés en paquets).
 	Les produits à consommer dans la semaine proposent des idées de plats et un réajustement
 	de la fin de la semaine en cours.
 -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { AUTRE_PRODUIT, ficheDuProduit } from '#lib/achats.ts';
 	import { api, messageErreur } from '#lib/api.ts';
 	import { iso, lundiDe } from '#lib/dates.ts';
+	import AutresProduits from '#lib/composants/AutresProduits.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
-	import type { IdeeFrigo, Ingredient, ProduitScanne, Stock } from '#lib/types.ts';
+	import type { IdeeFrigo, Ingredient, ProduitPlacard, ProduitScanne, Stock } from '#lib/types.ts';
 
 	let stock = $state<Stock[]>([]);
+	let autres = $state<ProduitPlacard[]>([]);
+	let categories = $state<string[]>([]);
 	let ingredients = $state<Ingredient[]>([]);
 	let idees = $state<IdeeFrigo[]>([]);
 	let erreur = $state('');
@@ -28,8 +33,14 @@
 	let ingredientScanne = $state('');
 	let quantiteScannee = $state(100);
 	let peremptionScannee = $state('');
+	let nomProduit = $state('');
+	let categorieProduit = $state('');
+	let paquetsScannes = $state(1);
 
-	const aVider = $derived(stock.filter((s) => s.bientot_perime));
+	const aVider = $derived([
+		...stock.filter((s) => s.bientot_perime),
+		...autres.filter((p) => p.bientot_perime)
+	]);
 	const suivis = $derived(ingredients.filter((i) => !i.basique));
 	const autresIngredients = $derived(
 		suivis.filter((i) => !produit?.propositions.some((p) => p.ingredient_id === i.id))
@@ -41,10 +52,12 @@
 
 	async function charger() {
 		try {
-			[stock, idees, ingredients] = await Promise.all([
+			[stock, autres, idees, ingredients, categories] = await Promise.all([
 				api.lire<Stock[]>('/placard'),
+				api.lire<ProduitPlacard[]>('/placard/produits'),
 				api.lire<IdeeFrigo[]>('/placard/idees'),
-				ingredients.length ? Promise.resolve(ingredients) : api.lire<Ingredient[]>('/ingredients')
+				ingredients.length ? Promise.resolve(ingredients) : api.lire<Ingredient[]>('/ingredients'),
+				categories.length ? Promise.resolve(categories) : api.lire<string[]>('/produits/categories')
 			]);
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -86,8 +99,12 @@
 		messageScan = '';
 		try {
 			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
-			choisirIngredient(produit.propositions[0]?.ingredient_id ?? '');
+			// Sans ingrédient correspondant, c'est sans doute un produit hors repas (Nutella...).
+			choisirIngredient(produit.propositions[0]?.ingredient_id ?? AUTRE_PRODUIT);
 			peremptionScannee = '';
+			nomProduit = produit.nom || 'Produit sans nom';
+			categorieProduit = produit.categorie;
+			paquetsScannes = 1;
 		} catch (e) {
 			messageScan = messageErreur(e);
 		} finally {
@@ -104,7 +121,23 @@
 
 	async function ajouterProduitScanne(event: SubmitEvent) {
 		event.preventDefault();
-		if (!ingredientScanne) return;
+		if (!ingredientScanne || !produit) return;
+		if (ingredientScanne === AUTRE_PRODUIT) {
+			try {
+				await api.creer('/placard/produits', {
+					...ficheDuProduit(produit, nomProduit, categorieProduit),
+					paquets: paquetsScannes,
+					peremption: peremptionScannee || null
+				});
+				await charger();
+			} catch (e) {
+				messageScan = messageErreur(e);
+				return;
+			}
+			messageScan = `Ajouté au placard : ${nomProduit.trim()}, ${paquetsScannes} paquet(s). Scannez le produit suivant.`;
+			produit = null;
+			return;
+		}
 		const existant = stock.find((s) => s.ingredient_id === ingredientScanne);
 		// Sans date saisie, on garde celle du produit déjà rangé : le plus ancien d'abord.
 		const ajoute = await ajuster(
@@ -186,7 +219,7 @@
 		<span class="doux">Le code-barres remplit le produit et sa quantité.</span>
 	</div>
 	{#if !stock.length}
-		<p class="doux">Le placard est vide.</p>
+		<p class="doux">Aucun ingrédient au placard.</p>
 	{:else}
 		<table>
 			<thead>
@@ -255,6 +288,8 @@
 	</form>
 </div>
 
+<AutresProduits produits={autres} {categories} onModifie={charger} />
+
 <Modale titre="Scanner un produit" bind:ouverte={scanOuvert}>
 	{#if messageScan}<p class:erreur={!messageScan.startsWith('Ajouté')}>{messageScan}</p>{/if}
 	{#if rechercheEnCours}
@@ -265,8 +300,11 @@
 			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
 			{#if produit.quantite_g}<span class="doux">({produit.quantite_g} g)</span>{/if}
 		</p>
-		{#if !produit.propositions.length}
-			<p class="doux">Aucun ingrédient ne correspond d'office : choisissez-le dans la liste.</p>
+		{#if ingredientScanne === AUTRE_PRODUIT}
+			<p class="doux">
+				Produit hors repas : rangé parmi les autres produits, compté en paquets. Choisissez un
+				ingrédient si les repas peuvent l'utiliser.
+			</p>
 		{/if}
 		<form class="formulaire-scan" onsubmit={ajouterProduitScanne}>
 			<label>
@@ -288,18 +326,42 @@
 							<option value={ing.id}>{ing.nom}</option>
 						{/each}
 					</optgroup>
+					<option value={AUTRE_PRODUIT}>Autre produit (hors repas)</option>
 				</select>
 			</label>
-			<label>
-				Quantité (g, part comestible)
-				<input type="number" min="1" step="any" bind:value={quantiteScannee} />
-			</label>
+			{#if ingredientScanne === AUTRE_PRODUIT}
+				<label>
+					Nom
+					<input type="text" maxlength="120" bind:value={nomProduit} />
+				</label>
+				<label>
+					Catégorie
+					<select bind:value={categorieProduit}>
+						{#each categories as c (c)}<option value={c}>{c}</option>{/each}
+					</select>
+				</label>
+				<label>
+					Paquets
+					<input type="number" min="1" max="99" bind:value={paquetsScannes} />
+				</label>
+			{:else}
+				<label>
+					Quantité (g, part comestible)
+					<input type="number" min="1" step="any" bind:value={quantiteScannee} />
+				</label>
+			{/if}
 			<label>
 				À utiliser avant (facultatif)
 				<input type="date" bind:value={peremptionScannee} />
 			</label>
 			<div class="ligne">
-				<button class="principal" disabled={!ingredientScanne}>Ajouter au placard</button>
+				<button
+					class="principal"
+					disabled={!ingredientScanne ||
+						(ingredientScanne === AUTRE_PRODUIT && (!nomProduit.trim() || paquetsScannes < 1))}
+				>
+					Ajouter au placard
+				</button>
 				<button type="button" onclick={() => (produit = null)}>Scanner un autre produit</button>
 			</div>
 		</form>

@@ -34,17 +34,21 @@ from repas.domaine.courses import (
 )
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
+from repas.domaine.produits import date_la_plus_proche, meme_produit
 from repas.domaine.reperes import REPERES
 from repas.modeles import (
+    AchatProduit,
     AchatReel,
-    AutreAchat,
     BilanCourses,
     Coche,
     Creneau,
     EcartPlacard,
+    EcartProduit,
+    FicheProduitMixin,
     Membre,
     Note,
     PrixProduit,
+    ProduitPlacard,
     Reglages,
     Semaine,
     Stock,
@@ -396,31 +400,82 @@ def _retenir_prix(s: Session, code: str | None, prix_eur: float) -> None:
         s.add(prix)
 
 
-def autres_achats(s: Session, semaine: Semaine) -> list[AutreAchat]:
-    """Achats sans ingrédient du référentiel, comptés dans le budget seulement."""
-    requete = select(AutreAchat).where(AutreAchat.semaine_id == semaine.id)
-    return list(s.exec(requete.order_by(col(AutreAchat.id))).all())
+def autres_achats(s: Session, semaine: Semaine) -> list[AchatProduit]:
+    """Autres produits achetés (sans ingrédient du référentiel) : budget, et placard si rangés."""
+    requete = select(AchatProduit).where(AchatProduit.semaine_id == semaine.id)
+    return list(s.exec(requete.order_by(col(AchatProduit.id))).all())
 
 
-def enregistrer_autre_achat(
-    s: Session, semaine: Semaine, libelle: str, prix_eur: float, code: str | None = None
-) -> None:
-    """Ajoute un achat compté dans le budget mais pas dans le placard."""
+def enregistrer_autre_achat(s: Session, semaine: Semaine, achat: AchatProduit) -> None:
+    """Ajoute un autre produit acheté ; il rejoint le placard à la validation s'il est rangé."""
     if semaine.courses_validees_le:
         raise ErreurMetier("Les courses de cette semaine sont déjà validées")
-    s.add(AutreAchat(semaine_id=semaine.id or 0, libelle=libelle, prix_eur=prix_eur))
-    _retenir_prix(s, code, prix_eur)
+    achat.semaine_id = semaine.id or 0
+    s.add(achat)
+    _retenir_prix(s, achat.code, achat.prix_eur)
     s.commit()
 
 
 def annuler_autre_achat(s: Session, semaine: Semaine, achat_id: int) -> None:
-    """Retire un achat « budget seulement »."""
+    """Retire un autre produit acheté."""
     if semaine.courses_validees_le:
         raise ErreurMetier("Les courses de cette semaine sont déjà validées")
-    achat = s.get(AutreAchat, achat_id)
+    achat = s.get(AchatProduit, achat_id)
     if achat and achat.semaine_id == semaine.id:
         s.delete(achat)
         s.commit()
+
+
+# --- Autres produits du placard (hors repas) ---------------------------------------------
+
+
+def produits_placard(s: Session) -> list[ProduitPlacard]:
+    """Autres produits du placard, par catégorie puis par nom."""
+    produits = s.exec(select(ProduitPlacard)).all()
+    return sorted(produits, key=lambda p: (p.categorie, p.nom.casefold()))
+
+
+def ranger_produit(
+    s: Session, fiche: FicheProduitMixin, paquets: int, peremption: date | None = None
+) -> tuple[ProduitPlacard, bool]:
+    """Ajoute des paquets au placard (même produit : on additionne) ; vrai si créé."""
+    existant = next(
+        (p for p in s.exec(select(ProduitPlacard)).all()
+         if meme_produit(p.code, p.nom, fiche.code, fiche.nom)),
+        None,
+    )  # fmt: skip
+    if existant is None:
+        champs = fiche.model_dump(include=set(FicheProduitMixin.model_fields))
+        existant = ProduitPlacard.model_validate({**champs, "paquets": 0, "peremption": peremption})
+    existant.paquets += paquets
+    existant.peremption = date_la_plus_proche(existant.peremption, peremption)
+    existant.mis_a_jour_le = datetime.now(UTC)
+    cree = existant.id is None
+    s.add(existant)
+    s.flush()
+    return existant, cree
+
+
+def modifier_produit(
+    s: Session,
+    produit_id: int,
+    paquets: int | None = None,
+    peremption: date | None = None,
+    categorie: str | None = None,
+) -> None:
+    """Corrige un autre produit du placard ; 0 paquet le retire."""
+    produit = s.get(ProduitPlacard, produit_id)
+    if produit is None:
+        raise ErreurMetier("Produit introuvable dans le placard")
+    if paquets == 0:
+        s.delete(produit)
+    else:
+        produit.paquets = paquets if paquets is not None else produit.paquets
+        produit.peremption = peremption or produit.peremption
+        produit.categorie = categorie or produit.categorie
+        produit.mis_a_jour_le = datetime.now(UTC)
+        s.add(produit)
+    s.commit()
 
 
 def annuler_achat(s: Session, semaine: Semaine, ingredient_id: str) -> None:
@@ -489,6 +544,7 @@ def valider_courses(
             stock.quantite_g = quantite
         stock.mis_a_jour_le = datetime.now(UTC)
         s.add(stock)
+    _ranger_autres_achats(s, semaine)
     semaine.courses_validees_le = datetime.now(UTC)
     s.add(semaine)
     s.add(
@@ -505,6 +561,36 @@ def valider_courses(
         )
     )
     s.commit()
+
+
+def _ranger_autres_achats(s: Session, semaine: Semaine) -> None:
+    """Range au placard les autres produits achetés, en notant les paquets ajoutés."""
+    ajouts: dict[int, EcartProduit] = {}
+    for achat in autres_achats(s, semaine):
+        if not achat.ranger:
+            continue
+        produit, cree = ranger_produit(s, achat, 1)
+        ecart = ajouts.setdefault(
+            produit.id or 0,
+            EcartProduit(semaine_id=semaine.id or 0, produit_id=produit.id or 0, paquets=0,
+                         cree=cree),
+        )  # fmt: skip
+        ecart.paquets += 1
+    s.add_all(ajouts.values())
+
+
+def _defaire_rangement(s: Session, semaine: Semaine) -> None:
+    """Retire du placard les paquets rangés par la validation (corrections ultérieures gardées)."""
+    requete = select(EcartProduit).where(EcartProduit.semaine_id == semaine.id)
+    for ecart in s.exec(requete).all():
+        produit = s.get(ProduitPlacard, ecart.produit_id)
+        if produit is not None:
+            produit.paquets -= ecart.paquets
+            if produit.paquets <= 0:
+                s.delete(produit)
+            else:
+                s.add(produit)
+        s.delete(ecart)
 
 
 def rouvrir_courses(s: Session, semaine: Semaine) -> None:
@@ -541,6 +627,7 @@ def rouvrir_courses(s: Session, semaine: Semaine) -> None:
             stock.mis_a_jour_le = datetime.now(UTC)
             s.add(stock)
         s.delete(ecart)
+    _defaire_rangement(s, semaine)
     if bilan:
         s.delete(bilan)
     semaine.courses_validees_le = None

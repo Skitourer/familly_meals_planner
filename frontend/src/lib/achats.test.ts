@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { articleCorrespondant, groupesDeChoix, prixPropose } from './achats';
+import { articleCorrespondant, ficheDuProduit, groupesDeChoix, prixPropose } from './achats';
 import type { Ingredient, LigneCourses, ProduitScanne } from './types';
 
 function ligne(ingredient_id: string, prix_eur = 0.9, achete_g = 500): LigneCourses {
@@ -27,6 +27,11 @@ const produit: ProduitScanne = {
 	nom: 'Penne complètes',
 	marque: 'Marque Exemple',
 	quantite_g: 1000,
+	contenu: '1 kg',
+	categorie: 'Épicerie',
+	nutriscore: 'a',
+	nova: 1,
+	green_score: null,
 	propositions: [
 		{
 			ingredient_id: 'pates-completes',
@@ -68,5 +73,18 @@ describe('achats', () => {
 		expect(prixPropose(produit, 'pates', lignes, 1000)).toBe(1.8);
 		expect(prixPropose(produit, 'pates-completes', lignes, 1000)).toBe(2.6);
 		expect(prixPropose(produit, 'riz', lignes, 1000)).toBe(0);
+	});
+
+	it('prépare la fiche d’un autre produit avec le nom corrigé', () => {
+		expect(ficheDuProduit(produit, ' Penne ', 'Épicerie')).toEqual({
+			code: '3000000000007',
+			nom: 'Penne',
+			marque: 'Marque Exemple',
+			contenu: '1 kg',
+			categorie: 'Épicerie',
+			nutriscore: 'a',
+			nova: 1,
+			green_score: null
+		});
 	});
 });

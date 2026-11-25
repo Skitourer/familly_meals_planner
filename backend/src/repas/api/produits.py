@@ -1,20 +1,58 @@
 """Produits du commerce lus par leur code-barres (placard et courses), réservé aux adultes."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlmodel import Session
 
 from repas import services
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.produits import (
+    CATEGORIES,
+    categorie_produit,
     code_barres_valide,
     ingredients_correspondants,
     quantite_comestible,
 )
+from repas.modeles import FicheProduitMixin
 from repas.open_food_facts import ChercheurProduit, OpenFoodFactsIndisponible, chercher_produit
 
 router = APIRouter(prefix="/produits", tags=["produits"])
+
+type Note = Literal["a", "b", "c", "d", "e"]
+
+
+class FicheEntree(BaseModel):
+    """Autre produit (hors repas) décrit par Open Food Facts ou saisi à la main."""
+
+    code: str | None = Field(default=None, max_length=14)
+    nom: str = Field(min_length=1, max_length=120)
+    marque: str = Field(default="", max_length=80)
+    contenu: str = Field(default="", max_length=40)
+    categorie: str = Field(max_length=40)
+    nutriscore: Note | None = None
+    nova: int | None = Field(default=None, ge=1, le=4)
+    green_score: Note | None = None
+
+    @field_validator("code")
+    @classmethod
+    def code_valide(cls, code: str | None) -> str | None:
+        if code is not None and not code_barres_valide(code):
+            raise ValueError("code-barres invalide")
+        return code
+
+    @field_validator("categorie")
+    @classmethod
+    def categorie_connue(cls, categorie: str) -> str:
+        if categorie not in CATEGORIES:
+            raise ValueError(f"catégorie inconnue (attendu : {', '.join(CATEGORIES)})")
+        return categorie
+
+    def fiche(self) -> FicheProduitMixin:
+        """Fiche à enregistrer (achat ou placard)."""
+        return FicheProduitMixin(**self.model_dump())
 
 
 class PropositionSortie(BaseModel):
@@ -29,6 +67,11 @@ class ProduitSortie(BaseModel):
     nom: str
     marque: str
     quantite_g: float | None  # contenu du paquet
+    contenu: str  # tel qu'imprimé, ex. « 400 g »
+    categorie: str  # catégorie proposée s'il est rangé parmi les autres produits
+    nutriscore: Note | None
+    nova: int | None
+    green_score: Note | None
     propositions: list[PropositionSortie]  # ingrédients correspondants, le plus probable d'abord
     dernier_prix_eur: float | None  # dernier prix payé par la famille pour ce produit
 
@@ -36,6 +79,12 @@ class ProduitSortie(BaseModel):
 def chercheur_produit() -> ChercheurProduit:
     """Dépendance : recherche Open Food Facts (remplaçable dans les tests)."""
     return chercher_produit
+
+
+@router.get("/categories")
+def categories() -> list[str]:
+    """Catégories des autres produits du placard."""
+    return list(CATEGORIES)
 
 
 @router.get("/{code}")
@@ -61,6 +110,11 @@ def produit_scanne(
         nom=fiche.nom,
         marque=fiche.marque,
         quantite_g=fiche.quantite_g,
+        contenu=fiche.contenu,
+        categorie=categorie_produit(fiche.categories),
+        nutriscore=fiche.nutriscore,  # pyright: ignore[reportArgumentType]
+        nova=fiche.nova,
+        green_score=fiche.green_score,  # pyright: ignore[reportArgumentType]
         propositions=[
             PropositionSortie(
                 ingredient_id=i,

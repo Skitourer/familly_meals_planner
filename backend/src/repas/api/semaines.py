@@ -9,6 +9,7 @@ from pydantic import AwareDatetime, BaseModel, Field
 from sqlmodel import Session, select
 
 from repas import services
+from repas.api.produits import FicheEntree
 from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
@@ -22,7 +23,7 @@ from repas.domaine.courses import (
     format_quantite,
 )
 from repas.domaine.produits import code_barres_valide
-from repas.modeles import AutreAchat, Creneau, Semaine
+from repas.modeles import AchatProduit, Creneau, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
@@ -86,8 +87,11 @@ class LigneCoursesSortie(BaseModel):
 
 class AutreAchatSortie(BaseModel):
     id: int
-    libelle: str
+    nom: str
+    marque: str
+    contenu: str
     prix_eur: float
+    ranger: bool  # rangé au placard à la validation
 
 
 class CoursesSortie(BaseModel):
@@ -118,10 +122,9 @@ class AchatEntree(BaseModel):
     code: str | None = Field(default=None, max_length=14)  # code-barres, pour le prix suivant
 
 
-class AutreAchatEntree(BaseModel):
-    libelle: str = Field(min_length=1, max_length=120)
+class AutreAchatEntree(FicheEntree):
     prix_eur: float = Field(ge=0, le=1_000)
-    code: str | None = Field(default=None, max_length=14)
+    ranger: bool = True  # faux : budget seulement (sandwich mangé tout de suite...)
 
 
 # --- Utilitaires ---------------------------------------------------------------------
@@ -190,7 +193,7 @@ def _courses_sortie(
     validees: bool,
     coches: list[str],
     achats: dict[str, AchatConstate],
-    autres: list[AutreAchat],
+    autres: list[AchatProduit],
 ) -> CoursesSortie:
     def ligne(x: LigneCourses) -> LigneCoursesSortie:
         reel = achats.get(x.ingredient_id)
@@ -222,7 +225,8 @@ def _courses_sortie(
         total_eur=liste.total_eur,
         hors_liste=[ligne(x) for x in sorted(reelle.hors_liste, key=lambda x: x.nom)],
         autres_achats=[
-            AutreAchatSortie(id=a.id or 0, libelle=a.libelle, prix_eur=a.prix_eur) for a in autres
+            AutreAchatSortie(**a.model_dump(include=set(AutreAchatSortie.model_fields)))
+            for a in autres
         ],
         total_reel_eur=round(reelle.total_eur + sum(a.prix_eur for a in autres), 2),
         nb_achats_reels=len(achats) + len(autres),
@@ -342,13 +346,12 @@ def annuler_achat(lundi: date, ingredient_id: str, s: Session = Depends(session)
 
 @router.post("/{lundi}/courses/autres-achats", status_code=204, dependencies=ADULTE)
 def acheter_autre(lundi: date, entree: AutreAchatEntree, s: Session = Depends(session)) -> None:
-    """Enregistre un achat sans ingrédient du référentiel : budget seulement."""
-    if entree.code is not None and not code_barres_valide(entree.code):
-        raise HTTPException(422, "Code-barres invalide")
+    """Enregistre un autre produit acheté : budget, et placard à la validation s'il est rangé."""
+    achat = AchatProduit(
+        **entree.fiche().model_dump(), semaine_id=0, prix_eur=entree.prix_eur, ranger=entree.ranger
+    )
     try:
-        services.enregistrer_autre_achat(
-            s, _semaine(s, lundi), entree.libelle.strip(), entree.prix_eur, entree.code
-        )
+        services.enregistrer_autre_achat(s, _semaine(s, lundi), achat)
     except services.ErreurMetier as erreur:
         raise HTTPException(409, str(erreur)) from erreur
 

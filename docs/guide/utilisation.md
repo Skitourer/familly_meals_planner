@@ -118,9 +118,10 @@ l'étiquette, puis **Enregistrer** : l'article est coché et la ligne affiche «
 **Produit qui n'est pas sur la liste** : choisissez l'ingrédient dans « Hors liste »
 (correspondances proposées, puis tous les ingrédients). Il apparaît dans la section **Hors
 liste** et rejoint **en entier** le placard quand les courses sont validées, même un produit
-frais : le cadre « Frigo à vider » le signalera à temps. Pour un produit sans ingrédient
-correspondant (gâteaux, boissons, produits ménagers), **Autre achat (budget seulement)**
-garde son nom et son prix : il compte dans le budget, pas dans le placard.
+frais : le cadre « Frigo à vider » le signalera à temps. Un produit que les repas n'utilisent
+pas (Nutella, céréales, boissons) est proposé comme **Autre produit (hors repas)** : il compte
+dans le budget et rejoint les « Autres produits » du placard à la validation. Décochez
+**Ranger au placard** pour ce qui est consommé tout de suite (un sandwich).
 
 Le total « avec les prix payés » s'affiche à côté du budget estimé. Le scan n'est pas
 obligatoire : les articles non scannés gardent leur estimation.
@@ -189,6 +190,21 @@ la caméra se rouvre pour le produit suivant.
 - Produit inconnu d'Open Food Facts ou réseau absent : ajoutez-le à la main.
 - Sans date saisie, un produit déjà au placard garde sa date limite (le plus ancien d'abord).
 - Les produits de fond de placard (huile, sel, épices) ne sont pas suivis.
+
+### Autres produits
+
+La section **Autres produits** suit le stock de ce que les repas n'utilisent pas : petit-déjeuner,
+biscuits et goûters, apéritif, boissons, conserves… Chaque produit est compté **en paquets**,
+regroupé par catégorie (déduite d'Open Food Facts, modifiable) :
+
+- **−** et **+** corrigent le nombre de paquets ; à 0, le produit est retiré ;
+- une date limite facultative le fait apparaître dans « Frigo à vider » ;
+- au scan, un produit sans ingrédient correspondant est proposé comme « Autre produit » ;
+  rescanner le même produit ajoute un paquet ;
+- un produit sans code-barres s'ajoute à la main en bas de la section.
+
+Les autres produits ne sont utilisés ni par l'algorithme des repas ni par le bilan
+nutritionnel.
 
 ### Frigo à vider
 

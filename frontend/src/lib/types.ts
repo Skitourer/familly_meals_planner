@@ -140,10 +140,37 @@ export interface LigneCourses {
 	prix_reel_eur: number | null;
 }
 
+/** Autre produit (hors repas) acheté aux courses. */
 export interface AutreAchat {
 	id: number;
-	libelle: string;
+	nom: string;
+	marque: string;
+	contenu: string;
 	prix_eur: number;
+	ranger: boolean; // rangé au placard à la validation
+}
+
+/** Note de A à E (Nutri-Score, Green-Score), en minuscule. */
+export type Note = 'a' | 'b' | 'c' | 'd' | 'e';
+
+/** Description d'un autre produit : Open Food Facts ou saisie à la main. */
+export interface FicheProduit {
+	code: string | null;
+	nom: string;
+	marque: string;
+	contenu: string;
+	categorie: string;
+	nutriscore: Note | null;
+	nova: number | null;
+	green_score: Note | null;
+}
+
+/** Autre produit du placard (hors repas), compté en paquets. */
+export interface ProduitPlacard extends FicheProduit {
+	id: number;
+	paquets: number;
+	peremption: string | null;
+	bientot_perime: boolean;
 }
 
 export interface Courses {
@@ -151,7 +178,7 @@ export interface Courses {
 	a_verifier: string[];
 	total_eur: number;
 	hors_liste: LigneCourses[]; // ingrédients achetés sans être prévus
-	autres_achats: AutreAchat[]; // budget seulement
+	autres_achats: AutreAchat[]; // autres produits (hors repas)
 	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
 	nb_achats_reels: number;
 	validees: boolean;
@@ -188,6 +215,11 @@ export interface ProduitScanne {
 	nom: string;
 	marque: string;
 	quantite_g: number | null;
+	contenu: string;
+	categorie: string; // proposée s'il est rangé parmi les autres produits
+	nutriscore: Note | null;
+	nova: number | null;
+	green_score: Note | null;
 	propositions: PropositionProduit[];
 	dernier_prix_eur: number | null; // dernier prix payé par la famille pour ce produit
 }

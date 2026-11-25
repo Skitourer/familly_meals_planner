@@ -115,14 +115,45 @@ class EcartPlacard(SQLModel, table=True):
     apres_g: float  # 0 si la validation l'a retiré
 
 
-class AutreAchat(SQLModel, table=True):
-    """Achat sans ingrédient du référentiel (gâteaux, boissons...) : budget seulement."""
+class FicheProduitMixin(SQLModel):
+    """Description d'un produit hors repas (Open Food Facts ou saisie à la main)."""
+
+    code: str | None = Field(default=None, max_length=14, index=True)
+    nom: str = Field(max_length=120)
+    marque: str = Field(default="", max_length=80)
+    contenu: str = Field(default="", max_length=40)  # ex. « 400 g »
+    categorie: str = Field(max_length=40)
+    nutriscore: str | None = Field(default=None, max_length=1)
+    nova: int | None = Field(default=None, ge=1, le=4)
+    green_score: str | None = Field(default=None, max_length=1)
+
+
+class ProduitPlacard(FicheProduitMixin, table=True):
+    """Autre produit du placard (Nutella, céréales...) : compté en paquets, hors repas."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    paquets: int = Field(ge=0)
+    peremption: date | None = None
+    mis_a_jour_le: datetime = Field(default_factory=maintenant)
+
+
+class AchatProduit(FicheProduitMixin, table=True):
+    """Autre produit acheté aux courses : budget, et placard à la validation si ``ranger``."""
 
     id: int | None = Field(default=None, primary_key=True)
     semaine_id: int = Field(foreign_key="semaine.id", index=True)
-    libelle: str = Field(max_length=120)
     prix_eur: float = Field(ge=0)
+    ranger: bool = True
     cree_le: datetime = Field(default_factory=maintenant)
+
+
+class EcartProduit(SQLModel, table=True):
+    """Paquets d'autres produits rangés par la validation des courses, pour la défaire."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    produit_id: int = Field(primary_key=True)
+    paquets: int
+    cree: bool  # le produit n'était pas au placard avant la validation
 
 
 class PrixProduit(SQLModel, table=True):

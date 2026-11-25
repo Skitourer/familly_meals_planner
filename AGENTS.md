@@ -318,6 +318,7 @@ Use these French terms as is in the UI, code and docs.
 | **Repas à l'extérieur** | Créneau eaten outside (school canteen…), assumed balanced. | Absence |
 | **Coefficient de portion** | Membre's energy need ÷ 2,000 kcal; multiplies the reference portion. | |
 | **Placard** | Ingredient stock left at home after shopping. | Restes |
+| **Autre produit** | Placard item not used by meals (Nutella, cereals), counted in paquets. | Ingrédient |
 | **Avis** / **note** | The "Avis" menu; a 1–5 star rating given by a membre to a plat. | |
 | **Bilan** | Statistics over a period (nutrition, carbon, budget, variety). | |
 | **Repères** | Per-meal nutritional guidelines (ANSES, PNNS). | Références (EFSA intakes per membre) |

@@ -30,8 +30,8 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus) ; la plus récente gagne ; renvoie les articles cochés |
 | `POST` | `/api/semaines/{lundi}/courses/achats` | Produit acheté (`{ingredient_id, quantite_g, prix_eur, code?}`), prévu sur la liste ou non (hors liste : au placard à la validation) ; s'ajoute aux précédents |
 | `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |
-| `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Achat sans ingrédient (`{libelle, prix_eur, code?}`) : budget seulement |
-| `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un « autre achat » |
+| `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Autre produit acheté (fiche, `prix_eur`, `ranger`) : budget, et placard à la validation si `ranger` |
+| `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un autre produit acheté |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard ; corps facultatif `{tout_achete}` (faux : les articles ni cochés ni scannés n'ont pas été achetés) |
 | `POST` | `/api/semaines/{lundi}/courses/rouvrir` | Défaire la validation (placard et budget) |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |
@@ -41,6 +41,10 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/placard` | Contenu du placard |
 | `GET` | `/api/placard/idees` | Plats qui consomment le mieux les produits à vider |
 | `PUT` | `/api/placard/{ingredient}` | Corriger une quantité ou une date limite (0 = retirer) |
+| `GET` | `/api/placard/produits` | Autres produits du placard (hors repas, en paquets) |
+| `POST` | `/api/placard/produits` | Ranger des paquets d'un autre produit (même code-barres ou même nom : additionnés) |
+| `PUT` | `/api/placard/produits/{id}` | Corriger paquets (0 = retirer), date limite ou catégorie |
+| `GET` | `/api/produits/categories` | Catégories des autres produits |
 | `GET` | `/api/produits/{code}` | Produit scanné (Open Food Facts), ingrédients correspondants et dernier prix payé |
 
 `{lundi}` est une date `AAAA-MM-JJ` qui doit tomber un lundi ; `{jour}` va de 0 (lundi) à 6 ;
