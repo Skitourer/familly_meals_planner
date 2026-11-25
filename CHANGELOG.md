@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.4.0...v1.5.0) (2026-11-25)
+
+
+### Nouveautés
+
+* autres produits du placard (hors repas) comptés en paquets ([#53](https://github.com/Skitourer/familly_meals_planner/issues/53)) ([b3bfb02](https://github.com/Skitourer/familly_meals_planner/commit/b3bfb025620215ad83b2aed846acbf86a7b6ac1e))
+* courses faites selon les coches, et réouverture possible ([#52](https://github.com/Skitourer/familly_meals_planner/issues/52)) ([ee8dd17](https://github.com/Skitourer/familly_meals_planner/commit/ee8dd17bc9666d1310caa263bb535700314d75b1))
+* scanner les produits achetés aux courses ([#51](https://github.com/Skitourer/familly_meals_planner/issues/51)) ([9f825a3](https://github.com/Skitourer/familly_meals_planner/commit/9f825a36e8ec41996934fd5fa5ed07923b25e5f1))
+
+
+### Corrections
+
+* création de la semaine sûre en cas de requêtes simultanées ([#50](https://github.com/Skitourer/familly_meals_planner/issues/50)) ([c7bde93](https://github.com/Skitourer/familly_meals_planner/commit/c7bde935874192c381491449a5918f37d033a814))
+
 ## [1.4.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.3.1...v1.4.0) (2026-11-25)
 
 
