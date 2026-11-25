@@ -7,10 +7,12 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, select
 
 from repas import services
+from repas.api.produits import FicheEntree
 from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.domaine.placard import a_vider
+from repas.domaine.produits import CATEGORIES
 from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
 
 router = APIRouter(tags=["suivi"])
@@ -197,3 +199,68 @@ def ajuster(ingredient_id: str, entree: StockEntree, s: Session = Depends(sessio
     )  # fmt: skip
     s.add(stock)
     s.commit()
+
+
+# --- Autres produits du placard (hors repas, comptés en paquets) -------------------------
+
+
+class ProduitPlacardSortie(BaseModel):
+    id: int
+    code: str | None
+    nom: str
+    marque: str
+    contenu: str
+    categorie: str
+    nutriscore: str | None
+    nova: int | None
+    green_score: str | None
+    paquets: int
+    peremption: date | None
+    bientot_perime: bool
+
+
+class ProduitPlacardEntree(FicheEntree):
+    paquets: int = Field(default=1, ge=1, le=99)
+    peremption: date | None = None
+
+
+class ProduitPlacardModification(BaseModel):
+    paquets: int | None = Field(default=None, ge=0, le=99)
+    peremption: date | None = None
+    categorie: str | None = None
+
+
+@router.get("/placard/produits", dependencies=ADULTE)
+def autres_produits(s: Session = Depends(session)) -> list[ProduitPlacardSortie]:
+    """Autres produits du placard, par catégorie puis par nom."""
+    aujourd_hui = date.today()
+    return [
+        ProduitPlacardSortie(
+            **p.model_dump(exclude={"id", "mis_a_jour_le"}),
+            id=p.id or 0,
+            bientot_perime=p.peremption is not None and a_vider(p.peremption, aujourd_hui),
+        )
+        for p in services.produits_placard(s)
+    ]
+
+
+@router.post("/placard/produits", status_code=204, dependencies=ADULTE)
+def ranger_produit(entree: ProduitPlacardEntree, s: Session = Depends(session)) -> None:
+    """Range des paquets d'un autre produit (même produit : les paquets s'additionnent)."""
+    services.ranger_produit(s, entree.fiche(), entree.paquets, entree.peremption)
+    s.commit()
+
+
+@router.put("/placard/produits/{produit_id}", status_code=204, dependencies=ADULTE)
+def modifier_produit(
+    produit_id: int, entree: ProduitPlacardModification, s: Session = Depends(session)
+) -> None:
+    """Corrige le nombre de paquets (0 = retirer), la date limite ou la catégorie."""
+    if entree.categorie is not None and entree.categorie not in CATEGORIES:
+        raise HTTPException(422, "Catégorie inconnue")
+    try:
+        services.modifier_produit(
+            s, produit_id, entree.paquets, entree.peremption, entree.categorie
+        )
+    except services.ErreurMetier as erreur:
+        raise HTTPException(404, str(erreur)) from erreur

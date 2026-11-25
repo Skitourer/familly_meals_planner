@@ -11,9 +11,12 @@ from repas.api.produits import chercheur_produit
 from repas.catalogue import Catalogue
 from repas.domaine.produits import (
     FicheProduit,
+    categorie_produit,
     code_barres_valide,
+    date_la_plus_proche,
     ingredients_correspondants,
     lire_fiche,
+    meme_produit,
     quantite_comestible,
 )
 from repas.open_food_facts import OpenFoodFactsIndisponible, chercher_produit
@@ -224,29 +227,115 @@ def test_api_achats_hors_liste_et_budget_seulement(client: TestClient):
     url = f"/api/semaines/{lundi}/courses"
     achat = {"ingredient_id": hors, "quantite_g": 400, "prix_eur": 3}
     assert client.post(f"{url}/achats", json=achat).status_code == 204
-    autre = {"libelle": "Biscuits", "prix_eur": 2.5, "code": EAN8}
+    autre = {"nom": "Biscuits", "categorie": "Biscuits et goûters", "prix_eur": 2.5, "code": EAN8}
     assert client.post(f"{url}/autres-achats", json=autre).status_code == 204
-    sans_nom = {"libelle": "", "prix_eur": 1}
-    assert client.post(f"{url}/autres-achats", json=sans_nom).status_code == 422
+    sandwich = {"nom": "Sandwich", "categorie": "Épicerie", "prix_eur": 4, "ranger": False}
+    assert client.post(f"{url}/autres-achats", json=sandwich).status_code == 204
+    for invalide in ({**autre, "nom": ""}, {**autre, "categorie": "Jouets"},
+                     {**autre, "code": "3000000000008"}):  # fmt: skip
+        assert client.post(f"{url}/autres-achats", json=invalide).status_code == 422
 
     courses = client.get(url).json()
     assert [x["ingredient_id"] for x in courses["hors_liste"]] == [hors]
     assert courses["hors_liste"][0]["achat_reel"] is not None
-    assert [a["libelle"] for a in courses["autres_achats"]] == ["Biscuits"]
-    assert courses["total_reel_eur"] == round(avant["total_eur"] + 3 + 2.5, 2)
-    assert courses["nb_achats_reels"] == 2
+    assert [(a["nom"], a["ranger"]) for a in courses["autres_achats"]] == [
+        ("Biscuits", True), ("Sandwich", False)
+    ]  # fmt: skip
+    assert courses["total_reel_eur"] == round(avant["total_eur"] + 3 + 2.5 + 4, 2)
+    assert courses["nb_achats_reels"] == 3
 
-    # Retrait puis remise de l'achat « budget seulement ».
+    # Retrait puis remise de l'autre produit.
     id_autre = courses["autres_achats"][0]["id"]
     assert client.delete(f"{url}/autres-achats/{id_autre}").status_code == 204
-    assert client.get(url).json()["autres_achats"] == []
+    assert [a["nom"] for a in client.get(url).json()["autres_achats"]] == ["Sandwich"]
     client.post(f"{url}/autres-achats", json=autre)
+    courses = client.get(url).json()
 
     # Validation : l'achat hors liste rejoint le placard, le budget compte tout.
     assert client.post(f"{url}/valider").status_code == 204
     placard = {p["ingredient_id"] for p in client.get("/api/placard").json()}
     assert hors in placard
+    # Les biscuits sont rangés, pas le sandwich.
+    rayon = client.get("/api/placard/produits").json()
+    assert [(p["nom"], p["paquets"]) for p in rayon] == [("Biscuits", 1)]
     semaine = next(x for x in client.get("/api/bilan").json()["semaines"] if x["lundi"] == lundi)
     assert (semaine["budget_eur"], semaine["budget_estime"]) == (courses["total_reel_eur"], False)
     assert client.post(f"{url}/autres-achats", json=autre).status_code == 409
     assert client.delete(f"{url}/autres-achats/{id_autre}").status_code == 409
+
+    # Rouvrir les courses retire les paquets rangés.
+    assert client.post(f"{url}/rouvrir").status_code == 204
+    assert client.get("/api/placard/produits").json() == []
+
+
+# --- Autres produits du placard -----------------------------------------------------------
+
+
+NUTELLA = {
+    "status": 1,
+    "product": {
+        "product_name": "Nutella",
+        "brands": "Ferrero",
+        "quantity": "400 g ℮",
+        "product_quantity": 400,
+        "product_quantity_unit": "g",
+        "categories_tags": ["en:breakfasts", "en:spreads", "en:sweet-spreads"],
+        "nutriscore_grade": "e",
+        "nova_group": "4",
+        "environmental_score_grade": "unknown",
+        "ecoscore_grade": "d",
+    },
+}
+
+
+def test_fiche_autre_produit():
+    fiche = lire_fiche(EAN13, NUTELLA)
+    assert fiche is not None
+    notes = (fiche.contenu, fiche.nutriscore, fiche.nova, fiche.green_score)
+    assert notes == ("400 g", "e", 4, "d")
+    assert categorie_produit(fiche.categories) == "Petit-déjeuner"
+    assert categorie_produit(("en:beverages", "en:sodas")) == "Boissons"
+    assert categorie_produit(()) == "Épicerie"
+    inconnues = {"status": 1, "product": {"nova_group": "7", "nutriscore_grade": "unknown"}}
+    sans_notes = lire_fiche(EAN13, inconnues)
+    assert sans_notes is not None and (sans_notes.nova, sans_notes.nutriscore) == (None, None)
+
+
+def test_meme_produit_et_date():
+    assert meme_produit(EAN13, "Nutella", EAN13, "Pâte à tartiner")
+    assert not meme_produit(EAN13, "Nutella", EAN8, "Nutella")
+    assert meme_produit(None, "Gâteau maison ", None, "gâteau MAISON")
+    assert not meme_produit(None, "Nutella", EAN13, "Nutella")
+    assert date_la_plus_proche(date(2027, 1, 5), date(2026, 12, 1)) == date(2026, 12, 1)
+    assert date_la_plus_proche(None, date(2026, 12, 1)) == date(2026, 12, 1)
+    assert date_la_plus_proche(None, None) is None
+
+
+def test_api_autres_produits_du_placard(client: TestClient):
+    simuler(client, lambda code: lire_fiche(code, NUTELLA))
+    produit = client.get(f"/api/produits/{EAN13}").json()
+    resume = (produit["categorie"], produit["contenu"], produit["nova"])
+    assert resume == ("Petit-déjeuner", "400 g", 4)
+    assert produit["propositions"] == []
+    assert "Boissons" in client.get("/api/produits/categories").json()
+
+    fiche = {k: produit[k] for k in ("code", "nom", "marque", "contenu", "categorie",
+                                     "nutriscore", "nova", "green_score")}  # fmt: skip
+    url_placard = "/api/placard/produits"
+    premier = {**fiche, "peremption": "2027-03-01"}
+    assert client.post(url_placard, json=premier).status_code == 204
+    deux_de_plus = {**fiche, "paquets": 2, "peremption": "2027-01-15"}
+    assert client.post(url_placard, json=deux_de_plus).status_code == 204
+    client.post(url_placard, json={"nom": "Gâteau maison", "categorie": "Biscuits et goûters"})
+    produits = client.get("/api/placard/produits").json()
+    assert [(p["nom"], p["paquets"]) for p in produits] == [("Gâteau maison", 1), ("Nutella", 3)]
+    nutella = produits[1]
+    assert (nutella["peremption"], nutella["green_score"]) == ("2027-01-15", "d")
+
+    url = f"/api/placard/produits/{nutella['id']}"
+    assert client.put(url, json={"paquets": 1, "categorie": "Épicerie"}).status_code == 204
+    assert client.get("/api/placard/produits").json()[1]["categorie"] == "Épicerie"
+    assert client.put(url, json={"categorie": "Jouets"}).status_code == 422
+    assert client.put(url, json={"paquets": 0}).status_code == 204
+    assert [p["nom"] for p in client.get("/api/placard/produits").json()] == ["Gâteau maison"]
+    assert client.put(url, json={"paquets": 2}).status_code == 404

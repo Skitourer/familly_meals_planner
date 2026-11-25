@@ -14,7 +14,8 @@ from repas.import_donnees.sources_web import USER_AGENT
 
 URL_PRODUIT = "https://world.openfoodfacts.org/api/v2/product/{code}.json"
 CHAMPS = (
-    "product_name,product_name_fr,brands,product_quantity,product_quantity_unit,categories_tags"
+    "product_name,product_name_fr,brands,product_quantity,product_quantity_unit,quantity,"
+    "categories_tags,nutriscore_grade,nova_group,environmental_score_grade,ecoscore_grade"
 )
 DELAI_S = 6  # au magasin, mieux vaut une saisie manuelle qu'une longue attente
 

@@ -1,9 +1,27 @@
 // Achats réels au magasin : rapprochement d'un produit scanné avec la liste de courses.
 
-import type { Ingredient, LigneCourses, ProduitScanne } from './types';
+import type { FicheProduit, Ingredient, LigneCourses, ProduitScanne } from './types';
 
-/** Choix « Autre achat » : compté dans le budget, sans ingrédient ni placard. */
-export const AUTRE_ACHAT = 'autre-achat';
+/** Choix « Autre produit » : hors repas, rangé parmi les autres produits du placard. */
+export const AUTRE_PRODUIT = 'autre-produit';
+
+/** Fiche d'un produit scanné, pour le ranger parmi les autres produits. */
+export function ficheDuProduit(
+	produit: ProduitScanne,
+	nom: string,
+	categorie: string
+): FicheProduit {
+	return {
+		code: produit.code,
+		nom: nom.trim(),
+		marque: produit.marque,
+		contenu: produit.contenu,
+		categorie,
+		nutriscore: produit.nutriscore,
+		nova: produit.nova,
+		green_score: produit.green_score
+	};
+}
 
 /** Article de la liste qui correspond le mieux au produit, sinon l'ingrédient proposé, sinon ''. */
 export function articleCorrespondant(produit: ProduitScanne, lignes: LigneCourses[]): string {
