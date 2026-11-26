@@ -22,8 +22,8 @@ from repas.domaine.courses import (
     appliquer_achats_reels,
     format_quantite,
 )
-from repas.domaine.produits import code_barres_valide
-from repas.modeles import AchatProduit, Creneau, Semaine
+from repas.domaine.produits import cle_coche_racheter, code_barres_valide, est_scanne
+from repas.modeles import AchatProduit, Creneau, ProduitARacheter, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
@@ -94,12 +94,25 @@ class AutreAchatSortie(BaseModel):
     ranger: bool  # rangé au placard à la validation
 
 
+class ARacheterSortie(BaseModel):
+    id: int
+    cle: str  # clé de sa coche sur la liste
+    code: str | None
+    nom: str
+    marque: str
+    contenu: str
+    categorie: str
+    prix_eur: float | None  # dernier prix payé, s'il est connu
+    scanne: bool  # acheté et scanné : rangé au placard par son achat
+
+
 class CoursesSortie(BaseModel):
     rayons: list[tuple[str, list[LigneCoursesSortie]]]
     a_verifier: list[str]
     total_eur: float
     hors_liste: list[LigneCoursesSortie]  # ingrédients achetés sans être prévus
     autres_achats: list[AutreAchatSortie]  # budget seulement
+    a_racheter: list[ARacheterSortie]  # autres produits finis au placard
     total_reel_eur: float  # prix payés quand ils sont connus, estimation sinon
     nb_achats_reels: int
     validees: bool
@@ -194,6 +207,7 @@ def _courses_sortie(
     coches: list[str],
     achats: dict[str, AchatConstate],
     autres: list[AchatProduit],
+    a_racheter: list[tuple[ProduitARacheter, float | None]],
 ) -> CoursesSortie:
     def ligne(x: LigneCourses) -> LigneCoursesSortie:
         reel = achats.get(x.ingredient_id)
@@ -219,16 +233,31 @@ def _courses_sortie(
         )
 
     reelle = appliquer_achats_reels(liste, achats, catalogue())
+    rachats = [
+        ARacheterSortie(
+            **p.model_dump(include={"code", "nom", "marque", "contenu", "categorie"}),
+            id=p.id or 0,
+            cle=cle_coche_racheter(p.id or 0),
+            prix_eur=prix,
+            scanne=est_scanne(p, autres),
+        )
+        for p, prix in a_racheter
+    ]
+    # Estimation : dernier prix payé. Prix réels : un produit scanné compte par son prix payé
+    # (autres achats), les autres par leur dernier prix.
+    rachats_estimes_eur = sum(r.prix_eur or 0 for r in rachats)
+    rachats_eur = sum(r.prix_eur or 0 for r in rachats if not r.scanne)
     return CoursesSortie(
         rayons=[(rayon, [ligne(x) for x in lignes]) for rayon, lignes in liste.par_rayon()],
         a_verifier=[x.nom for x in liste.a_verifier],
-        total_eur=liste.total_eur,
+        total_eur=round(liste.total_eur + rachats_estimes_eur, 2),
         hors_liste=[ligne(x) for x in sorted(reelle.hors_liste, key=lambda x: x.nom)],
         autres_achats=[
             AutreAchatSortie(**a.model_dump(include=set(AutreAchatSortie.model_fields)))
             for a in autres
         ],
-        total_reel_eur=round(reelle.total_eur + sum(a.prix_eur for a in autres), 2),
+        a_racheter=rachats,
+        total_reel_eur=round(reelle.total_eur + sum(a.prix_eur for a in autres) + rachats_eur, 2),
         nb_achats_reels=len(achats) + len(autres),
         validees=validees,
         coches=coches,
@@ -316,6 +345,7 @@ def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
         services.coches(s, semaine),
         services.achats_reels(s, semaine),
         services.autres_achats(s, semaine),
+        [(p, services.prix_estime(s, p)) for p in services.produits_a_racheter(s, semaine)],
     )
 
 
@@ -365,6 +395,24 @@ def annuler_autre_achat(lundi: date, achat_id: int, s: Session = Depends(session
         raise HTTPException(409, str(erreur)) from erreur
 
 
+@router.post("/{lundi}/courses/a-racheter", status_code=204, dependencies=ADULTE)
+def ajouter_a_racheter(lundi: date, entree: FicheEntree, s: Session = Depends(session)) -> None:
+    """Remet sur la liste un autre produit fini au placard."""
+    try:
+        services.ajouter_a_racheter(s, _semaine(s, lundi), entree.fiche())
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete("/{lundi}/courses/a-racheter/{produit_id}", status_code=204, dependencies=ADULTE)
+def retirer_a_racheter(lundi: date, produit_id: int, s: Session = Depends(session)) -> None:
+    """Retire un produit à racheter de la liste."""
+    try:
+        services.retirer_a_racheter(s, _semaine(s, lundi), produit_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
 @router.put("/{lundi}/courses/coches", dependencies=ADULTE)
 def cocher(
     lundi: date,
@@ -375,11 +423,14 @@ def cocher(
 
     Pour chaque article, la modification la plus récente l'emporte, même arrivée en retard.
     """
-    inconnus = sorted({e.ingredient_id for e in entrees} - catalogue().ingredients.keys())
+    semaine = _semaine(s, lundi)
+    rachats = {cle_coche_racheter(p.id or 0) for p in services.produits_a_racheter(s, semaine)}
+    connus = catalogue().ingredients.keys() | rachats
+    inconnus = sorted({e.ingredient_id for e in entrees} - connus)
     if inconnus:
-        raise HTTPException(400, f"Ingrédients inconnus : {', '.join(inconnus)}")
+        raise HTTPException(400, f"Articles inconnus : {', '.join(inconnus)}")
     modifications = [ModificationCoche(e.ingredient_id, e.cochee, e.modifiee_le) for e in entrees]
-    return services.enregistrer_coches(s, _semaine(s, lundi), modifications)
+    return services.enregistrer_coches(s, semaine, modifications)
 
 
 class ValidationEntree(BaseModel):
@@ -410,9 +461,11 @@ def rouvrir_courses(lundi: date, s: Session = Depends(session)) -> None:
 
 @router.get("/{lundi}/courses.pdf", dependencies=ADULTE)
 def courses_pdf(lundi: date, s: Session = Depends(session)) -> Response:
-    liste = services.courses(s, _semaine(s, lundi), catalogue())
+    semaine = _semaine(s, lundi)
+    liste = services.courses(s, semaine, catalogue())
+    a_racheter = [p.nom for p in services.produits_a_racheter(s, semaine)]
     return Response(
-        pdf_liste_courses(liste, lundi),
+        pdf_liste_courses(liste, lundi, a_racheter),
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="courses-{lundi}.pdf"'},
     )

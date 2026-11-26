@@ -6,6 +6,7 @@ couvre les caractères français (œ, €, guillemets...).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -64,8 +65,11 @@ def date_longue(jour: date) -> str:
     return f"{jour.day} {MOIS[jour.month - 1]} {jour.year}"
 
 
-def pdf_liste_courses(liste: ListeCourses, lundi: date) -> bytes:
-    """Liste de courses imprimable, par rayon, avec cases à cocher."""
+def pdf_liste_courses(liste: ListeCourses, lundi: date, a_racheter: Sequence[str] = ()) -> bytes:
+    """Liste de courses imprimable, par rayon, avec cases à cocher.
+
+    ``a_racheter`` : noms des autres produits finis au placard, un paquet chacun.
+    """
     doc = _Document(
         "Liste de courses",
         f"Semaine du {date_longue(lundi)} — budget estimé {liste.total_eur:.2f} €".replace(
@@ -97,6 +101,18 @@ def pdf_liste_courses(liste: ListeCourses, lundi: date) -> bytes:
                 detail += f", placard {format_quantite(ligne.depuis_placard_g, ligne.unite)}"
             doc.cell(0, 6, detail, align="R", new_x="LMARGIN", new_y="NEXT")
             doc.set_text_color(0, 0, 0)
+
+    if a_racheter:
+        doc.section("À racheter")
+        for nom in a_racheter:
+            if doc.get_y() > doc.h - 25:
+                doc.add_page()
+            doc.rect(doc.l_margin, doc.get_y() + 1.2, 3.6, 3.6)
+            doc.set_x(doc.l_margin + 6)
+            doc.set_font("DejaVu", "B", 10)
+            doc.cell(largeur * 0.42, 6, nom)
+            doc.set_font("DejaVu", "", 10)
+            doc.cell(0, 6, "1 paquet", new_x="LMARGIN", new_y="NEXT")
 
     if liste.a_verifier:
         doc.section("À vérifier dans le placard")

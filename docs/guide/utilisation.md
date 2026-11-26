@@ -81,7 +81,11 @@ Onglet **Courses** :
   vrac) en choisissant la combinaison qui gaspille le moins ;
 - ce qui est déjà au **placard** est déduit ;
 - les produits de base (sel, épices, huile...) sont listés à part, « à vérifier » ;
-- le **budget estimé** utilise les prix médians relevés par Open Prices.
+- le **budget estimé** utilise les prix médians relevés par Open Prices ;
+- la section **À racheter** reprend les autres produits finis au placard (un paquet chacun,
+  au dernier prix payé s'il est connu). Ils se cochent comme le reste et se retirent avec ✕ ;
+  scanner l'un d'eux le reconnaît par son code-barres. À la validation, un produit coché (ou
+  « Tout a été acheté ») rejoint les autres produits du placard.
 
 Les cases cochées sont **partagées entre appareils** : à deux au magasin, chacun voit ce que
 l'autre a déjà pris (en rechargeant la page ou en revenant sur l'application). Sans réseau, les
@@ -212,7 +216,8 @@ La section **Autres produits** suit le stock de ce que les repas n'utilisent pas
 biscuits et goûters, apéritif, boissons, conserves… Chaque produit est compté **en paquets**,
 regroupé par catégorie (déduite d'Open Food Facts, modifiable) :
 
-- **−** et **+** corrigent le nombre de paquets ; à 0, le produit est retiré ;
+- **−** et **+** corrigent le nombre de paquets ; à 0, le produit est retiré et
+  **🛒 À racheter** le remet sur la liste de courses de la semaine suivante (voir plus bas) ;
 - une date limite facultative le fait apparaître dans « Frigo à vider » ;
 - au scan, un produit sans ingrédient correspondant est proposé comme « Autre produit » ;
   rescanner le même produit ajoute un paquet ;

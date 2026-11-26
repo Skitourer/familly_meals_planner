@@ -1,10 +1,13 @@
 <!--
 	Autres produits du placard (Nutella, céréales...) : hors repas, comptés en paquets et
 	regroupés par catégorie, dans l'ordre reçu (recherche, filtre et tri faits par la page).
-	Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit.
+	Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit, et propose de le
+	remettre sur la liste de courses de la semaine suivante (« À racheter »).
 -->
 <script lang="ts">
+	import { ficheARacheter } from '#lib/achats.ts';
 	import { api, messageErreur } from '#lib/api.ts';
+	import { libelleSemaine, lundiSuivant } from '#lib/dates.ts';
 	import type { ProduitPlacard } from '#lib/types.ts';
 
 	let {
@@ -24,6 +27,9 @@
 	let categorie = $state('Épicerie');
 	let paquets = $state(1);
 	let peremption = $state('');
+	// Dernier produit retiré du placard, à remettre sur la liste de courses si on le souhaite.
+	let retire = $state<ProduitPlacard | null>(null);
+	let messageRachat = $state('');
 
 	const groupes = $derived(
 		categories
@@ -35,7 +41,23 @@
 		erreur = '';
 		try {
 			await api.modifier(`/placard/produits/${produit.id}`, changement);
+			if (changement.paquets === 0) {
+				retire = produit;
+				messageRachat = '';
+			}
 			await onModifie();
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function racheter(produit: ProduitPlacard) {
+		erreur = '';
+		const lundi = lundiSuivant();
+		try {
+			await api.creer(`/semaines/${lundi}/courses/a-racheter`, ficheARacheter(produit));
+			retire = null;
+			messageRachat = `${produit.nom} : sur la liste de courses de la semaine ${libelleSemaine(lundi)}`;
 		} catch (e) {
 			erreur = messageErreur(e);
 		}
@@ -67,6 +89,18 @@
 	<h2>Autres produits</h2>
 	<p class="doux">Hors repas (petit-déjeuner, goûters, boissons…), comptés en paquets.</p>
 	{#if erreur}<p class="erreur">{erreur}</p>{/if}
+	{#if retire}
+		<p class="ligne retire" role="status">
+			<span>{retire.nom} n'est plus au placard.</span>
+			<button class="principal" onclick={() => retire && racheter(retire)}>🛒 À racheter</button>
+			<button class="discret" onclick={() => (retire = null)}>Non merci</button>
+		</p>
+	{:else if messageRachat}
+		<p class="ligne retire" role="status">
+			<span>✓ {messageRachat}</span>
+			<a href={`/courses?lundi=${lundiSuivant()}`}>Voir la liste</a>
+		</p>
+	{/if}
 	{#if !produits.length}
 		<p class="doux">
 			{filtrage
@@ -183,6 +217,13 @@
 
 	.ajout {
 		margin-top: 1rem;
+	}
+
+	.retire {
+		align-items: center;
+		padding: 0.5rem 0.7rem;
+		border-radius: 0.5rem;
+		background: var(--accent-doux);
 	}
 
 	.ajout input[type='number'] {

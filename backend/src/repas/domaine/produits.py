@@ -9,10 +9,10 @@ fiche Open Food Facts et propose les ingrédients du référentiel correspondant
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import Any, Protocol
 
 from repas.catalogue.schemas import Ingredient
 
@@ -164,3 +164,52 @@ def date_la_plus_proche(a: date | None, b: date | None) -> date | None:
     """Date limite d'un stock de plusieurs paquets : celle du paquet à finir en premier."""
     dates = [d for d in (a, b) if d is not None]
     return min(dates) if dates else None
+
+
+# --- Produits à racheter (liste de courses) -----------------------------------------------
+
+PREFIXE_COCHE_RACHETER = "racheter-"
+
+
+class FicheIdentifiable(Protocol):
+    """Ce qui suffit à reconnaître un produit : code-barres, sinon nom."""
+
+    @property
+    def code(self) -> str | None: ...
+
+    @property
+    def nom(self) -> str: ...
+
+
+class ARacheter(FicheIdentifiable, Protocol):
+    @property
+    def id(self) -> int | None: ...
+
+
+def cle_coche_racheter(produit_id: int) -> str:
+    """Clé de la coche d'un produit à racheter : distincte des identifiants d'ingrédients."""
+    return f"{PREFIXE_COCHE_RACHETER}{produit_id}"
+
+
+def est_scanne(article: FicheIdentifiable, achats: Sequence[FicheIdentifiable]) -> bool:
+    """Le produit à racheter a été scanné aux courses (enregistré comme autre achat)."""
+    return any(meme_produit(article.code, article.nom, a.code, a.nom) for a in achats)
+
+
+def a_ranger_a_la_validation[R: ARacheter](
+    articles: Sequence[R],
+    coches: set[str],
+    achats: Sequence[FicheIdentifiable],
+    *,
+    tout_achete: bool,
+) -> list[R]:
+    """Produits à racheter qui rejoignent le placard (un paquet) à la validation des courses.
+
+    Un produit scanné est déjà rangé par son achat ; sinon il l'est s'il est coché, ou si la
+    famille confirme que tout a été acheté.
+    """
+    return [
+        a
+        for a in articles
+        if not est_scanne(a, achats) and (tout_achete or cle_coche_racheter(a.id or 0) in coches)
+    ]

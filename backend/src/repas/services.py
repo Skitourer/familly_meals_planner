@@ -34,7 +34,12 @@ from repas.domaine.courses import (
 )
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
-from repas.domaine.produits import date_la_plus_proche, meme_produit
+from repas.domaine.produits import (
+    a_ranger_a_la_validation,
+    cle_coche_racheter,
+    date_la_plus_proche,
+    meme_produit,
+)
 from repas.domaine.reperes import REPERES
 from repas.modeles import (
     AchatProduit,
@@ -48,6 +53,7 @@ from repas.modeles import (
     Membre,
     Note,
     PrixProduit,
+    ProduitARacheter,
     ProduitPlacard,
     Reglages,
     Semaine,
@@ -426,6 +432,46 @@ def annuler_autre_achat(s: Session, semaine: Semaine, achat_id: int) -> None:
         s.commit()
 
 
+# --- Produits à racheter ----------------------------------------------------------------
+
+
+def produits_a_racheter(s: Session, semaine: Semaine) -> list[ProduitARacheter]:
+    """Autres produits finis au placard, remis sur la liste de courses de la semaine."""
+    requete = select(ProduitARacheter).where(ProduitARacheter.semaine_id == semaine.id)
+    return list(s.exec(requete.order_by(col(ProduitARacheter.id))).all())
+
+
+def ajouter_a_racheter(s: Session, semaine: Semaine, fiche: FicheProduitMixin) -> None:
+    """Met un produit sur la liste de courses (une seule fois, même s'il est fini deux fois)."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    if any(meme_produit(p.code, p.nom, fiche.code, fiche.nom)
+           for p in produits_a_racheter(s, semaine)):  # fmt: skip
+        return
+    champs = fiche.model_dump(include=set(FicheProduitMixin.model_fields))
+    s.add(ProduitARacheter.model_validate({**champs, "semaine_id": semaine.id or 0}))
+    s.commit()
+
+
+def retirer_a_racheter(s: Session, semaine: Semaine, produit_id: int) -> None:
+    """Retire un produit de la liste de courses, avec sa coche."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    produit = s.get(ProduitARacheter, produit_id)
+    if produit is None or produit.semaine_id != semaine.id:
+        return
+    coche = s.get(Coche, (semaine.id, cle_coche_racheter(produit_id)))
+    if coche:
+        s.delete(coche)
+    s.delete(produit)
+    s.commit()
+
+
+def prix_estime(s: Session, produit: FicheProduitMixin) -> float | None:
+    """Prix d'un produit à racheter : le dernier payé par la famille, s'il est connu."""
+    return dernier_prix(s, produit.code) if produit.code else None
+
+
 # --- Autres produits du placard (hors repas) ---------------------------------------------
 
 
@@ -516,7 +562,11 @@ def valider_courses(
         appliquer_achats_reels(courses(s, semaine, catalogue), achats_reels(s, semaine), catalogue),
         non_achetes,
     )
-    autres_eur = sum(a.prix_eur for a in autres_achats(s, semaine))
+    autres = autres_achats(s, semaine)
+    rachats = a_ranger_a_la_validation(
+        produits_a_racheter(s, semaine), set(coches(s, semaine)), autres, tout_achete=tout_achete
+    )
+    autres_eur = sum(a.prix_eur for a in autres) + sum(prix_estime(s, r) or 0 for r in rachats)
     nouveau = placard_apres_courses(liste, stock_disponible(s, semaine.lundi), catalogue)
     anciens = {st.ingredient_id: st for st in s.exec(select(Stock)).all()}
     for id_ing in anciens.keys() | nouveau.keys():
@@ -544,7 +594,7 @@ def valider_courses(
             stock.quantite_g = quantite
         stock.mis_a_jour_le = datetime.now(UTC)
         s.add(stock)
-    _ranger_autres_achats(s, semaine)
+    _ranger_autres_achats(s, semaine, rachats)
     semaine.courses_validees_le = datetime.now(UTC)
     s.add(semaine)
     s.add(
@@ -563,13 +613,12 @@ def valider_courses(
     s.commit()
 
 
-def _ranger_autres_achats(s: Session, semaine: Semaine) -> None:
-    """Range au placard les autres produits achetés, en notant les paquets ajoutés."""
+def _ranger_autres_achats(s: Session, semaine: Semaine, rachats: list[ProduitARacheter]) -> None:
+    """Range au placard les autres produits achetés et rachetés, en notant les paquets ajoutés."""
     ajouts: dict[int, EcartProduit] = {}
-    for achat in autres_achats(s, semaine):
-        if not achat.ranger:
-            continue
-        produit, cree = ranger_produit(s, achat, 1)
+    fiches: list[FicheProduitMixin] = [a for a in autres_achats(s, semaine) if a.ranger]
+    for fiche in fiches + list(rachats):
+        produit, cree = ranger_produit(s, fiche, 1)
         ecart = ajouts.setdefault(
             produit.id or 0,
             EcartProduit(semaine_id=semaine.id or 0, produit_id=produit.id or 0, paquets=0,

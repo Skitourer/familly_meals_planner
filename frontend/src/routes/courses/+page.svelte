@@ -5,6 +5,8 @@
 	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés ;
 	hors liste, il rejoint le placard à la validation ; un autre produit (hors repas) est rangé
 	parmi les autres produits du placard, sauf s'il est marqué « ne pas ranger ».
+	Les produits « à racheter » (autres produits finis au placard) se cochent et se scannent
+	comme le reste ; cochés, ils rejoignent le placard à la validation.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -14,7 +16,8 @@
 		AUTRE_PRODUIT,
 		ficheDuProduit,
 		groupesDeChoix,
-		prixPropose
+		prixPropose,
+		rachatScanne
 	} from '#lib/achats.ts';
 	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
 	import {
@@ -54,7 +57,7 @@
 
 	// Validation : articles ni cochés ni scannés, à confirmer comme achetés ou non.
 	let confirmationOuverte = $state(false);
-	let nonCoches = $state<LigneCourses[]>([]);
+	let nonCoches = $state<{ cle: string; nom: string }[]>([]);
 
 	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
 	const lignes = $derived<LigneCourses[]>(courses?.rayons.flatMap(([, l]) => l) ?? []);
@@ -149,7 +152,14 @@
 			nomProduit = produit.nom || 'Produit sans nom';
 			categorie = produit.categorie;
 			ranger = true;
-			choisirArticle(articleCorrespondant(produit, lignes) || AUTRE_PRODUIT);
+			const rachat = rachatScanne(produit, courses?.a_racheter ?? []);
+			if (rachat) {
+				nomProduit = rachat.nom;
+				categorie = rachat.categorie;
+			}
+			choisirArticle(
+				rachat ? AUTRE_PRODUIT : articleCorrespondant(produit, lignes) || AUTRE_PRODUIT
+			);
 		} catch (e) {
 			messageScan = messageErreur(e);
 		} finally {
@@ -187,6 +197,8 @@
 		}
 		const prevu = lignes.some((l) => l.ingredient_id === article);
 		if (prevu && !coches.has(article)) cocher(article);
+		const rachat = autre ? rachatScanne(produit, courses?.a_racheter ?? []) : undefined;
+		if (rachat && !coches.has(rachat.cle)) cocher(rachat.cle);
 		const nom = autre ? nomProduit : (nomsIngredients.get(article) ?? article);
 		messageScan = `Enregistré : ${nom}, ${euros(prixPaye)}. Scannez le produit suivant.`;
 		produit = null;
@@ -210,7 +222,14 @@
 			erreur = 'Des coches attendent encore le réseau : validez une fois la connexion revenue.';
 			return;
 		}
-		nonCoches = lignes.filter((l) => !coches.has(l.ingredient_id) && !l.achat_reel);
+		nonCoches = [
+			...lignes
+				.filter((l) => !coches.has(l.ingredient_id) && !l.achat_reel)
+				.map((l) => ({ cle: l.ingredient_id, nom: l.nom })),
+			...(courses?.a_racheter ?? [])
+				.filter((r) => !coches.has(r.cle) && !r.scanne)
+				.map((r) => ({ cle: r.cle, nom: r.nom }))
+		];
 		if (nonCoches.length) {
 			confirmationOuverte = true;
 		} else if (confirm('Courses faites ? Les restes de paquets seront ajoutés au placard.')) {
@@ -220,7 +239,7 @@
 
 	async function toutAchete() {
 		const maintenant = new Date();
-		for (const ligne of nonCoches) file = ajouterAFile(file, ligne.ingredient_id, true, maintenant);
+		for (const article of nonCoches) file = ajouterAFile(file, article.cle, true, maintenant);
 		ecrireFile(localStorage, lundi, file);
 		await envoyer(lundi);
 		await envoyerValidation(true);
@@ -230,6 +249,15 @@
 		confirmationOuverte = false;
 		try {
 			await api.creer(`/semaines/${lundi}/courses/valider`, { tout_achete: toutAcheteConfirme });
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function retirerRachat(id: number) {
+		try {
+			await api.supprimer(`/semaines/${lundi}/courses/a-racheter/${id}`);
 			await charger(lundi);
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -248,7 +276,11 @@
 		}
 	}
 
-	const nbLignes = $derived(courses?.rayons.reduce((n, [, lignes]) => n + lignes.length, 0) ?? 0);
+	// Articles de la liste : ingrédients des repas et produits à racheter.
+	const nbLignes = $derived(
+		(courses?.rayons.reduce((n, [, lignes]) => n + lignes.length, 0) ?? 0) +
+			(courses?.a_racheter.length ?? 0)
+	);
 	const euros = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 </script>
 
@@ -344,6 +376,43 @@
 					</ul>
 				</section>
 			{/each}
+			{#if courses.a_racheter.length}
+				<section class="carte">
+					<h2>À racheter</h2>
+					<ul>
+						{#each courses.a_racheter as rachat (rachat.id)}
+							<li class:coche={coches.has(rachat.cle) || rachat.scanne}>
+								<label>
+									<input
+										type="checkbox"
+										checked={coches.has(rachat.cle) || rachat.scanne}
+										disabled={courses.validees || rachat.scanne}
+										onchange={() => cocher(rachat.cle)}
+									/>
+									<span class="nom">{rachat.nom}</span>
+									<span class="achat">1 paquet</span>
+								</label>
+								<span class="detail doux">
+									{[rachat.marque, rachat.contenu].filter(Boolean).join(' · ') || rachat.categorie}
+									{#if rachat.prix_eur !== null}· environ {euros(rachat.prix_eur)}{/if}
+									{#if !courses.validees && !rachat.scanne}
+										<button
+											class="discret"
+											onclick={() => retirerRachat(rachat.id)}
+											aria-label={`Retirer ${rachat.nom} de la liste`}
+										>
+											✕
+										</button>
+									{/if}
+								</span>
+								{#if rachat.scanne}
+									<span class="detail reel">✓ scanné (voir « Hors liste »)</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
 			{#if courses.hors_liste.length || courses.autres_achats.length}
 				<section class="carte">
 					<h2>Hors liste</h2>

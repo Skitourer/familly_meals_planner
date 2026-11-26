@@ -150,6 +150,19 @@ export interface AutreAchat {
 	ranger: boolean; // rangé au placard à la validation
 }
 
+/** Autre produit fini au placard, remis sur la liste de courses. */
+export interface ARacheter {
+	id: number;
+	cle: string; // clé de sa coche sur la liste
+	code: string | null;
+	nom: string;
+	marque: string;
+	contenu: string;
+	categorie: string;
+	prix_eur: number | null; // dernier prix payé, s'il est connu
+	scanne: boolean; // acheté et scanné : rangé au placard par son achat
+}
+
 /** Note de A à E (Nutri-Score, Green-Score), en minuscule. */
 export type Note = 'a' | 'b' | 'c' | 'd' | 'e';
 
@@ -179,6 +192,7 @@ export interface Courses {
 	total_eur: number;
 	hors_liste: LigneCourses[]; // ingrédients achetés sans être prévus
 	autres_achats: AutreAchat[]; // autres produits (hors repas)
+	a_racheter: ARacheter[]; // autres produits finis au placard
 	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
 	nb_achats_reels: number;
 	validees: boolean;

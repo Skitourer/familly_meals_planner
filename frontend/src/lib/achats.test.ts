@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { articleCorrespondant, ficheDuProduit, groupesDeChoix, prixPropose } from './achats';
-import type { Ingredient, LigneCourses, ProduitScanne } from './types';
+import {
+	articleCorrespondant,
+	ficheARacheter,
+	ficheDuProduit,
+	groupesDeChoix,
+	prixPropose,
+	rachatScanne
+} from './achats';
+import type { ARacheter, Ingredient, LigneCourses, ProduitPlacard, ProduitScanne } from './types';
 
 function ligne(ingredient_id: string, prix_eur = 0.9, achete_g = 500): LigneCourses {
 	return {
@@ -86,5 +93,53 @@ describe('achats', () => {
 			nova: 1,
 			green_score: null
 		});
+	});
+});
+
+describe('produits à racheter', () => {
+	const pateATartiner: ProduitPlacard = {
+		id: 4,
+		code: '3000000000007',
+		nom: 'Pâte à tartiner',
+		marque: 'Marque Exemple',
+		contenu: '400 g',
+		categorie: 'Petit-déjeuner',
+		nutriscore: 'e',
+		nova: 4,
+		green_score: null,
+		paquets: 0,
+		peremption: '2027-01-10',
+		bientot_perime: false
+	};
+
+	it('la fiche reprend la description, sans le stock', () => {
+		expect(ficheARacheter(pateATartiner)).toEqual({
+			code: '3000000000007',
+			nom: 'Pâte à tartiner',
+			marque: 'Marque Exemple',
+			contenu: '400 g',
+			categorie: 'Petit-déjeuner',
+			nutriscore: 'e',
+			nova: 4,
+			green_score: null
+		});
+	});
+
+	it('un produit scanné est reconnu par son code-barres', () => {
+		const rachat = (id: number, code: string | null): ARacheter => ({
+			id,
+			cle: `racheter-${id}`,
+			code,
+			nom: 'Produit',
+			marque: '',
+			contenu: '',
+			categorie: 'Épicerie',
+			prix_eur: null,
+			scanne: false
+		});
+		const sansCode = rachat(1, null);
+		const avecCode = rachat(2, '3000000000007');
+		expect(rachatScanne(produit, [sansCode, avecCode])).toBe(avecCode);
+		expect(rachatScanne({ ...produit, code: '12345670' }, [sansCode, avecCode])).toBeUndefined();
 	});
 });
