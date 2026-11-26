@@ -21,7 +21,8 @@ function ligne(ingredient_id: string, prix_eur = 0.9, achete_g = 500): LigneCour
 		prix_eur,
 		achete_g,
 		achat_reel: null,
-		prix_reel_eur: null
+		prix_reel_eur: null,
+		a_racheter: false
 	};
 }
 

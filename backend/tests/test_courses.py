@@ -125,3 +125,42 @@ def test_stock_avant_validation():
     # Depuis la validation, la famille a fini le riz à la main et ajouté des œufs.
     actuel = {"pates": 150, "riz": 0, "oeufs": 6}
     assert stock_avant_validation(actuel, ecarts) == {"riz": 180, "lait": 200, "oeufs": 6}
+
+
+def test_ingredient_a_racheter_sans_repas(cat: Catalogue):
+    # Beurre fini, aucun repas n'en demande : un paquet de 250 g, rangé au placard.
+    liste = liste_de_courses([], cat, {}, a_racheter=["beurre"])
+    (beurre,) = liste.a_acheter
+    assert (beurre.ingredient_id, beurre.besoin_g, beurre.achete_g) == ("beurre", 0, 250)
+    assert beurre.a_racheter and beurre.surplus_g == 250
+    assert placard_apres_courses(liste, {}, cat)["beurre"] > 0
+
+
+def test_ingredient_a_racheter_en_plus_des_repas(cat: Catalogue):
+    # 350 g pour les repas + un paquet de réserve : 850 g, donc deux paquets de 500 g.
+    liste = liste_de_courses([Portion("spaghetti-bolognaise", 350 / 90)], cat, {}, ["pates"])
+    pates = next(ligne for ligne in liste.lignes if ligne.ingredient_id == "pates")
+    assert (pates.besoin_g, pates.achete_g, pates.surplus_g) == (350, 1000, 650)
+    autres = [ligne for ligne in liste.lignes if ligne.ingredient_id != "pates"]
+    assert not any(ligne.a_racheter for ligne in autres)
+
+
+def test_plus_petit_conditionnement_selon_la_vente(cat: Catalogue):
+    liste = liste_de_courses([], cat, {}, ["oeuf", "pomme", "creme"])
+    achats = {ligne.ingredient_id: ligne.achats for ligne in liste.a_acheter}
+    assert [a.libelle for a in achats["oeuf"]] == ["boîte de 6"]
+    assert achats["pomme"][0].total_g == 250  # vrac : un pas
+    assert achats["creme"][0].total_g == 200  # le plus petit des formats
+
+
+def test_racheter_un_produit_frais_le_range_quand_meme(cat: Catalogue):
+    frais = next(i for i, ing in cat.ingredients.items()
+                 if ing.conservation_jours < 7 and not ing.basique)  # fmt: skip
+    (ligne,) = liste_de_courses([], cat, {}, [frais]).a_acheter
+    assert ligne.surplus_au_placard
+
+
+def test_basiques_et_inconnus_jamais_a_racheter(cat: Catalogue):
+    basique = next(i for i, ing in cat.ingredients.items() if ing.basique)
+    liste = liste_de_courses([], cat, {}, [basique, "licorne"])
+    assert liste.lignes == []

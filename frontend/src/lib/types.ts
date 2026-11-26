@@ -138,6 +138,7 @@ export interface LigneCourses {
 	achete_g: number; // quantité prévue (brute)
 	achat_reel: string | null; // quantité vraiment achetée (produits scannés)
 	prix_reel_eur: number | null;
+	a_racheter: boolean; // un conditionnement en plus, demandé depuis le placard
 }
 
 /** Autre produit (hors repas) acheté aux courses. */

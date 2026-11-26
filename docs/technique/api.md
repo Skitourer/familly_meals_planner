@@ -34,6 +34,8 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un autre produit acheté |
 | `POST` | `/api/semaines/{lundi}/courses/a-racheter` | Remettre sur la liste un autre produit fini au placard (fiche) ; une seule fois par produit |
 | `DELETE` | `/api/semaines/{lundi}/courses/a-racheter/{id}` | Retirer un produit à racheter de la liste (et sa coche) |
+| `POST` | `/api/semaines/{lundi}/courses/ingredients-a-racheter` | Ajouter à la liste le plus petit conditionnement d'un ingrédient (`{ingredient_id}`), en plus des repas ; la ligne porte `a_racheter` |
+| `DELETE` | `/api/semaines/{lundi}/courses/ingredients-a-racheter/{ingredient_id}` | Renoncer à cet achat en plus |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard ; corps facultatif `{tout_achete}` (faux : les articles ni cochés ni scannés n'ont pas été achetés) |
 | `POST` | `/api/semaines/{lundi}/courses/rouvrir` | Défaire la validation (placard et budget) |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |

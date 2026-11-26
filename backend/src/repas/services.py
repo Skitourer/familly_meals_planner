@@ -50,6 +50,7 @@ from repas.modeles import (
     EcartPlacard,
     EcartProduit,
     FicheProduitMixin,
+    IngredientARacheter,
     Membre,
     Note,
     PrixProduit,
@@ -326,7 +327,7 @@ def courses(s: Session, semaine: Semaine, catalogue: Catalogue) -> ListeCourses:
     if semaine.courses_validees_le:
         # Liste telle qu'au moment des courses, sans les surplus qu'elles ont rangés.
         stock = stock_avant_validation(stock, _ecarts(s, semaine))
-    return liste_de_courses(portions, catalogue, stock)
+    return liste_de_courses(portions, catalogue, stock, ingredients_a_racheter(s, semaine))
 
 
 def _ecarts(s: Session, semaine: Semaine) -> dict[str, tuple[float, float]]:
@@ -465,6 +466,31 @@ def retirer_a_racheter(s: Session, semaine: Semaine, produit_id: int) -> None:
         s.delete(coche)
     s.delete(produit)
     s.commit()
+
+
+def ingredients_a_racheter(s: Session, semaine: Semaine) -> list[str]:
+    """Ingrédients finis au placard, achetés en plus des repas sur la liste de la semaine."""
+    requete = select(IngredientARacheter).where(IngredientARacheter.semaine_id == semaine.id)
+    return [i.ingredient_id for i in s.exec(requete).all()]
+
+
+def ajouter_ingredient_a_racheter(s: Session, semaine: Semaine, ingredient_id: str) -> None:
+    """Met un ingrédient sur la liste de courses (une seule fois)."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    if s.get(IngredientARacheter, (semaine.id, ingredient_id)) is None:
+        s.add(IngredientARacheter(semaine_id=semaine.id or 0, ingredient_id=ingredient_id))
+        s.commit()
+
+
+def retirer_ingredient_a_racheter(s: Session, semaine: Semaine, ingredient_id: str) -> None:
+    """Retire l'achat en plus d'un ingrédient (le besoin des repas reste sur la liste)."""
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+    ligne = s.get(IngredientARacheter, (semaine.id, ingredient_id))
+    if ligne:
+        s.delete(ligne)
+        s.commit()
 
 
 def prix_estime(s: Session, produit: FicheProduitMixin) -> float | None:

@@ -155,6 +155,14 @@ class ProduitARacheter(FicheProduitMixin, table=True):
     cree_le: datetime = Field(default_factory=maintenant)
 
 
+class IngredientARacheter(SQLModel, table=True):
+    """Ingrédient fini au placard : un conditionnement en plus sur la liste de la semaine."""
+
+    semaine_id: int = Field(foreign_key="semaine.id", primary_key=True)
+    ingredient_id: str = Field(primary_key=True, max_length=80)
+    cree_le: datetime = Field(default_factory=maintenant)
+
+
 class EcartProduit(SQLModel, table=True):
     """Paquets d'autres produits rangés par la validation des courses, pour la défaire."""
 

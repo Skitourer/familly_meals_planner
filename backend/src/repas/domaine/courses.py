@@ -14,13 +14,17 @@
 
 Les produits « basiques » (sel, épices, huile...) ne sont pas achetés
 systématiquement : ils sont listés à part, « à vérifier dans le placard ».
+
+Un ingrédient **à racheter** (fini au placard, remis sur la liste par la famille) est
+acheté en plus du besoin des repas : le plus petit conditionnement vendu, rangé au
+placard quelle que soit sa conservation (la famille l'a demandé).
 """
 
 from __future__ import annotations
 
 import math
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field, replace
 from itertools import combinations_with_replacement
 
@@ -66,6 +70,7 @@ class LigneCourses:
     prix_eur: float
     basique: bool = False
     hors_liste: bool = False  # acheté sans être prévu (produit scanné au magasin)
+    a_racheter: bool = False  # un conditionnement en plus, demandé depuis le placard
 
 
 @dataclass
@@ -115,16 +120,32 @@ def besoins_par_ingredient(portions: list[Portion], catalogue: Catalogue) -> dic
 
 
 def liste_de_courses(
-    portions: list[Portion], catalogue: Catalogue, stock: dict[str, float] | None = None
+    portions: list[Portion],
+    catalogue: Catalogue,
+    stock: dict[str, float] | None = None,
+    a_racheter: Collection[str] = (),
 ) -> ListeCourses:
-    """Construit la liste de courses de la semaine."""
+    """Construit la liste de courses de la semaine.
+
+    ``a_racheter`` : ingrédients finis au placard, achetés en plus des besoins des repas.
+    """
     stock = stock or {}
     liste = ListeCourses()
-    for id_ing, besoin in sorted(besoins_par_ingredient(portions, catalogue).items()):
+    besoins = besoins_par_ingredient(portions, catalogue)
+    # Les basiques ne sont pas suivis au placard : jamais « à racheter ».
+    rachats = {
+        i for i in a_racheter if i in catalogue.ingredients and not catalogue.ingredients[i].basique
+    }
+    for id_ing in sorted(besoins.keys() | rachats):
+        besoin = besoins.get(id_ing, 0.0)
         ingredient = catalogue.ingredients[id_ing]
+        racheter = id_ing in rachats
         depuis_placard = min(stock.get(id_ing, 0.0), besoin)
-        brut = (besoin - depuis_placard) / ingredient.part_comestible
-        achats = [] if brut <= 0 or ingredient.basique else _arrondir(id_ing, brut, catalogue)
+        brut = (besoin - depuis_placard) / ingredient.part_comestible  # pour les repas
+        a_acheter = brut + (plus_petit_conditionnement(id_ing, catalogue) if racheter else 0)
+        achats = (
+            [] if a_acheter <= 0 or ingredient.basique else _arrondir(id_ing, a_acheter, catalogue)
+        )
         achete = sum(a.total_g for a in achats)
         liste.lignes.append(
             LigneCourses(
@@ -137,12 +158,24 @@ def liste_de_courses(
                 achats=achats,
                 achete_g=round(achete),
                 surplus_g=round(max(achete - brut, 0)),
-                surplus_au_placard=ingredient.conservation_jours >= CONSERVATION_MIN_PLACARD_JOURS,
+                surplus_au_placard=racheter
+                or ingredient.conservation_jours >= CONSERVATION_MIN_PLACARD_JOURS,
                 prix_eur=round(achete / 1000 * catalogue.prix_kg(id_ing), 2),
                 basique=ingredient.basique,
+                a_racheter=racheter,
             )
         )
     return liste
+
+
+def plus_petit_conditionnement(id_ing: str, catalogue: Catalogue) -> float:
+    """Quantité brute du plus petit achat possible : une pièce, un pas de vrac, un paquet."""
+    vente = catalogue.ingredients[id_ing].vente
+    if vente.mode == "piece":
+        return vente.poids
+    if vente.mode == "vrac":
+        return vente.pas
+    return min(catalogue.formats_vente(id_ing) or [100.0])
 
 
 def _arrondir(id_ing: str, brut_g: float, catalogue: Catalogue) -> list[Achat]:
