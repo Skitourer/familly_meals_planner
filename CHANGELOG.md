@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.5.0...v1.6.0) (2026-11-26)
+
+
+### Nouveautés
+
+* recherche, tri, filtre « à vider » et regroupement par rayon au placard ([#56](https://github.com/Skitourer/familly_meals_planner/issues/56)) ([67758e9](https://github.com/Skitourer/familly_meals_planner/commit/67758e9b699900e98fa83c2c852573298de0d114))
+
 ## [1.5.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.4.0...v1.5.0) (2026-11-25)
 
 
