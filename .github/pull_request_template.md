@@ -1,6 +1,6 @@
 ## Objet
 
-<!-- Que change cette PR, et pourquoi ? Lier l'issue : « Ferme #12 ». -->
+<!-- Que change cette PR, et pourquoi ? Lier l'issue : « Closes #12 » (GitHub ne reconnaît pas « Ferme »). -->
 
 ## Vérifications
 
