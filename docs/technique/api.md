@@ -38,7 +38,7 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/bilan?semaines=12` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `GET` | `/api/notes/a-noter?jours=14&jours_a_venir=7` | Repas récents et à venir, notes déjà données |
 | `PUT` | `/api/notes` | Noter un plat (crée ou met à jour ; un enfant pour lui-même) |
-| `GET` | `/api/placard` | Contenu du placard |
+| `GET` | `/api/placard` | Contenu du placard, avec le rayon de chaque ingrédient (`rayon`, `rang_rayon` : ordre de la liste de courses) |
 | `GET` | `/api/placard/idees` | Plats qui consomment le mieux les produits à vider |
 | `PUT` | `/api/placard/{ingredient}` | Corriger une quantité ou une date limite (0 = retirer) |
 | `GET` | `/api/placard/produits` | Autres produits du placard (hors repas, en paquets) |

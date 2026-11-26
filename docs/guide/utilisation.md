@@ -174,8 +174,23 @@ validation, il retient les prix payés des articles scannés, les achats hors li
 
 L'onglet **Placard** liste les restes avec leur date limite estimée. Les quantités et les
 dates sont modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter un produit à
-la main, avec sa date limite si on la connaît. L'algorithme favorise les plats qui utilisent
-le placard.
+la main : tapez les premières lettres de son nom et choisissez-le dans la liste, puis sa date
+limite si on la connaît. L'algorithme favorise les plats qui utilisent le placard.
+
+### Retrouver un produit
+
+Au-dessus de la liste :
+
+- **Rechercher** filtre les ingrédients et les autres produits, sans tenir compte des
+  accents ni des majuscules (« creme » trouve « Crème fraîche légère ») ;
+- **Trier par** date limite (par défaut, les produits sans date en dernier), nom ou
+  quantité ; sur ordinateur, on peut aussi toucher l'en-tête d'une colonne ;
+- **Par rayon** regroupe les ingrédients dans l'ordre des rayons de la liste de courses ;
+- **À vider seulement** ne garde que les produits marqués « à vider » (leur nombre est
+  indiqué).
+
+Le tri et le regroupement sont retenus sur l'appareil. Sur téléphone, chaque ingrédient
+s'affiche comme une carte plutôt que comme une ligne de tableau.
 
 ### Scanner un produit
 

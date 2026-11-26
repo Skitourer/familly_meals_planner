@@ -11,6 +11,7 @@ from repas.api.produits import FicheEntree
 from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
+from repas.catalogue.schemas import LIBELLES_RAYONS, Rayon
 from repas.domaine.placard import a_vider
 from repas.domaine.produits import CATEGORIES
 from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
@@ -131,6 +132,8 @@ class StockSortie(BaseModel):
     unite: str
     peremption: date
     bientot_perime: bool  # à vider : à consommer dans les 7 jours
+    rayon: str  # libellé, pour regrouper le placard comme la liste de courses
+    rang_rayon: int  # ordre du rayon dans le parcours du magasin
 
 
 class StockEntree(BaseModel):
@@ -142,6 +145,7 @@ class StockEntree(BaseModel):
 def placard(s: Session = Depends(session)) -> list[StockSortie]:
     cat = catalogue()
     aujourd_hui = date.today()
+    rangs = {rayon: rang for rang, rayon in enumerate(Rayon)}
     return [
         StockSortie(
             ingredient_id=st.ingredient_id,
@@ -150,6 +154,8 @@ def placard(s: Session = Depends(session)) -> list[StockSortie]:
             unite=cat.ingredients[st.ingredient_id].unite,
             peremption=st.peremption,
             bientot_perime=a_vider(st.peremption, aujourd_hui),
+            rayon=LIBELLES_RAYONS[cat.ingredients[st.ingredient_id].rayon],
+            rang_rayon=rangs[cat.ingredients[st.ingredient_id].rayon],
         )
         for st in s.exec(select(Stock).order_by(col(Stock.peremption))).all()
         if st.ingredient_id in cat.ingredients
