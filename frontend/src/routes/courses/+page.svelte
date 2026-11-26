@@ -620,11 +620,17 @@
 		gap: 1rem;
 	}
 
+	/* Colonnes « maçonnerie » : chaque rayon suit le précédent dans sa colonne, sans les trous
+	   d'une grille dont chaque ligne prend la hauteur du plus long rayon. Ordre du magasin :
+	   de haut en bas, puis colonne suivante. */
 	.rayons {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-		gap: 0.75rem;
-		align-items: start;
+		columns: 320px;
+		column-gap: 0.75rem;
+	}
+
+	.rayons > section {
+		break-inside: avoid;
+		margin-bottom: 0.75rem;
 	}
 
 	ul {
