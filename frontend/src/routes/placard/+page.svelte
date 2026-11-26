@@ -543,10 +543,21 @@
 		cursor: pointer;
 	}
 
+	/* Bandeau de rayon : même allure que les catégories des autres produits. */
 	tr.rayon th {
-		padding-top: 0.8rem;
-		font-size: 0.9rem;
-		color: var(--texte);
+		padding: 0.35rem 0.7rem;
+		border-bottom: none;
+		background: var(--surface-2);
+		color: var(--texte-doux);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	/* Un peu d'air avant chaque rayon, sauf le premier. */
+	tbody + tbody tr.rayon th {
+		border-top: 0.9rem solid var(--surface);
 	}
 
 	/* Téléphone : une carte par ingrédient, sans en-têtes (le tri passe par « Trier par »). */

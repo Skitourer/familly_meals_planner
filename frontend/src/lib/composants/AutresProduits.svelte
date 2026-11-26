@@ -2,7 +2,8 @@
 	Autres produits du placard (Nutella, céréales...) : hors repas, comptés en paquets et
 	regroupés par catégorie, dans l'ordre reçu (recherche, filtre et tri faits par la page).
 	Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit, et propose de le
-	remettre sur la liste de courses de la semaine suivante (« À racheter »).
+	remettre sur la liste de courses de la semaine suivante (« À racheter »). Le bouton 🛒 l'y
+	met à tout moment, sans le retirer du placard (dernier paquet entamé...).
 -->
 <script lang="ts">
 	import { ficheARacheter } from '#lib/achats.ts';
@@ -109,12 +110,14 @@
 		</p>
 	{/if}
 	{#each groupes as [nomCategorie, liste] (nomCategorie)}
-		<h3>{nomCategorie}</h3>
+		<h3 class="categorie">
+			{nomCategorie} <span class="nombre">{liste.length}</span>
+		</h3>
 		<ul>
 			{#each liste as produit (produit.id)}
 				<li>
 					<div class="nom">
-						<strong>{produit.nom}</strong>
+						<span class="produit">{produit.nom}</span>
 						{#if details(produit)}<span class="doux">{details(produit)}</span>{/if}
 						{#if produit.bientot_perime}<span class="badge alerte">à vider</span>{/if}
 					</div>
@@ -142,6 +145,14 @@
 							onchange={(e) =>
 								modifier(produit, { peremption: (e.target as HTMLInputElement).value || null })}
 						/>
+						<button
+							class="discret"
+							onclick={() => racheter(produit)}
+							title="Mettre sur la liste de courses de la semaine suivante"
+							aria-label={`À racheter : ${produit.nom}`}
+						>
+							🛒
+						</button>
 						<button
 							class="discret"
 							onclick={() => modifier(produit, { paquets: 0 })}
@@ -173,10 +184,30 @@
 </section>
 
 <style>
-	h3 {
-		margin: 0.8rem 0 0.3rem;
-		font-size: 0.9rem;
+	/* Bandeau de catégorie : distinct des noms de produits (texte normal, sans fond). */
+	.categorie {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 1.2rem 0 0.4rem;
+		padding: 0.35rem 0.7rem;
+		border-radius: 0.5rem;
+		background: var(--surface-2);
 		color: var(--texte-doux);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.nombre {
+		font-weight: 600;
+		letter-spacing: 0;
+		opacity: 0.8;
+	}
+
+	.produit {
+		font-weight: 600;
 	}
 
 	ul {
