@@ -1,6 +1,13 @@
 // Achats réels au magasin : rapprochement d'un produit scanné avec la liste de courses.
 
-import type { FicheProduit, Ingredient, LigneCourses, ProduitScanne } from './types';
+import type {
+	ARacheter,
+	FicheProduit,
+	Ingredient,
+	LigneCourses,
+	ProduitPlacard,
+	ProduitScanne
+} from './types';
 
 /** Choix « Autre produit » : hors repas, rangé parmi les autres produits du placard. */
 export const AUTRE_PRODUIT = 'autre-produit';
@@ -65,4 +72,15 @@ export function prixPropose(
 	}
 	const proposition = produit.propositions.find((p) => p.ingredient_id === ingredientId);
 	return proposition?.prix_estime_eur ?? 0;
+}
+
+/** Fiche d'un produit du placard, pour le remettre sur la liste de courses. */
+export function ficheARacheter(produit: ProduitPlacard): FicheProduit {
+	const { code, nom, marque, contenu, categorie, nutriscore, nova, green_score } = produit;
+	return { code, nom, marque, contenu, categorie, nutriscore, nova, green_score };
+}
+
+/** Produit à racheter qui a le code-barres scanné, s'il y en a un. */
+export function rachatScanne(produit: ProduitScanne, rachats: ARacheter[]): ARacheter | undefined {
+	return rachats.find((r) => r.code !== null && r.code === produit.code);
 }

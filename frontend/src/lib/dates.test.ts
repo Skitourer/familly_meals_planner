@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ajouterJours, iso, libelleSemaine, lundiDe, semaineParDefaut } from './dates';
+import {
+	ajouterJours,
+	iso,
+	libelleSemaine,
+	lundiDe,
+	lundiSuivant,
+	semaineParDefaut
+} from './dates';
 
 describe('semaines', () => {
 	it('trouve le lundi de la semaine', () => {
@@ -17,5 +24,13 @@ describe('semaines', () => {
 	it('change de mois correctement', () => {
 		expect(iso(ajouterJours(new Date(2026, 10, 30), 2))).toBe('2026-12-02');
 		expect(libelleSemaine('2026-11-30')).toBe('du 30 nov. au 6 déc.');
+	});
+});
+
+describe('semaine suivante', () => {
+	it('même le dimanche, le lundi qui vient', () => {
+		expect(lundiSuivant(new Date(2026, 10, 26))).toBe('2026-11-30'); // jeudi
+		expect(lundiSuivant(new Date(2026, 10, 29))).toBe('2026-11-30'); // dimanche
+		expect(lundiSuivant(new Date(2026, 10, 30))).toBe('2026-12-07'); // lundi
 	});
 });

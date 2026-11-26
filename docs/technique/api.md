@@ -27,11 +27,13 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/semaines/{lundi}/creneaux/{jour}/{moment}/alternatives` | Meilleurs plats de remplacement |
 | `GET` | `/api/semaines/{lundi}/bilan` | Bilan nutritionnel et carbone |
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
-| `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus) ; la plus récente gagne ; renvoie les articles cochés |
+| `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus ; un produit à racheter a pour clé `racheter-{id}`) ; la plus récente gagne ; renvoie les articles cochés |
 | `POST` | `/api/semaines/{lundi}/courses/achats` | Produit acheté (`{ingredient_id, quantite_g, prix_eur, code?}`), prévu sur la liste ou non (hors liste : au placard à la validation) ; s'ajoute aux précédents |
 | `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |
 | `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Autre produit acheté (fiche, `prix_eur`, `ranger`) : budget, et placard à la validation si `ranger` |
 | `DELETE` | `/api/semaines/{lundi}/courses/autres-achats/{id}` | Retirer un autre produit acheté |
+| `POST` | `/api/semaines/{lundi}/courses/a-racheter` | Remettre sur la liste un autre produit fini au placard (fiche) ; une seule fois par produit |
+| `DELETE` | `/api/semaines/{lundi}/courses/a-racheter/{id}` | Retirer un produit à racheter de la liste (et sa coche) |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard ; corps facultatif `{tout_achete}` (faux : les articles ni cochés ni scannés n'ont pas été achetés) |
 | `POST` | `/api/semaines/{lundi}/courses/rouvrir` | Défaire la validation (placard et budget) |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |

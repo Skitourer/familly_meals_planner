@@ -45,3 +45,8 @@ export function libelleSemaine(lundiIso: string): string {
 	const lundi = depuisIso(lundiIso);
 	return `du ${dateCourte(lundi)} au ${dateCourte(ajouterJours(lundi, 6))}`;
 }
+
+/** Lundi de la semaine suivante (ISO) : celle dont la liste de courses reste à faire. */
+export function lundiSuivant(aujourdhui = new Date()): string {
+	return iso(ajouterJours(lundiDe(aujourdhui), 7));
+}
