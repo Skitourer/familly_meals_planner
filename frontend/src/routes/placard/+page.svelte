@@ -12,6 +12,14 @@
 	import AutresProduits from '#lib/composants/AutresProduits.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
+	import {
+		articlesAffiches,
+		ecrireChoix,
+		lireChoix,
+		normaliser,
+		parRayon,
+		type Tri
+	} from '#lib/placard.ts';
 	import type { IdeeFrigo, Ingredient, ProduitPlacard, ProduitScanne, Stock } from '#lib/types.ts';
 
 	let stock = $state<Stock[]>([]);
@@ -21,7 +29,7 @@
 	let idees = $state<IdeeFrigo[]>([]);
 	let erreur = $state('');
 	let enCours = $state(false);
-	let nouvelIngredient = $state('');
+	let nomNouvelIngredient = $state('');
 	let nouvelleQuantite = $state(100);
 	let nouvellePeremption = $state('');
 
@@ -46,9 +54,57 @@
 		suivis.filter((i) => !produit?.propositions.some((p) => p.ingredient_id === i.id))
 	);
 
+	// Recherche et filtre : pour cette visite ; tri et regroupement : gardés sur l'appareil.
+	let recherche = $state('');
+	let aViderSeulement = $state(false);
+	let choix = $state(lireChoix(localStorage));
+	const TRIS: [Tri, string][] = [
+		['peremption', 'Date limite'],
+		['nom', 'Nom'],
+		['quantite', 'Quantité']
+	];
+	// En-têtes du tableau, dans l'ordre des colonnes : toucher un en-tête trie par cette colonne.
+	const COLONNES: [Tri, string][] = [
+		['nom', 'Ingrédient'],
+		['quantite', 'Quantité'],
+		['peremption', 'À utiliser avant']
+	];
+	const stockAffiche = $derived(
+		articlesAffiches(
+			stock.map((s) => ({ ...s, quantite: s.quantite_g })),
+			recherche,
+			aViderSeulement,
+			choix.tri
+		)
+	);
+	const groupesStock = $derived<[string, typeof stockAffiche][]>(
+		choix.parRayon ? parRayon(stockAffiche) : [['', stockAffiche]]
+	);
+	const autresAffiches = $derived(
+		articlesAffiches(
+			autres.map((p) => ({ ...p, quantite: p.paquets })),
+			recherche,
+			aViderSeulement,
+			choix.tri
+		)
+	);
+	const filtrage = $derived(aViderSeulement || recherche.trim() !== '');
+	// Ajout manuel : le nom saisi doit être celui d'un ingrédient suivi (proposé par la liste).
+	const nouvelIngredient = $derived(
+		suivis.find((i) => normaliser(i.nom) === normaliser(nomNouvelIngredient))?.id ?? ''
+	);
+
+	$effect(() => {
+		ecrireChoix(localStorage, choix);
+	});
+
 	$effect(() => {
 		charger();
 	});
+
+	function trierPar(tri: Tri) {
+		choix.tri = tri;
+	}
 
 	async function charger() {
 		try {
@@ -83,8 +139,8 @@
 		event.preventDefault();
 		if (!nouvelIngredient) return;
 		const existant = stock.find((s) => s.ingredient_id === nouvelIngredient)?.quantite_g ?? 0;
-		await ajuster(nouvelIngredient, existant + nouvelleQuantite, nouvellePeremption);
-		nouvelIngredient = '';
+		if (await ajuster(nouvelIngredient, existant + nouvelleQuantite, nouvellePeremption))
+			nomNouvelIngredient = '';
 		nouvellePeremption = '';
 	}
 
@@ -218,65 +274,107 @@
 		<button class="principal" onclick={ouvrirScan}>📷 Scanner un produit</button>
 		<span class="doux">Le code-barres remplit le produit et sa quantité.</span>
 	</div>
+	<div class="outils">
+		<input
+			type="search"
+			placeholder="Rechercher au placard…"
+			bind:value={recherche}
+			aria-label="Rechercher au placard"
+		/>
+		<label>
+			Trier par
+			<select bind:value={choix.tri}>
+				{#each TRIS as [tri, libelle] (tri)}<option value={tri}>{libelle}</option>{/each}
+			</select>
+		</label>
+		<label><input type="checkbox" bind:checked={choix.parRayon} /> Par rayon</label>
+		<label>
+			<input type="checkbox" bind:checked={aViderSeulement} />
+			À vider seulement ({aVider.length})
+		</label>
+	</div>
+
+	<h2>Ingrédients</h2>
 	{#if !stock.length}
 		<p class="doux">Aucun ingrédient au placard.</p>
+	{:else if !stockAffiche.length}
+		<p class="doux">Aucun ingrédient ne correspond.</p>
 	{:else}
 		<table>
 			<thead>
-				<tr><th>Ingrédient</th><th>Quantité</th><th>À utiliser avant</th><th></th></tr>
-			</thead>
-			<tbody>
-				{#each stock as article (article.ingredient_id)}
-					<tr>
-						<td>{article.nom}</td>
-						<td>
-							<input
-								type="number"
-								min="0"
-								step="any"
-								value={article.quantite_g}
-								aria-label={`Quantité de ${article.nom}`}
-								onchange={(e) =>
-									ajuster(article.ingredient_id, Number((e.target as HTMLInputElement).value))}
-							/>
-							{unite(article.unite)}
-						</td>
-						<td>
-							<input
-								type="date"
-								value={article.peremption}
-								aria-label={`Date limite de ${article.nom}`}
-								onchange={(e) =>
-									ajuster(
-										article.ingredient_id,
-										article.quantite_g,
-										(e.target as HTMLInputElement).value
-									)}
-							/>
-							{#if article.bientot_perime}<span class="badge alerte">à vider</span>{/if}
-						</td>
-						<td>
-							<button
-								class="discret"
-								onclick={() => ajuster(article.ingredient_id, 0)}
-								aria-label={`Retirer ${article.nom}`}
-							>
-								🗑
+				<tr>
+					{#each COLONNES as [tri, libelle] (tri)}
+						<th aria-sort={choix.tri === tri ? 'ascending' : undefined}>
+							<button class="tri" onclick={() => trierPar(tri)}>
+								{libelle}
+								{#if choix.tri === tri}▲{/if}
 							</button>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
+						</th>
+					{/each}
+					<th></th>
+				</tr>
+			</thead>
+			{#each groupesStock as [rayon, articles] (rayon)}
+				<tbody>
+					{#if rayon}
+						<tr class="rayon"><th colspan="4" scope="rowgroup">{rayon}</th></tr>
+					{/if}
+					{#each articles as article (article.ingredient_id)}
+						<tr>
+							<td class="nom">{article.nom}</td>
+							<td>
+								<input
+									type="number"
+									min="0"
+									step="any"
+									value={article.quantite_g}
+									aria-label={`Quantité de ${article.nom}`}
+									onchange={(e) =>
+										ajuster(article.ingredient_id, Number((e.target as HTMLInputElement).value))}
+								/>
+								{unite(article.unite)}
+							</td>
+							<td>
+								<input
+									type="date"
+									value={article.peremption}
+									aria-label={`Date limite de ${article.nom}`}
+									onchange={(e) =>
+										ajuster(
+											article.ingredient_id,
+											article.quantite_g,
+											(e.target as HTMLInputElement).value
+										)}
+								/>
+								{#if article.bientot_perime}<span class="badge alerte">à vider</span>{/if}
+							</td>
+							<td>
+								<button
+									class="discret"
+									onclick={() => ajuster(article.ingredient_id, 0)}
+									aria-label={`Retirer ${article.nom}`}
+								>
+									🗑
+								</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			{/each}
 		</table>
 	{/if}
 
 	<form class="ligne ajout" onsubmit={ajouter}>
-		<select bind:value={nouvelIngredient} aria-label="Ingrédient à ajouter">
-			<option value="">Ajouter un ingrédient…</option>
-			{#each suivis as ing (ing.id)}
-				<option value={ing.id}>{ing.nom}</option>
-			{/each}
-		</select>
+		<input
+			type="search"
+			list="ingredients-suivis"
+			placeholder="Ajouter un ingrédient…"
+			bind:value={nomNouvelIngredient}
+			aria-label="Ingrédient à ajouter"
+		/>
+		<datalist id="ingredients-suivis">
+			{#each suivis as ing (ing.id)}<option value={ing.nom}></option>{/each}
+		</datalist>
 		<input type="number" min="1" step="any" bind:value={nouvelleQuantite} aria-label="Quantité" />
 		<input
 			type="date"
@@ -288,7 +386,7 @@
 	</form>
 </div>
 
-<AutresProduits produits={autres} {categories} onModifie={charger} />
+<AutresProduits produits={autresAffiches} {filtrage} {categories} onModifie={charger} />
 
 <Modale titre="Scanner un produit" bind:ouverte={scanOuvert}>
 	{#if messageScan}<p class:erreur={!messageScan.startsWith('Ajouté')}>{messageScan}</p>{/if}
@@ -411,6 +509,70 @@
 
 	td input[type='number'] {
 		width: 5.5rem;
+	}
+
+	.outils {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.outils input[type='search'] {
+		flex: 1 1 14rem;
+	}
+
+	.outils label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+
+	h2 {
+		margin: 1rem 0 0.3rem;
+	}
+
+	/* En-tête cliquable : même allure que le texte de l'en-tête. */
+	button.tri {
+		border: none;
+		background: none;
+		padding: 0;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	tr.rayon th {
+		padding-top: 0.8rem;
+		font-size: 0.9rem;
+		color: var(--texte);
+	}
+
+	/* Téléphone : une carte par ingrédient, sans en-têtes (le tri passe par « Trier par »). */
+	@media (max-width: 640px) {
+		thead {
+			display: none;
+		}
+
+		tr:not(.rayon) {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.3rem 0.6rem;
+			padding: 0.5rem 0;
+			border-bottom: 1px solid var(--bordure);
+		}
+
+		td {
+			border: none;
+			padding: 0;
+		}
+
+		td.nom {
+			flex-basis: 100%;
+			font-weight: 600;
+		}
 	}
 
 	.frigo {

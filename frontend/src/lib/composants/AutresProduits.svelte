@@ -1,6 +1,7 @@
 <!--
 	Autres produits du placard (Nutella, céréales...) : hors repas, comptés en paquets et
-	regroupés par catégorie. Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit.
+	regroupés par catégorie, dans l'ordre reçu (recherche, filtre et tri faits par la page).
+	Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit.
 -->
 <script lang="ts">
 	import { api, messageErreur } from '#lib/api.ts';
@@ -8,10 +9,15 @@
 
 	let {
 		produits,
+		filtrage,
 		categories,
 		onModifie
-	}: { produits: ProduitPlacard[]; categories: string[]; onModifie: () => Promise<void> } =
-		$props();
+	}: {
+		produits: ProduitPlacard[];
+		filtrage: boolean; // recherche ou filtre actif : une liste vide ne veut pas dire placard vide
+		categories: string[];
+		onModifie: () => Promise<void>;
+	} = $props();
 
 	let erreur = $state('');
 	let nom = $state('');
@@ -62,7 +68,11 @@
 	<p class="doux">Hors repas (petit-déjeuner, goûters, boissons…), comptés en paquets.</p>
 	{#if erreur}<p class="erreur">{erreur}</p>{/if}
 	{#if !produits.length}
-		<p class="doux">Aucun pour l'instant : scannez-les ou ajoutez-les ci-dessous.</p>
+		<p class="doux">
+			{filtrage
+				? 'Aucun autre produit ne correspond.'
+				: "Aucun pour l'instant : scannez-les ou ajoutez-les ci-dessous."}
+		</p>
 	{/if}
 	{#each groupes as [nomCategorie, liste] (nomCategorie)}
 		<h3>{nomCategorie}</h3>

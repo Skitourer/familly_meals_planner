@@ -103,7 +103,9 @@ def test_notes(client: TestClient):
 
 def test_placard_manuel(client: TestClient):
     assert client.put("/api/placard/riz", json={"quantite_g": 400}).status_code == 200
-    assert client.get("/api/placard").json()[0]["ingredient_id"] == "riz"
+    riz = client.get("/api/placard").json()[0]
+    assert riz["ingredient_id"] == "riz"
+    assert (riz["rayon"], riz["rang_rayon"]) == ("Épicerie salée", 5)
     client.put("/api/placard/riz", json={"quantite_g": 0})
     assert client.get("/api/placard").json() == []
     assert client.put("/api/placard/licorne", json={"quantite_g": 1}).status_code == 404

@@ -192,6 +192,8 @@ export interface Stock {
 	unite: string;
 	peremption: string;
 	bientot_perime: boolean;
+	rayon: string;
+	rang_rayon: number; // ordre du rayon dans la liste de courses
 }
 
 /** Plat qui consomme les produits du placard à vider (frigo à vider). */
