@@ -8,7 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { AUTRE_PRODUIT, ficheDuProduit } from '#lib/achats.ts';
 	import { api, messageErreur } from '#lib/api.ts';
-	import { iso, lundiDe } from '#lib/dates.ts';
+	import { iso, libelleSemaine, lundiDe, lundiSuivant } from '#lib/dates.ts';
 	import AutresProduits from '#lib/composants/AutresProduits.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
@@ -101,6 +101,30 @@
 	$effect(() => {
 		charger();
 	});
+
+	// Ingrédient fini : proposé « à racheter » sur la liste de la semaine suivante.
+	let ingredientRetire = $state<Stock | null>(null);
+	let messageRachat = $state('');
+
+	async function retirer(article: Stock) {
+		if (await ajuster(article.ingredient_id, 0)) {
+			ingredientRetire = article;
+			messageRachat = '';
+		}
+	}
+
+	async function racheter(article: Stock) {
+		const lundi = lundiSuivant();
+		try {
+			await api.creer(`/semaines/${lundi}/courses/ingredients-a-racheter`, {
+				ingredient_id: article.ingredient_id
+			});
+			ingredientRetire = null;
+			messageRachat = `${article.nom} : sur la liste de courses de la semaine ${libelleSemaine(lundi)}`;
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
 
 	function trierPar(tri: Tri) {
 		choix.tri = tri;
@@ -295,6 +319,20 @@
 	</div>
 
 	<h2>Ingrédients</h2>
+	{#if ingredientRetire}
+		<p class="ligne rachat" role="status">
+			<span>{ingredientRetire.nom} n'est plus au placard.</span>
+			<button class="principal" onclick={() => ingredientRetire && racheter(ingredientRetire)}>
+				🛒 À racheter
+			</button>
+			<button class="discret" onclick={() => (ingredientRetire = null)}>Non merci</button>
+		</p>
+	{:else if messageRachat}
+		<p class="ligne rachat" role="status">
+			<span>✓ {messageRachat}</span>
+			<a href={`/courses?lundi=${lundiSuivant()}`}>Voir la liste</a>
+		</p>
+	{/if}
 	{#if !stock.length}
 		<p class="doux">Aucun ingrédient au placard.</p>
 	{:else if !stockAffiche.length}
@@ -348,10 +386,18 @@
 								/>
 								{#if article.bientot_perime}<span class="badge alerte">à vider</span>{/if}
 							</td>
-							<td>
+							<td class="actions">
 								<button
 									class="discret"
-									onclick={() => ajuster(article.ingredient_id, 0)}
+									onclick={() => racheter(article)}
+									title="Mettre sur la liste de courses de la semaine suivante"
+									aria-label={`À racheter : ${article.nom}`}
+								>
+									🛒
+								</button>
+								<button
+									class="discret"
+									onclick={() => retirer(article)}
 									aria-label={`Retirer ${article.nom}`}
 								>
 									🗑
@@ -509,6 +555,17 @@
 
 	td input[type='number'] {
 		width: 5.5rem;
+	}
+
+	.rachat {
+		align-items: center;
+		padding: 0.5rem 0.7rem;
+		border-radius: 0.5rem;
+		background: var(--accent-doux);
+	}
+
+	td.actions {
+		white-space: nowrap;
 	}
 
 	.outils {

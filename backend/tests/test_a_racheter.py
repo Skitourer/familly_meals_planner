@@ -124,3 +124,37 @@ def test_retirer_de_la_liste(client: TestClient):
     assert client.delete(f"{url}/a-racheter/{produit['id']}").status_code == 204  # déjà retiré
     courses = client.get(url).json()
     assert courses["a_racheter"] == [] and courses["coches"] == []
+
+
+# --- Ingrédients à racheter -------------------------------------------------------------
+
+
+def lignes(client: TestClient, url: str) -> dict[str, dict]:
+    return {x["ingredient_id"]: x for _, xs in client.get(url).json()["rayons"] for x in xs}
+
+
+def test_ingredient_fini_remis_sur_la_liste_puis_range(client: TestClient):
+    url = url_courses("2026-11-30")
+    entree = {"ingredient_id": "beurre"}
+    for _ in range(2):  # une seule fois sur la liste
+        assert client.post(f"{url}/ingredients-a-racheter", json=entree).status_code == 204
+    for invalide in ("licorne", "sel"):  # inconnu, basique
+        reponse = client.post(f"{url}/ingredients-a-racheter", json={"ingredient_id": invalide})
+        assert reponse.status_code == 400
+    beurre = lignes(client, url)["beurre"]
+    assert beurre["a_racheter"] and beurre["achat"] == "1 × paquet de 250 g"
+
+    # Coché comme un ingrédient ordinaire, puis rangé au placard à la validation.
+    maintenant = datetime.now(UTC).isoformat()
+    coche = {"ingredient_id": "beurre", "cochee": True, "modifiee_le": maintenant}
+    client.put(f"{url}/coches", json=[coche])
+    assert client.post(f"{url}/valider", json={"tout_achete": False}).status_code == 204
+    placard = {p["ingredient_id"]: p["quantite_g"] for p in client.get("/api/placard").json()}
+    assert placard["beurre"] > 0
+    assert client.post(f"{url}/ingredients-a-racheter", json=entree).status_code == 409
+    assert client.delete(f"{url}/ingredients-a-racheter/beurre").status_code == 409
+
+    assert client.post(f"{url}/rouvrir").status_code == 204
+    assert "beurre" not in {p["ingredient_id"] for p in client.get("/api/placard").json()}
+    assert client.delete(f"{url}/ingredients-a-racheter/beurre").status_code == 204
+    assert "beurre" not in lignes(client, url)

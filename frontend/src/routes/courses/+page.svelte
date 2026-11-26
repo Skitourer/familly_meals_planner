@@ -255,6 +255,15 @@
 		}
 	}
 
+	async function retirerIngredientRachat(ingredientId: string) {
+		try {
+			await api.supprimer(`/semaines/${lundi}/courses/ingredients-a-racheter/${ingredientId}`);
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
 	async function retirerRachat(id: number) {
 		try {
 			await api.supprimer(`/semaines/${lundi}/courses/a-racheter/${id}`);
@@ -351,12 +360,29 @@
 									<span class="nom">{ligne.nom}</span>
 									<span class="achat">{ligne.achat}</span>
 								</label>
-								<span class="detail doux">
-									besoin {ligne.besoin}{#if ligne.depuis_placard}, dont {ligne.depuis_placard} du placard{/if}{#if ligne.surplus}
-										· reste {ligne.surplus}{ligne.surplus_au_placard
-											? ' → placard'
-											: ' ⚠️ à consommer'}{/if}
-								</span>
+								{#if ligne.a_racheter}
+									<span class="detail doux">
+										🛒 à racheter : un paquet en plus, pour le placard
+										{#if !courses.validees}
+											<button
+												class="discret"
+												onclick={() => retirerIngredientRachat(ligne.ingredient_id)}
+												aria-label={`Ne plus racheter ${ligne.nom}`}
+											>
+												✕
+											</button>
+										{/if}
+									</span>
+								{/if}
+								<!-- Racheté sans repas qui l'utilise : besoin nul, le détail n'apprend rien. -->
+								{#if !ligne.a_racheter || !ligne.besoin.startsWith('0 ')}
+									<span class="detail doux">
+										besoin {ligne.besoin}{#if ligne.depuis_placard}, dont {ligne.depuis_placard} du placard{/if}{#if ligne.surplus}
+											· reste {ligne.surplus}{ligne.surplus_au_placard
+												? ' → placard'
+												: ' ⚠️ à consommer'}{/if}
+									</span>
+								{/if}
 								{#if ligne.achat_reel}
 									<span class="detail reel">
 										✓ acheté {ligne.achat_reel} · {euros(ligne.prix_reel_eur ?? 0)}

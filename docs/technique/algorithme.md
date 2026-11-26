@@ -178,6 +178,10 @@ Fichier : `domaine/courses.py`.
    → 1 kg ; 9 œufs → une boîte de 12).
 5. Le surplus va au placard si l'ingrédient se conserve au moins 7 jours.
 
+Un ingrédient **à racheter** (🛒 au placard) ajoute au brut du point 3 son plus petit
+conditionnement (une pièce, un pas de vrac, le plus petit paquet) ; le surplus se calcule
+toujours par rapport au besoin des repas et va au placard quelle que soit la conservation.
+
 ## 9. Vérification
 
 Les tests (`backend/tests/test_planificateur.py`) vérifient notamment que :

@@ -82,6 +82,8 @@ Onglet **Courses** :
 - ce qui est déjà au **placard** est déduit ;
 - les produits de base (sel, épices, huile...) sont listés à part, « à vérifier » ;
 - le **budget estimé** utilise les prix médians relevés par Open Prices ;
+- un ingrédient mis de côté avec 🛒 apparaît dans son rayon, marqué « 🛒 à racheter » (✕ pour
+  y renoncer) ;
 - la section **À racheter** reprend les autres produits finis au placard (un paquet chacun,
   au dernier prix payé s'il est connu). Ils se cochent comme le reste et se retirent avec ✕ ;
   scanner l'un d'eux le reconnaît par son code-barres. À la validation, un produit coché (ou
@@ -181,6 +183,11 @@ dates sont modifiables (vous avez fini le riz ? mettez 0). On peut aussi ajouter
 la main : tapez les premières lettres de son nom et choisissez-le dans la liste, puis sa date
 limite si on la connaît. L'algorithme favorise les plats qui utilisent le placard.
 
+Le bouton **🛒** d'un ingrédient le met sur la liste de courses de la semaine suivante :
+le plus petit conditionnement vendu (un paquet de beurre, une boîte de 6 œufs…), en plus de
+ce que demandent les repas, rangé au placard à la validation. Il est aussi proposé quand on
+retire un ingrédient avec 🗑.
+
 ### Retrouver un produit
 
 Au-dessus de la liste :
@@ -218,6 +225,7 @@ regroupé par catégorie (déduite d'Open Food Facts, modifiable) :
 
 - **−** et **+** corrigent le nombre de paquets ; à 0, le produit est retiré et
   **🛒 À racheter** le remet sur la liste de courses de la semaine suivante (voir plus bas) ;
+- le bouton **🛒** de chaque produit l'y met à tout moment, sans le retirer du placard ;
 - une date limite facultative le fait apparaître dans « Frigo à vider » ;
 - au scan, un produit sans ingrédient correspondant est proposé comme « Autre produit » ;
   rescanner le même produit ajoute un paquet ;

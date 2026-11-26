@@ -83,6 +83,7 @@ class LigneCoursesSortie(BaseModel):
     achete_g: float  # quantité brute prévue (estimation du prix d'un produit scanné)
     achat_reel: str | None = None  # quantité vraiment achetée (produits scannés)
     prix_reel_eur: float | None = None
+    a_racheter: bool = False  # un conditionnement en plus, demandé depuis le placard
 
 
 class AutreAchatSortie(BaseModel):
@@ -230,6 +231,7 @@ def _courses_sortie(
             achete_g=x.achete_g,
             achat_reel=format_quantite(reel.quantite_g, x.unite) if reel else None,
             prix_reel_eur=round(reel.prix_eur, 2) if reel else None,
+            a_racheter=x.a_racheter,
         )
 
     reelle = appliquer_achats_reels(liste, achats, catalogue())
@@ -400,6 +402,39 @@ def ajouter_a_racheter(lundi: date, entree: FicheEntree, s: Session = Depends(se
     """Remet sur la liste un autre produit fini au placard."""
     try:
         services.ajouter_a_racheter(s, _semaine(s, lundi), entree.fiche())
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+class IngredientARacheterEntree(BaseModel):
+    ingredient_id: str = Field(max_length=80)
+
+
+@router.post("/{lundi}/courses/ingredients-a-racheter", status_code=204, dependencies=ADULTE)
+def ajouter_ingredient_a_racheter(
+    lundi: date, entree: IngredientARacheterEntree, s: Session = Depends(session)
+) -> None:
+    """Remet sur la liste un ingrédient fini au placard (le plus petit conditionnement)."""
+    ingredient = catalogue().ingredients.get(entree.ingredient_id)
+    if ingredient is None or ingredient.basique:
+        raise HTTPException(400, "Ingrédient inconnu ou non suivi au placard")
+    try:
+        services.ajouter_ingredient_a_racheter(s, _semaine(s, lundi), entree.ingredient_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete(
+    "/{lundi}/courses/ingredients-a-racheter/{ingredient_id}",
+    status_code=204,
+    dependencies=ADULTE,
+)
+def retirer_ingredient_a_racheter(
+    lundi: date, ingredient_id: str, s: Session = Depends(session)
+) -> None:
+    """Retire l'achat en plus d'un ingrédient."""
+    try:
+        services.retirer_ingredient_a_racheter(s, _semaine(s, lundi), ingredient_id)
     except services.ErreurMetier as erreur:
         raise HTTPException(409, str(erreur)) from erreur
 
