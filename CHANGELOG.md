@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.6.0...v1.7.0) (2026-11-26)
+
+
+### Nouveautés
+
+* ingrédients « à racheter » depuis le placard ([#62](https://github.com/Skitourer/familly_meals_planner/issues/62)) ([3c5199d](https://github.com/Skitourer/familly_meals_planner/commit/3c5199d5ff167ec9344dc1662e090e0192c393de))
+* produits « à racheter » remis sur la liste de courses ([#58](https://github.com/Skitourer/familly_meals_planner/issues/58)) ([044e8b5](https://github.com/Skitourer/familly_meals_planner/commit/044e8b50512186c3400219c5f0a83e0415231aa1))
+
+
+### Corrections
+
+* catégories du placard bien séparées et bouton 🛒 « à racheter » visible ([#60](https://github.com/Skitourer/familly_meals_planner/issues/60)) ([5e5903e](https://github.com/Skitourer/familly_meals_planner/commit/5e5903e2413ccbc5b83aad30f9fdd673dca66e40))
+* liste de courses en colonnes, sans trous entre les rayons ([#61](https://github.com/Skitourer/familly_meals_planner/issues/61)) ([7958b81](https://github.com/Skitourer/familly_meals_planner/commit/7958b81acaccb6bd5e22665af604a595d9df9f9c))
+
 ## [1.6.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.5.0...v1.6.0) (2026-11-26)
 
 
