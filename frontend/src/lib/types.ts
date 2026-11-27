@@ -164,6 +164,15 @@ export interface ARacheter {
 	scanne: boolean; // acheté et scanné : rangé au placard par son achat
 }
 
+/** Article ajouté à la main sur la liste (chaussures, nettoyant) : ni repas, ni placard. */
+export interface ArticleLibre {
+	id: number;
+	cle: string; // clé de sa coche sur la liste
+	libelle: string;
+	quantite: string;
+	prix_eur: number | null; // prix payé, saisi à la coche
+}
+
 /** Note de A à E (Nutri-Score, Green-Score), en minuscule. */
 export type Note = 'a' | 'b' | 'c' | 'd' | 'e';
 
@@ -194,6 +203,8 @@ export interface Courses {
 	hors_liste: LigneCourses[]; // ingrédients achetés sans être prévus
 	autres_achats: AutreAchat[]; // autres produits (hors repas)
 	a_racheter: ARacheter[]; // autres produits finis au placard
+	articles_libres: ArticleLibre[]; // hors repas et hors placard
+	total_articles_libres_eur: number; // prix saisis ; hors coût des repas du Bilan
 	total_reel_eur: number; // prix payés quand ils sont connus, estimation sinon
 	nb_achats_reels: number;
 	validees: boolean;

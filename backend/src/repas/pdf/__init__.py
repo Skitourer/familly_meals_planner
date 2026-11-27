@@ -65,10 +65,16 @@ def date_longue(jour: date) -> str:
     return f"{jour.day} {MOIS[jour.month - 1]} {jour.year}"
 
 
-def pdf_liste_courses(liste: ListeCourses, lundi: date, a_racheter: Sequence[str] = ()) -> bytes:
+def pdf_liste_courses(
+    liste: ListeCourses,
+    lundi: date,
+    a_racheter: Sequence[str] = (),
+    articles_libres: Sequence[tuple[str, str]] = (),
+) -> bytes:
     """Liste de courses imprimable, par rayon, avec cases à cocher.
 
     ``a_racheter`` : noms des autres produits finis au placard, un paquet chacun.
+    ``articles_libres`` : (libellé, quantité) des articles hors repas ajoutés à la main.
     """
     doc = _Document(
         "Liste de courses",
@@ -102,9 +108,15 @@ def pdf_liste_courses(liste: ListeCourses, lundi: date, a_racheter: Sequence[str
             doc.cell(0, 6, detail, align="R", new_x="LMARGIN", new_y="NEXT")
             doc.set_text_color(0, 0, 0)
 
-    if a_racheter:
-        doc.section("À racheter")
-        for nom in a_racheter:
+    sections = (
+        ("À racheter", [(nom, "1 paquet") for nom in a_racheter]),
+        ("Autres articles", list(articles_libres)),
+    )
+    for titre, articles in sections:
+        if not articles:
+            continue
+        doc.section(titre)
+        for nom, quantite in articles:
             if doc.get_y() > doc.h - 25:
                 doc.add_page()
             doc.rect(doc.l_margin, doc.get_y() + 1.2, 3.6, 3.6)
@@ -112,7 +124,7 @@ def pdf_liste_courses(liste: ListeCourses, lundi: date, a_racheter: Sequence[str
             doc.set_font("DejaVu", "B", 10)
             doc.cell(largeur * 0.42, 6, nom)
             doc.set_font("DejaVu", "", 10)
-            doc.cell(0, 6, "1 paquet", new_x="LMARGIN", new_y="NEXT")
+            doc.cell(0, 6, quantite, new_x="LMARGIN", new_y="NEXT")
 
     if liste.a_verifier:
         doc.section("À vérifier dans le placard")

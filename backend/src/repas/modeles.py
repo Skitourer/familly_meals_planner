@@ -163,6 +163,17 @@ class IngredientARacheter(SQLModel, table=True):
     cree_le: datetime = Field(default_factory=maintenant)
 
 
+class ArticleLibre(SQLModel, table=True):
+    """Article de la liste de courses hors repas et hors placard (chaussures, nettoyant...)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    semaine_id: int = Field(foreign_key="semaine.id", index=True)
+    libelle: str = Field(max_length=120)
+    quantite: str = Field(default="", max_length=40)  # texte libre : « 2 », « taille 32 »
+    prix_eur: float | None = Field(default=None, ge=0)  # saisi à la coche, facultatif
+    cree_le: datetime = Field(default_factory=maintenant)
+
+
 class EcartProduit(SQLModel, table=True):
     """Paquets d'autres produits rangés par la validation des courses, pour la défaire."""
 
