@@ -7,6 +7,8 @@
 	parmi les autres produits du placard, sauf s'il est marqué « ne pas ranger ».
 	Les produits « à racheter » (autres produits finis au placard) se cochent et se scannent
 	comme le reste ; cochés, ils rejoignent le placard à la validation.
+	Les « autres articles » (chaussures, nettoyant) s'ajoutent à la main : cochés comme le reste,
+	prix facultatif, jamais rangés au placard ; les non cochés passent à la semaine suivante.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -29,10 +31,17 @@
 		type FileCoches
 	} from '#lib/coches.ts';
 	import ChoixSemaine from '#lib/composants/ChoixSemaine.svelte';
+	import { depuisIso, libelleSemaine, lundiSuivant } from '#lib/dates.ts';
 	import Modale from '#lib/composants/Modale.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
-	import type { Courses, Ingredient, LigneCourses, ProduitScanne } from '#lib/types.ts';
+	import type {
+		ArticleLibre,
+		Courses,
+		Ingredient,
+		LigneCourses,
+		ProduitScanne
+	} from '#lib/types.ts';
 
 	const lundi = $derived(lundiDepuisUrl(page.url));
 	let courses = $state<Courses | null>(null);
@@ -59,6 +68,11 @@
 	let confirmationOuverte = $state(false);
 	let nonCoches = $state<{ cle: string; nom: string }[]>([]);
 
+	// Autres articles (hors repas) : saisie et report à la semaine suivante.
+	let libelle = $state('');
+	let quantite = $state('');
+	let report = $state<{ reportes: number; lundi: string } | null>(null); // dernier report fait
+
 	const coches = $derived(cochesAffichees(courses?.coches ?? [], file));
 	const lignes = $derived<LigneCourses[]>(courses?.rayons.flatMap(([, l]) => l) ?? []);
 	const enAttente = $derived(Object.keys(file).length);
@@ -68,6 +82,7 @@
 	// Recharger seulement quand la semaine change (charger lit et modifie la file d'attente).
 	$effect(() => {
 		const date = lundi;
+		report = null;
 		untrack(() => charger(date));
 	});
 
@@ -273,6 +288,50 @@
 		}
 	}
 
+	async function ajouterArticle(event: SubmitEvent) {
+		event.preventDefault();
+		try {
+			await api.creer(`/semaines/${lundi}/courses/articles`, { libelle, quantite });
+			libelle = quantite = '';
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	/** Prix payé, facultatif : un champ vidé efface le prix. */
+	async function enregistrerPrix(article: ArticleLibre, texte: string) {
+		const prix = texte.trim() === '' ? null : Number(texte);
+		try {
+			await api.modifier(`/semaines/${lundi}/courses/articles/${article.id}`, { prix_eur: prix });
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function retirerArticle(id: number) {
+		try {
+			await api.supprimer(`/semaines/${lundi}/courses/articles/${id}`);
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function reporterArticles() {
+		await envoyer(lundi); // les coches en attente disent ce qui a été acheté
+		try {
+			const { reportes } = await api.creer<{ reportes: number }>(
+				`/semaines/${lundi}/courses/articles/reporter`
+			);
+			report = { reportes, lundi: semaineSuivante };
+			await charger(lundi);
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
 	async function rouvrir() {
 		const message =
 			'Rouvrir les courses ? Ce que la validation a changé dans le placard et le budget est défait ; vos corrections faites depuis sont gardées.';
@@ -285,11 +344,16 @@
 		}
 	}
 
-	// Articles de la liste : ingrédients des repas et produits à racheter.
+	// Articles de la liste : ingrédients des repas, produits à racheter et autres articles.
 	const nbLignes = $derived(
 		(courses?.rayons.reduce((n, [, lignes]) => n + lignes.length, 0) ?? 0) +
-			(courses?.a_racheter.length ?? 0)
+			(courses?.a_racheter.length ?? 0) +
+			(courses?.articles_libres.length ?? 0)
 	);
+	const aReporter = $derived(
+		courses?.articles_libres.filter((a) => !coches.has(a.cle)).length ?? 0
+	);
+	const semaineSuivante = $derived(lundiSuivant(depuisIso(lundi)));
 	const euros = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 </script>
 
@@ -332,11 +396,15 @@
 		<p class="carte">
 			Rien à acheter : <a href={`/?lundi=${lundi}`}>générez d'abord les repas de la semaine</a>.
 		</p>
+		{@render autresArticles(courses)}
 	{:else}
 		<p class="doux">
 			{coches.size} / {nbLignes} articles · budget estimé
 			<strong>{euros(courses.total_eur)}</strong>
 			(prix médians Open Prices)
+			{#if courses.total_articles_libres_eur}
+				· autres articles <strong>{euros(courses.total_articles_libres_eur)}</strong>
+			{/if}
 			{#if courses.nb_achats_reels}
 				· avec les prix payés <strong>{euros(courses.total_reel_eur)}</strong>
 				({courses.nb_achats_reels}
@@ -439,6 +507,7 @@
 					</ul>
 				</section>
 			{/if}
+			{@render autresArticles(courses)}
 			{#if courses.hors_liste.length || courses.autres_achats.length}
 				<section class="carte">
 					<h2>Hors liste</h2>
@@ -490,6 +559,95 @@
 		</div>
 	{/if}
 {/if}
+
+{#snippet autresArticles(courses: Courses)}
+	<section class="carte">
+		<h2>Autres articles</h2>
+		<p class="doux aide">Hors repas : ni rangés au placard, ni comptés dans le coût des repas.</p>
+		{#if courses.articles_libres.length}
+			<ul>
+				{#each courses.articles_libres as article (article.id)}
+					{@const cochee = coches.has(article.cle)}
+					<li class:coche={cochee}>
+						<label>
+							<input
+								type="checkbox"
+								checked={cochee}
+								disabled={courses.validees}
+								onchange={() => cocher(article.cle)}
+							/>
+							<span class="nom">{article.libelle}</span>
+							<span class="achat">{article.quantite}</span>
+						</label>
+						<span class="detail doux">
+							{#if cochee && !courses.validees}
+								<label class="prix">
+									prix payé (facultatif)
+									<input
+										type="number"
+										min="0"
+										max="1000"
+										step="0.01"
+										inputmode="decimal"
+										value={article.prix_eur ?? ''}
+										disabled={!enLigne}
+										onchange={(e) => enregistrerPrix(article, e.currentTarget.value)}
+										aria-label={`Prix payé : ${article.libelle}`}
+									/>
+									€
+								</label>
+							{:else if article.prix_eur !== null}
+								✓ {euros(article.prix_eur)}
+							{/if}
+							{#if !courses.validees}
+								<button
+									class="discret"
+									onclick={() => retirerArticle(article.id)}
+									disabled={!enLigne}
+									aria-label={`Retirer ${article.libelle} de la liste`}
+								>
+									✕
+								</button>
+							{/if}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		{#if !courses.validees}
+			<form class="ajout" onsubmit={ajouterArticle}>
+				<input
+					bind:value={libelle}
+					required
+					maxlength="120"
+					placeholder="Article"
+					aria-label="Article à ajouter"
+				/>
+				<input
+					bind:value={quantite}
+					maxlength="40"
+					placeholder="Quantité"
+					aria-label="Quantité (facultatif)"
+				/>
+				<button type="submit" disabled={!enLigne}>Ajouter</button>
+			</form>
+		{/if}
+		{#if aReporter}
+			<button class="discret reporter" onclick={reporterArticles} disabled={!enLigne}>
+				↪ Reporter {aReporter > 1 ? `les ${aReporter} non cochés` : 'le non coché'} à la semaine
+				{libelleSemaine(semaineSuivante)}
+			</button>
+		{/if}
+		{#if report}
+			<p class="doux" role="status">
+				{report.reportes}
+				{report.reportes > 1 ? 'articles reportés' : 'article reporté'} sur la semaine
+				{libelleSemaine(report.lundi)} ·
+				<a href={`/courses?lundi=${report.lundi}`}>voir la liste</a>
+			</p>
+		{/if}
+	</section>
+{/snippet}
 
 <Modale titre="Courses faites ?" bind:ouverte={confirmationOuverte}>
 	<p>
@@ -694,6 +852,35 @@
 		display: block;
 		padding-left: 1.7rem;
 		font-size: 0.78rem;
+	}
+
+	.ajout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 5.5rem auto;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	.aide {
+		margin: 0 0 0.5rem;
+		font-size: 0.78rem;
+	}
+
+	.reporter {
+		margin-top: 0.5rem;
+		text-align: left;
+		font-size: 0.85rem;
+	}
+
+	li label.prix {
+		display: inline;
+		font-size: inherit;
+		color: inherit;
+	}
+
+	.prix input {
+		width: 6rem;
+		margin: 0 0.25rem;
 	}
 
 	.coche .nom,

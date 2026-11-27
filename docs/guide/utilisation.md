@@ -87,7 +87,13 @@ Onglet **Courses** :
 - la section **À racheter** reprend les autres produits finis au placard (un paquet chacun,
   au dernier prix payé s'il est connu). Ils se cochent comme le reste et se retirent avec ✕ ;
   scanner l'un d'eux le reconnaît par son code-barres. À la validation, un produit coché (ou
-  « Tout a été acheté ») rejoint les autres produits du placard.
+  « Tout a été acheté ») rejoint les autres produits du placard ;
+- la section **Autres articles** accueille ce qui ne vient pas des repas (chaussures des
+  enfants, produits nettoyants...) : un libellé, une quantité facultative, **Ajouter**. Ils se
+  cochent comme le reste ; une fois coché, un champ facultatif garde le **prix payé**, compté à
+  part (« autres articles ») et jamais dans le coût des repas du bilan. Ils ne vont pas au
+  placard. **↪ Reporter** déplace les articles non cochés sur la liste de la semaine suivante,
+  même après « Courses faites » ; un libellé déjà prévu là-bas n'est pas doublé.
 
 Les cases cochées sont **partagées entre appareils** : à deux au magasin, chacun voit ce que
 l'autre a déjà pris (en rechargeant la page ou en revenant sur l'application). Sans réseau, les

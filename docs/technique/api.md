@@ -27,7 +27,7 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `GET` | `/api/semaines/{lundi}/creneaux/{jour}/{moment}/alternatives` | Meilleurs plats de remplacement |
 | `GET` | `/api/semaines/{lundi}/bilan` | Bilan nutritionnel et carbone |
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
-| `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus ; un produit à racheter a pour clé `racheter-{id}`) ; la plus récente gagne ; renvoie les articles cochés |
+| `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus ; un produit à racheter a pour clé `racheter-{id}`, un article libre `libre-{id}` ; la coche d'un tel article retiré entre-temps est ignorée) ; la plus récente gagne ; renvoie les articles cochés |
 | `POST` | `/api/semaines/{lundi}/courses/achats` | Produit acheté (`{ingredient_id, quantite_g, prix_eur, code?}`), prévu sur la liste ou non (hors liste : au placard à la validation) ; s'ajoute aux précédents |
 | `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |
 | `POST` | `/api/semaines/{lundi}/courses/autres-achats` | Autre produit acheté (fiche, `prix_eur`, `ranger`) : budget, et placard à la validation si `ranger` |
@@ -36,6 +36,10 @@ membres et des plats, et aux avis ; les autres routes répondent 403.
 | `DELETE` | `/api/semaines/{lundi}/courses/a-racheter/{id}` | Retirer un produit à racheter de la liste (et sa coche) |
 | `POST` | `/api/semaines/{lundi}/courses/ingredients-a-racheter` | Ajouter à la liste le plus petit conditionnement d'un ingrédient (`{ingredient_id}`), en plus des repas ; la ligne porte `a_racheter` |
 | `DELETE` | `/api/semaines/{lundi}/courses/ingredients-a-racheter/{ingredient_id}` | Renoncer à cet achat en plus |
+| `POST` | `/api/semaines/{lundi}/courses/articles` | Ajouter un article libre, hors repas et hors placard (`{libelle, quantite?}`) ; un même libellé une seule fois |
+| `PUT` | `/api/semaines/{lundi}/courses/articles/{id}` | Prix payé d'un article libre (`{prix_eur}`, `null` pour l'effacer) ; hors coût des repas du bilan |
+| `DELETE` | `/api/semaines/{lundi}/courses/articles/{id}` | Retirer un article libre (et sa coche) |
+| `POST` | `/api/semaines/{lundi}/courses/articles/reporter` | Déplacer les articles libres non cochés sur la semaine suivante ; renvoie `{reportes}` ; permis après validation |
 | `POST` | `/api/semaines/{lundi}/courses/valider` | Courses faites : mise à jour du placard ; corps facultatif `{tout_achete}` (faux : les articles ni cochés ni scannés n'ont pas été achetés) |
 | `POST` | `/api/semaines/{lundi}/courses/rouvrir` | Défaire la validation (placard et budget) |
 | `GET` | `/api/semaines/{lundi}/courses.pdf`, `/menu.pdf` | Documents imprimables |

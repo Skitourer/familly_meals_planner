@@ -14,6 +14,7 @@ from sqlmodel import Session, col, select
 
 from repas.catalogue import Catalogue
 from repas.domaine import planificateur as plan
+from repas.domaine.articles_libres import a_reporter, cle_coche_libre
 from repas.domaine.besoins import ProfilPhysique, coefficient_portion
 from repas.domaine.bilan import Bilan, RepasServi, bilan_semaine
 from repas.domaine.coches import (
@@ -44,6 +45,7 @@ from repas.domaine.reperes import REPERES
 from repas.modeles import (
     AchatProduit,
     AchatReel,
+    ArticleLibre,
     BilanCourses,
     Coche,
     Creneau,
@@ -491,6 +493,82 @@ def retirer_ingredient_a_racheter(s: Session, semaine: Semaine, ingredient_id: s
     if ligne:
         s.delete(ligne)
         s.commit()
+
+
+# --- Articles libres (hors repas, hors placard) -----------------------------------------
+
+
+def articles_libres(s: Session, semaine: Semaine) -> list[ArticleLibre]:
+    """Articles ajoutés à la main sur la liste de la semaine, dans l'ordre d'ajout."""
+    requete = select(ArticleLibre).where(ArticleLibre.semaine_id == semaine.id)
+    return list(s.exec(requete.order_by(col(ArticleLibre.id))).all())
+
+
+def _exiger_courses_ouvertes(semaine: Semaine) -> None:
+    if semaine.courses_validees_le:
+        raise ErreurMetier("Les courses de cette semaine sont déjà validées")
+
+
+def ajouter_article_libre(s: Session, semaine: Semaine, libelle: str, quantite: str) -> None:
+    """Ajoute un article libre ; le même libellé n'est ajouté qu'une fois."""
+    _exiger_courses_ouvertes(semaine)
+    if any(meme_produit(None, a.libelle, None, libelle) for a in articles_libres(s, semaine)):
+        return
+    s.add(ArticleLibre(semaine_id=semaine.id or 0, libelle=libelle, quantite=quantite))
+    s.commit()
+
+
+def _article_libre(s: Session, semaine: Semaine, article_id: int) -> ArticleLibre | None:
+    article = s.get(ArticleLibre, article_id)
+    return article if article and article.semaine_id == semaine.id else None
+
+
+def modifier_prix_article_libre(
+    s: Session, semaine: Semaine, article_id: int, prix_eur: float | None
+) -> None:
+    """Enregistre le prix payé d'un article libre (``None`` l'efface)."""
+    _exiger_courses_ouvertes(semaine)
+    article = _article_libre(s, semaine, article_id)
+    if article is None:
+        raise ErreurMetier("Cet article n'est plus sur la liste")
+    article.prix_eur = prix_eur
+    s.add(article)
+    s.commit()
+
+
+def retirer_article_libre(s: Session, semaine: Semaine, article_id: int) -> None:
+    """Retire un article libre de la liste, avec sa coche."""
+    _exiger_courses_ouvertes(semaine)
+    article = _article_libre(s, semaine, article_id)
+    if article is None:
+        return
+    coche = s.get(Coche, (semaine.id, cle_coche_libre(article_id)))
+    if coche:
+        s.delete(coche)
+    s.delete(article)
+    s.commit()
+
+
+def reporter_articles_libres(s: Session, semaine: Semaine) -> int:
+    """Déplace les articles libres non cochés sur la semaine suivante ; renvoie leur nombre.
+
+    Permis même après « Courses faites » : c'est justement là qu'on voit ce qui manque.
+    """
+    suivante = obtenir_semaine(s, semaine.lundi + timedelta(days=7))
+    _exiger_courses_ouvertes(suivante)
+    deja = articles_libres(s, suivante)
+    reportes = a_reporter(articles_libres(s, semaine), coches(s, semaine))
+    for article in reportes:
+        coche = s.get(Coche, (semaine.id, cle_coche_libre(article.id or 0)))
+        if coche:
+            s.delete(coche)
+        if any(meme_produit(None, a.libelle, None, article.libelle) for a in deja):
+            s.delete(article)  # déjà prévu la semaine suivante : pas de doublon
+            continue
+        article.semaine_id, article.prix_eur = suivante.id or 0, None
+        s.add(article)
+    s.commit()
+    return len(reportes)
 
 
 def prix_estime(s: Session, produit: FicheProduitMixin) -> float | None:

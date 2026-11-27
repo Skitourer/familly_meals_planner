@@ -76,11 +76,14 @@ def test_produit_fini_remis_sur_la_liste_puis_range(client: TestClient):
     pdf = client.get(f"{url}.pdf")  # section « À racheter » imprimée
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
 
-    # Coche partagée, avec la clé du produit ; une clé inconnue est refusée.
+    # Coche partagée, avec la clé du produit ; celle d'un produit retiré entre-temps (autre
+    # appareil) est ignorée pour ne pas bloquer la file hors ligne.
     maintenant = datetime.now(UTC).isoformat()
     coche = {"ingredient_id": rachats[0]["cle"], "cochee": True, "modifiee_le": maintenant}
     assert client.put(f"{url}/coches", json=[coche]).json() == [rachats[0]["cle"]]
-    inconnue = {**coche, "ingredient_id": "racheter-9999"}
+    retiree = {**coche, "ingredient_id": "racheter-9999"}
+    assert client.put(f"{url}/coches", json=[retiree]).json() == [rachats[0]["cle"]]
+    inconnue = {**coche, "ingredient_id": "ingredient-inexistant"}
     assert client.put(f"{url}/coches", json=[inconnue]).status_code == 400
 
     # Les céréales ne sont pas achetées : seule la pâte à tartiner cochée rejoint le placard.

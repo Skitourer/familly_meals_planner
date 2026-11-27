@@ -52,6 +52,7 @@ flowchart TB
 | `statistiques.py` | Bilan sur plusieurs semaines (onglet Bilan) |
 | `domaine/courses.py` | Liste de courses, conditionnements, placard |
 | `domaine/coches.py` | Coches de la liste de courses : la plus récente l'emporte |
+| `domaine/articles_libres.py` | Articles libres de la liste (hors repas) : clé de coche, report, total |
 | `domaine/placard.py` | Frigo à vider : produits à consommer vite, idées de plats |
 | `domaine/produits.py` | Produits scannés : code-barres, fiche Open Food Facts, ingrédients correspondants |
 | `open_food_facts.py` | Appel à Open Food Facts pour un produit scanné (ADR 8) |

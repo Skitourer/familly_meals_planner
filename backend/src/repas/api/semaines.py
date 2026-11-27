@@ -1,11 +1,11 @@
 """Planning de la semaine : créneaux, génération, alternatives, bilan, courses, PDF."""
 
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import Response
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, StringConstraints
 from sqlmodel import Session, select
 
 from repas import services
@@ -13,6 +13,11 @@ from repas.api.produits import FicheEntree
 from repas.api.session import exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
+from repas.domaine.articles_libres import (
+    PREFIXE_COCHE_LIBRE,
+    cle_coche_libre,
+    total_articles_libres,
+)
 from repas.domaine.bilan import Bilan, InfosRepas, infos_repas, raisons
 from repas.domaine.coches import ModificationCoche
 from repas.domaine.courses import (
@@ -22,8 +27,13 @@ from repas.domaine.courses import (
     appliquer_achats_reels,
     format_quantite,
 )
-from repas.domaine.produits import cle_coche_racheter, code_barres_valide, est_scanne
-from repas.modeles import AchatProduit, Creneau, ProduitARacheter, Semaine
+from repas.domaine.produits import (
+    PREFIXE_COCHE_RACHETER,
+    cle_coche_racheter,
+    code_barres_valide,
+    est_scanne,
+)
+from repas.modeles import AchatProduit, ArticleLibre, Creneau, ProduitARacheter, Semaine
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
@@ -107,6 +117,14 @@ class ARacheterSortie(BaseModel):
     scanne: bool  # acheté et scanné : rangé au placard par son achat
 
 
+class ArticleLibreSortie(BaseModel):
+    id: int
+    cle: str  # clé de sa coche sur la liste
+    libelle: str
+    quantite: str
+    prix_eur: float | None  # prix payé, saisi à la coche
+
+
 class CoursesSortie(BaseModel):
     rayons: list[tuple[str, list[LigneCoursesSortie]]]
     a_verifier: list[str]
@@ -114,6 +132,8 @@ class CoursesSortie(BaseModel):
     hors_liste: list[LigneCoursesSortie]  # ingrédients achetés sans être prévus
     autres_achats: list[AutreAchatSortie]  # budget seulement
     a_racheter: list[ARacheterSortie]  # autres produits finis au placard
+    articles_libres: list[ArticleLibreSortie]  # hors repas et hors placard
+    total_articles_libres_eur: float  # prix saisis ; hors coût des repas du Bilan
     total_reel_eur: float  # prix payés quand ils sont connus, estimation sinon
     nb_achats_reels: int
     validees: bool
@@ -209,6 +229,7 @@ def _courses_sortie(
     achats: dict[str, AchatConstate],
     autres: list[AchatProduit],
     a_racheter: list[tuple[ProduitARacheter, float | None]],
+    articles: list[ArticleLibre],
 ) -> CoursesSortie:
     def ligne(x: LigneCourses) -> LigneCoursesSortie:
         reel = achats.get(x.ingredient_id)
@@ -259,6 +280,15 @@ def _courses_sortie(
             for a in autres
         ],
         a_racheter=rachats,
+        articles_libres=[
+            ArticleLibreSortie(
+                **a.model_dump(include={"libelle", "quantite", "prix_eur"}),
+                id=a.id or 0,
+                cle=cle_coche_libre(a.id or 0),
+            )
+            for a in articles
+        ],
+        total_articles_libres_eur=total_articles_libres(articles),
         total_reel_eur=round(reelle.total_eur + sum(a.prix_eur for a in autres) + rachats_eur, 2),
         nb_achats_reels=len(achats) + len(autres),
         validees=validees,
@@ -348,6 +378,7 @@ def courses(lundi: date, s: Session = Depends(session)) -> CoursesSortie:
         services.achats_reels(s, semaine),
         services.autres_achats(s, semaine),
         [(p, services.prix_estime(s, p)) for p in services.produits_a_racheter(s, semaine)],
+        services.articles_libres(s, semaine),
     )
 
 
@@ -448,6 +479,68 @@ def retirer_a_racheter(lundi: date, produit_id: int, s: Session = Depends(sessio
         raise HTTPException(409, str(erreur)) from erreur
 
 
+Libelle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+Quantite = Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)]
+
+
+class ArticleLibreEntree(BaseModel):
+    libelle: Libelle
+    quantite: Quantite = ""
+
+
+class PrixArticleEntree(BaseModel):
+    prix_eur: float | None = Field(ge=0, le=1_000)  # None : prix effacé
+
+
+class ReportSortie(BaseModel):
+    reportes: int
+
+
+@router.post("/{lundi}/courses/articles", status_code=204, dependencies=ADULTE)
+def ajouter_article_libre(
+    lundi: date, entree: ArticleLibreEntree, s: Session = Depends(session)
+) -> None:
+    """Ajoute un article hors repas (chaussures, nettoyant...) : ni placard, ni coût des repas."""
+    try:
+        services.ajouter_article_libre(s, _semaine(s, lundi), entree.libelle, entree.quantite)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.post("/{lundi}/courses/articles/reporter", dependencies=ADULTE)
+def reporter_articles_libres(lundi: date, s: Session = Depends(session)) -> ReportSortie:
+    """Déplace les articles libres non cochés sur la liste de la semaine suivante."""
+    try:
+        return ReportSortie(reportes=services.reporter_articles_libres(s, _semaine(s, lundi)))
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.put("/{lundi}/courses/articles/{article_id}", status_code=204, dependencies=ADULTE)
+def modifier_prix_article_libre(
+    lundi: date, article_id: int, entree: PrixArticleEntree, s: Session = Depends(session)
+) -> None:
+    """Enregistre le prix payé d'un article libre (facultatif)."""
+    try:
+        services.modifier_prix_article_libre(s, _semaine(s, lundi), article_id, entree.prix_eur)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+@router.delete("/{lundi}/courses/articles/{article_id}", status_code=204, dependencies=ADULTE)
+def retirer_article_libre(lundi: date, article_id: int, s: Session = Depends(session)) -> None:
+    """Retire un article libre de la liste."""
+    try:
+        services.retirer_article_libre(s, _semaine(s, lundi), article_id)
+    except services.ErreurMetier as erreur:
+        raise HTTPException(409, str(erreur)) from erreur
+
+
+def _cle_retirable(cle: str) -> bool:
+    """Clé d'un article qu'on peut retirer de la liste (produit à racheter, article libre)."""
+    return cle.startswith((PREFIXE_COCHE_RACHETER, PREFIXE_COCHE_LIBRE))
+
+
 @router.put("/{lundi}/courses/coches", dependencies=ADULTE)
 def cocher(
     lundi: date,
@@ -457,14 +550,20 @@ def cocher(
     """Enregistre des coches (une ou une file d'attente hors ligne) ; renvoie les articles cochés.
 
     Pour chaque article, la modification la plus récente l'emporte, même arrivée en retard.
+    La coche d'un produit à racheter ou d'un article libre retiré entre-temps (depuis un autre
+    appareil) est ignorée : sinon la file d'attente hors ligne resterait bloquée.
     """
     semaine = _semaine(s, lundi)
-    rachats = {cle_coche_racheter(p.id or 0) for p in services.produits_a_racheter(s, semaine)}
-    connus = catalogue().ingredients.keys() | rachats
-    inconnus = sorted({e.ingredient_id for e in entrees} - connus)
+    retirables = {cle_coche_racheter(p.id or 0) for p in services.produits_a_racheter(s, semaine)}
+    retirables |= {cle_coche_libre(a.id or 0) for a in services.articles_libres(s, semaine)}
+    connus = catalogue().ingredients.keys() | retirables
+    gardees = [
+        e for e in entrees if e.ingredient_id in connus or not _cle_retirable(e.ingredient_id)
+    ]
+    inconnus = sorted({e.ingredient_id for e in gardees} - connus)
     if inconnus:
         raise HTTPException(400, f"Articles inconnus : {', '.join(inconnus)}")
-    modifications = [ModificationCoche(e.ingredient_id, e.cochee, e.modifiee_le) for e in entrees]
+    modifications = [ModificationCoche(e.ingredient_id, e.cochee, e.modifiee_le) for e in gardees]
     return services.enregistrer_coches(s, semaine, modifications)
 
 
@@ -499,8 +598,9 @@ def courses_pdf(lundi: date, s: Session = Depends(session)) -> Response:
     semaine = _semaine(s, lundi)
     liste = services.courses(s, semaine, catalogue())
     a_racheter = [p.nom for p in services.produits_a_racheter(s, semaine)]
+    articles = [(a.libelle, a.quantite) for a in services.articles_libres(s, semaine)]
     return Response(
-        pdf_liste_courses(liste, lundi, a_racheter),
+        pdf_liste_courses(liste, lundi, a_racheter, articles),
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="courses-{lundi}.pdf"'},
     )
