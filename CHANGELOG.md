@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.7.0...v1.8.0) (2026-11-27)
+
+
+### Nouveautés
+
+* articles libres sur la liste de courses (hors repas) ([#63](https://github.com/Skitourer/familly_meals_planner/issues/63)) ([5f3a6d4](https://github.com/Skitourer/familly_meals_planner/commit/5f3a6d45205745335214bc0d34b54a9dbf54258d))
+
 ## [1.7.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.6.0...v1.7.0) (2026-11-26)
 
 
