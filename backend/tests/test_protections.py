@@ -125,7 +125,8 @@ def test_empreintes_des_scripts_en_ligne() -> None:
 
 def test_politique_avec_empreintes() -> None:
     csp = politique_contenu(["sha256-abc"])
-    assert "script-src 'self' 'sha256-abc';" in csp
+    assert "script-src 'self' 'wasm-unsafe-eval' 'sha256-abc';" in csp
+    assert "'unsafe-eval'" not in csp
     assert "object-src 'none'" in csp
 
 

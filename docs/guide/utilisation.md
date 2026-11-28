@@ -237,7 +237,9 @@ correspondant est proposé (des penne complètes → « Pâtes complètes »), a
 paquet. Vérifiez, ajoutez la date limite si vous la connaissez, puis **Ajouter au placard** ;
 la caméra se rouvre pour le produit suivant.
 
-- Si la caméra n'est pas disponible (Safari sur iPhone, Firefox, page sans HTTPS), tapez les
+- Sur Firefox, la lecture par la caméra passe par un lecteur intégré, chargé à l'ouverture
+  du scanner (quelques secondes la première fois).
+- Si la caméra n'est pas disponible (autorisation refusée, page sans HTTPS), tapez les
   chiffres imprimés sous le code-barres.
 - Produit inconnu d'Open Food Facts ou réseau absent : ajoutez-le à la main.
 - Sans date saisie, un produit déjà au placard garde sa date limite (le plus ancien d'abord).
