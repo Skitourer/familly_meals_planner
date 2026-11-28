@@ -55,3 +55,28 @@ test('liste de courses puis export PDF', async ({ page }) => {
 	expect(pdf.headers()['content-type']).toBe('application/pdf');
 	expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
 });
+
+test('modification d’un article du placard', async ({ page }) => {
+	await preparer(page, '2026-09-16');
+	await seConnecter(page);
+	const reponse = await page.request.put('/api/placard/riz', {
+		headers: { 'X-Menu-Famille': '1' },
+		data: { quantite_g: 400 }
+	});
+	expect(reponse.ok()).toBeTruthy();
+
+	await page.goto('/placard');
+	await page.getByRole('button', { name: 'Modifier Riz basmati' }).click();
+	const fenetre = page.getByRole('dialog');
+	await expect(fenetre.getByRole('spinbutton').first()).toHaveValue('400');
+
+	// Le riz était en fait du riz au lait pour le goûter : il devient un autre produit.
+	await fenetre.getByLabel('Ingrédient').selectOption({ label: 'Autre produit (hors repas)' });
+	await fenetre.getByLabel('Nom').fill('Riz au lait');
+	await fenetre.getByLabel('Catégorie').selectOption('Biscuits et goûters');
+	await fenetre.getByRole('button', { name: 'Enregistrer' }).click();
+
+	await expect(fenetre).toBeHidden();
+	await expect(page.getByText('Aucun ingrédient au placard.')).toBeVisible();
+	await expect(page.getByText('Riz au lait')).toBeVisible();
+});

@@ -6,8 +6,14 @@ import {
 	correspond,
 	ecrireChoix,
 	lireChoix,
-	parRayon
+	articleValide,
+	corpsModification,
+	parRayon,
+	valeursDuProduit,
+	valeursDuStock
 } from './placard';
+import { AUTRE_PRODUIT } from './achats';
+import type { ProduitPlacard, Stock } from './types';
 
 const creme = {
 	nom: 'Crème fraîche légère',
@@ -152,5 +158,70 @@ describe('choix mémorisés', () => {
 		};
 		expect(lireChoix(interdit)).toEqual(CHOIX_PAR_DEFAUT);
 		expect(() => ecrireChoix(interdit, CHOIX_PAR_DEFAUT)).not.toThrow();
+	});
+});
+
+describe("formulaire d'un article", () => {
+	const riz: Stock = {
+		ingredient_id: 'riz',
+		nom: 'Riz',
+		quantite_g: 400,
+		unite: 'g',
+		peremption: '2027-01-10',
+		bientot_perime: false,
+		rayon: 'Épicerie salée',
+		rang_rayon: 5,
+		nutriscore: 'a',
+		nutriscore_calcule: true,
+		nova: null,
+		green_score: null
+	};
+	const nutella: ProduitPlacard = {
+		id: 7,
+		code: null,
+		nom: 'Nutella',
+		marque: '',
+		contenu: '400 g',
+		categorie: 'Petit-déjeuner',
+		nutriscore: 'e',
+		nova: 4,
+		green_score: 'd',
+		paquets: 2,
+		peremption: null,
+		bientot_perime: false
+	};
+
+	it('pré-remplit un ingrédient, avec son nom si on le change en autre produit', () => {
+		const valeurs = valeursDuStock(riz);
+		expect(valeurs).toMatchObject({ ingredient_id: 'riz', quantite_g: 400, nom: 'Riz' });
+		expect(articleValide(valeurs)).toBe(true);
+		expect(articleValide({ ...valeurs, quantite_g: 0 })).toBe(false);
+		expect(articleValide({ ...valeurs, ingredient_id: '' })).toBe(false);
+	});
+
+	it('pré-remplit un autre produit, sans date si elle est inconnue', () => {
+		const valeurs = valeursDuProduit(nutella);
+		expect(valeurs).toMatchObject({ ingredient_id: AUTRE_PRODUIT, paquets: 2, peremption: '' });
+		expect(articleValide({ ...valeurs, nom: '  ' })).toBe(false);
+		expect(articleValide({ ...valeurs, paquets: 100 })).toBe(false);
+	});
+
+	it('construit la cible selon le type choisi', () => {
+		const versProduit = { ...valeursDuStock(riz), ingredient_id: AUTRE_PRODUIT, nom: ' Riz ' };
+		expect(corpsModification({ ingredient_id: 'riz' }, versProduit)).toEqual({
+			ingredient_id: 'riz',
+			cible: {
+				type: 'produit',
+				nom: 'Riz',
+				categorie: 'Épicerie',
+				paquets: 1,
+				peremption: '2027-01-10'
+			}
+		});
+		const versIngredient = { ...valeursDuProduit(nutella), ingredient_id: 'riz', quantite_g: 500 };
+		expect(corpsModification({ produit_id: 7 }, versIngredient)).toEqual({
+			produit_id: 7,
+			cible: { type: 'ingredient', ingredient_id: 'riz', quantite_g: 500, peremption: null }
+		});
 	});
 });

@@ -55,6 +55,7 @@ Les requêtes `POST`, `PUT`, `PATCH` et `DELETE` doivent porter l'en-tête
 | `GET` | `/api/placard/produits` | Autres produits du placard (hors repas, en paquets) |
 | `POST` | `/api/placard/produits` | Ranger des paquets d'un autre produit (même code-barres ou même nom : additionnés) |
 | `PUT` | `/api/placard/produits/{id}` | Corriger paquets (0 = retirer), date limite ou catégorie |
+| `POST` | `/api/placard/modification` | Corriger un article en une transaction : source `ingredient_id` ou `produit_id`, `cible` ingrédient (`{type: "ingredient", ingredient_id, quantite_g, peremption?}`) ou autre produit (`{type: "produit", nom, categorie, paquets, peremption?}`) ; changer d'ingrédient ou de type regroupe avec le même article déjà au placard, les notes suivent |
 | `GET` | `/api/produits/categories` | Catégories des autres produits |
 | `GET` | `/api/produits/{code}` | Produit scanné (Open Food Facts), ingrédients correspondants et dernier prix payé |
 

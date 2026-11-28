@@ -1,9 +1,10 @@
 <!--
 	Autres produits du placard (Nutella, céréales...) : hors repas, comptés en paquets et
 	regroupés par catégorie, dans l'ordre reçu (recherche, filtre et tri faits par la page).
-	Les boutons − et + corrigent le nombre de paquets ; 0 retire le produit, et propose de le
-	remettre sur la liste de courses de la semaine suivante (« À racheter »). Le bouton 🛒 l'y
-	met à tout moment, sans le retirer du placard (dernier paquet entamé...).
+	Le bouton ✏️ ouvre le formulaire complet (nom, catégorie, ingrédient...). Les boutons − et +
+	corrigent le nombre de paquets ; 0 retire le produit, et propose de le remettre sur la liste
+	de courses de la semaine suivante (« À racheter »). Le bouton 🛒 l'y met à tout moment, sans
+	le retirer du placard (dernier paquet entamé...).
 -->
 <script lang="ts">
 	import { ficheARacheter } from '#lib/achats.ts';
@@ -16,12 +17,14 @@
 		produits,
 		filtrage,
 		categories,
-		onModifie
+		onModifie,
+		onEditer
 	}: {
 		produits: ProduitPlacard[];
 		filtrage: boolean; // recherche ou filtre actif : une liste vide ne veut pas dire placard vide
 		categories: string[];
 		onModifie: () => Promise<void>;
+		onEditer: (produit: ProduitPlacard) => void; // formulaire complet, ouvert par la page
 	} = $props();
 
 	let erreur = $state('');
@@ -147,6 +150,13 @@
 							onchange={(e) =>
 								modifier(produit, { peremption: (e.target as HTMLInputElement).value || null })}
 						/>
+						<button
+							class="discret"
+							onclick={() => onEditer(produit)}
+							aria-label={`Modifier ${produit.nom}`}
+						>
+							✏️
+						</button>
 						<button
 							class="discret"
 							onclick={() => racheter(produit)}
