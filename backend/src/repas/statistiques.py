@@ -4,9 +4,10 @@ anti-gaspillage. Alimente l'onglet « Bilan » de l'interface.
 Toutes les valeurs sont calculées à partir des repas planifiés ; les semaines sans
 repas générés sont ignorées.
 
-Repas pris à l'extérieur (cantine, restaurant d'entreprise...) : ils ne sont pas
-saisis et sont **supposés équilibrés**. Ils ne comptent donc ni dans les repères, ni
-dans la couverture des besoins, calculée comme une moyenne par repas pris à la maison.
+Repas pris à l'extérieur (cantine, restaurant d'entreprise...) : ils sont **supposés
+équilibrés** et ne comptent ni dans les repères, ni dans la couverture des besoins,
+calculée comme une moyenne par repas pris à la maison. Quand la famille indique leur
+catégorie (poisson, viande, végétarien), ils s'ajoutent aux sources de protéines.
 """
 
 from __future__ import annotations
@@ -54,6 +55,8 @@ class BilanHebdo(BaseModel):
     part_vegetarien: float  # % de repas sans viande ni poisson
     legumes_differents: int
     proteines: dict[str, int]  # source principale -> nombre de repas
+    # Repas pris dehors de catégorie connue (un par membre) : source -> nombre de repas.
+    proteines_exterieur: dict[str, int] = {}
 
 
 class CouvertureNutriment(BaseModel):
@@ -97,6 +100,19 @@ class BilanPeriode(BaseModel):
     co2_economise_kg: float
     equivalent_km_voiture: float
     budget_total_eur: float
+
+
+# Catégorie d'un repas pris dehors -> source de protéines du bilan.
+SOURCE_REPAS_EXTERIEUR = {"poisson": "poisson", "viande": "viande", "vegetarien": "vegetal"}
+
+
+def _proteines_exterieur(s: Session, semaine: Semaine) -> dict[str, int]:
+    compte: Counter[str] = Counter(
+        SOURCE_REPAS_EXTERIEUR[categorie]
+        for membres in services.categories_exterieur(s, semaine).values()
+        for categorie in membres.values()
+    )
+    return dict(compte)
 
 
 def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> BilanPeriode:
@@ -185,6 +201,7 @@ def bilan_periode(s: Session, catalogue: Catalogue, nb_semaines: int = 12) -> Bi
                 part_vegetarien=round(100 * vegetariens / len(repas), 1),
                 legumes_differents=len(legumes),
                 proteines=dict(proteines),
+                proteines_exterieur=_proteines_exterieur(s, semaine),
             )
         )
 

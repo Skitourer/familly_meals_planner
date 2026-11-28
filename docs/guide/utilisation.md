@@ -48,6 +48,12 @@ La nutrition reste toujours prioritaire : ces réglages départagent les plats �
 1. **Présences** : chaque repas affiche les initiales des membres. Un clic indique une absence
    (cantine, déplacement). Le bouton **+** ajoute un invité (clic droit pour en retirer).
    Un repas sans personne n'est pas planifié.
+    - **Dehors** : sous les initiales, chaque membre absent a une pastille en pointillés.
+      Un clic indique ce qu'il a mangé dehors (les cantines publient leurs menus chaque
+      semaine) : **?** inconnu (par défaut) → 🐟 poisson → 🍖 viande → 🥕 végétarien.
+      C'est facultatif ; à la génération suivante, l'application évite un second poisson (ou
+      une seconde viande) le même jour pour ce membre et compte ses poissons dans le repère
+      de la semaine.
 2. **Jokers** 🎉 : sur ces repas, l'application propose des plats plaisir (pizza, raclette,
    burger maison...) et des desserts gourmands ; ils ne comptent pas dans les repères
    nutritionnels.
@@ -173,10 +179,11 @@ L'onglet **Bilan** résume les 4 dernières semaines, 3 mois, 6 mois ou 1 an :
   reprises dans le placard, surplus de produits frais, produits périmés.
 
 !!! note "Repas pris à l'extérieur"
-    Les repas où un membre est absent (cantine, travail, restaurant) ne sont pas saisis : ils
-    sont **supposés équilibrés**. Ils ne comptent ni dans les repères de la semaine (ramenés
-    au nombre de repas pris à la maison), ni dans la couverture des besoins (moyenne par
-    repas pris à la maison).
+    Les repas où un membre est absent (cantine, travail, restaurant) sont **supposés
+    équilibrés**. Ils ne comptent ni dans les repères de la semaine (ramenés au nombre de
+    repas pris à la maison), ni dans la couverture des besoins (moyenne par repas pris à la
+    maison). Quand leur catégorie est indiquée (poisson, viande, végétarien), ils
+    s'ajoutent aux **sources de protéines** du bilan, un repas par membre.
 
 Le budget d'une semaine est estimé tant que les courses ne sont pas validées. À la
 validation, il retient les prix payés des articles scannés, les achats hors liste et les

@@ -24,11 +24,12 @@ Contraintes souples (pénalisées très fortement : la nutrition prime)
     charcuterie.
 
 Préférences (objectif, à poids réglables)
-    notes de la famille, saisonnalité, empreinte carbone, prix, répétition des
-    semaines précédentes, restes de plats cuisinés en lot, utilisation du
-    placard (bonus fort pour le frigo à vider avant sa date limite), plaisirs
-    sur les jokers, temps de préparation en semaine, et une petite part de
-    hasard pour varier les propositions.
+    repas pris à l'extérieur le même jour (pas de second poisson ou de seconde
+    viande pour un membre qui en a déjà mangé), notes de la famille, saisonnalité,
+    empreinte carbone, prix, répétition des semaines précédentes, restes de plats
+    cuisinés en lot, utilisation du placard (bonus fort pour le frigo à vider avant
+    sa date limite), plaisirs sur les jokers, temps de préparation en semaine, et
+    une petite part de hasard pour varier les propositions.
 
 L'algorithme est détaillé dans ``docs/algorithme.md``.
 """
@@ -48,6 +49,7 @@ from repas.domaine.notes import Preferences
 from repas.domaine.reperes import REPERES, Reperes
 
 type Moment = Literal["midi", "soir"]
+type CategorieExterieur = Literal["poisson", "viande", "vegetarien"]
 
 DESSERT_MAX_PAR_SEMAINE = 2
 PART_MAX_MEME_PROTEINE = 0.35  # variété des sources de protéines
@@ -90,6 +92,16 @@ class CreneauAPlanifier:
 
 
 @dataclass(frozen=True)
+class RepasExterieur:
+    """Repas pris dehors par un membre (cantine...), dont la famille connaît la catégorie."""
+
+    membre_id: int
+    jour: int
+    moment: Moment
+    categorie: CategorieExterieur
+
+
+@dataclass(frozen=True)
 class Poids:
     """Importance relative de chaque critère dans l'objectif."""
 
@@ -103,6 +115,9 @@ class Poids:
     placard: float = 20  # par ingrédient du placard entièrement consommé (au prorata)
     frigo_a_vider: float = 200  # idem pour un produit consommé avant sa date limite
     plaisir_joker: float = 80  # pour un plat ou dessert plaisir sur un joker
+    # Par membre présent ayant déjà mangé la même catégorie dehors le même jour : un peu
+    # plus qu'une étoile d'écart de note, pour l'emporter sur une légère préférence.
+    exterieur_meme_jour: float = 60
     temps_semaine: float = 0.5  # par minute au-delà de 45 min en semaine
     hasard: float = 6  # amplitude du bruit aléatoire
 
@@ -120,6 +135,7 @@ class ContextePlanification:
     reperes: Reperes = REPERES
     graine: int = 0
     restes_max: int = 4  # repas de restes au plus par semaine
+    repas_exterieurs: tuple[RepasExterieur, ...] = ()
     duree_max_s: float = 10.0
 
 
@@ -255,6 +271,7 @@ class _Modele:
         self._contraintes_repetition()
         self._contraintes_nutrition()
         self._preferences()
+        self._repas_exterieurs()
         self._placard()
         self.modele.maximize(sum(self.objectif))
 
@@ -456,9 +473,10 @@ class _Modele:
                 if k in cles_suivies
             )
 
-        if hebdo.poissons_min:
+        poissons_min = max(0, hebdo.poissons_min - self._poissons_manges_dehors(suivis))
+        if poissons_min:
             poissons = compte(lambda p: p.est_poisson)
-            self._au_moins("poisson_min", poissons, hebdo.poissons_min, hebdo.poissons_min)
+            self._au_moins("poisson_min", poissons, poissons_min, poissons_min)
         if hebdo.poissons_gras_min:
             gras = compte(lambda p: p.est_poisson_gras)
             self._au_moins("poisson_gras_min", gras, hebdo.poissons_gras_min, 2)
@@ -481,6 +499,20 @@ class _Modele:
         self._au_plus("viande_rouge_max", rouge, hebdo.viande_rouge_max_g, r.viande_rouge_max_g)
         charcuterie = grammes(lambda p: p.charcuterie_g)
         self._au_plus("charcuterie_max", charcuterie, hebdo.charcuterie_max_g, r.charcuterie_max_g)
+
+    def _poissons_manges_dehors(self, suivis: list[CreneauAPlanifier]) -> int:
+        """Poissons mangés dehors, ramenés à des repas de toute la famille.
+
+        Les repères sont fixés pour chaque personne : quand deux enfants sur quatre
+        mangent du poisson à la cantine, c'est un demi-repas de poisson pour la famille.
+        """
+        membres = {m for c in suivis for m in c.convives}
+        poissons = sum(
+            1
+            for r in self.ctx.repas_exterieurs
+            if r.categorie == "poisson" and r.membre_id in membres
+        )
+        return poissons // len(membres) if membres else 0
 
     def _au_moins(self, nom: str, expression, borne: float, echelle: float) -> None:
         """expression ≥ borne, avec un écart pénalisé proportionnellement à ``echelle``."""
@@ -527,6 +559,27 @@ class _Modele:
             interet -= poids.temps_semaine * max(0, recette.temps.total - TEMPS_SEMAINE_MAX_MIN)
 
         return interet + poids.hasard * self._bruit(c.cle, recette.id)
+
+    def _repas_exterieurs(self) -> None:
+        """Évite au membre un second poisson (ou une seconde viande) dans la même journée."""
+        dehors: dict[tuple[int, int], set[str]] = defaultdict(set)  # (jour, membre) -> catégories
+        for r in self.ctx.repas_exterieurs:
+            dehors[r.jour, r.membre_id].add(r.categorie)
+        criteres = {
+            "poisson": lambda p: p.est_poisson,
+            "viande": lambda p: p.proteine_principale in ("viande", "volaille"),
+        }
+        for c in self.creneaux:
+            for categorie, critere in criteres.items():
+                membres = sum(categorie in dehors.get((c.jour, m), ()) for m in c.convives)
+                if not membres:
+                    continue
+                penalite = self.ctx.poids.exterieur_meme_jour * membres
+                self.objectif.extend(
+                    -penalite * v
+                    for (k, rid), v in self.plat.items()
+                    if k == c.cle and critere(self.catalogue.profils[rid])
+                )
 
     def _placard(self) -> None:
         """Bonus pour la part du placard consommée par les repas de la semaine.

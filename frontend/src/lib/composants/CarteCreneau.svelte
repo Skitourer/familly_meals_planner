@@ -2,6 +2,12 @@
 <script lang="ts">
 	import { donnees } from '#lib/donnees.svelte.ts';
 	import { JOURS } from '#lib/dates.ts';
+	import {
+		categorieSuivante,
+		descriptionExterieur,
+		ICONES,
+		type CategorieExterieur
+	} from '#lib/repas-exterieur.ts';
 	import type { Creneau } from '#lib/types.ts';
 	import NutriScore from './NutriScore.svelte';
 	import Pastille from './Pastille.svelte';
@@ -10,11 +16,13 @@
 		creneau,
 		onmodifier,
 		onchanger,
+		onexterieur,
 		lectureSeule = false
 	}: {
 		creneau: Creneau;
 		onmodifier: (modification: Partial<Creneau>) => void;
 		onchanger: () => void;
+		onexterieur?: (membreId: number, categorie: CategorieExterieur | null) => void;
 		lectureSeule?: boolean; // compte enfant : consultation seulement
 	} = $props();
 
@@ -32,6 +40,16 @@
 				creneau.invites) *
 				100
 		) / 100
+	);
+
+	// Membres absents et catégorie de leur repas pris dehors (inconnue par défaut).
+	const absents = $derived(
+		donnees.membresActifs
+			.filter((m) => !creneau.convives.includes(m.id))
+			.map((membre) => ({
+				membre,
+				categorie: creneau.exterieurs.find((e) => e.membre_id === membre.id)?.categorie ?? null
+			}))
 	);
 
 	function basculer(id: number) {
@@ -75,6 +93,29 @@
 			{/if}
 		</div>
 	</div>
+
+	{#if absents.length && (!lectureSeule || absents.some((a) => a.categorie))}
+		<div class="exterieurs">
+			<span class="doux">Dehors :</span>
+			{#each absents as { membre, categorie } (membre.id)}
+				{#if !lectureSeule || categorie}
+					<button
+						class="discret exterieur"
+						style:--couleur={membre.couleur}
+						title={descriptionExterieur(membre.prenom, categorie) +
+							(lectureSeule ? '' : ' (cliquer pour changer)')}
+						aria-label={descriptionExterieur(membre.prenom, categorie)}
+						disabled={lectureSeule}
+						onclick={() => onexterieur?.(membre.id, categorieSuivante(categorie))}
+					>
+						<span class="initiale">{membre.prenom.slice(0, 1)}</span>{categorie
+							? ICONES[categorie]
+							: '?'}
+					</button>
+				{/if}
+			{/each}
+		</div>
+	{/if}
 
 	{#if !aLaMaison}
 		<p class="doux">Personne à la maison</p>
@@ -169,6 +210,29 @@
 </article>
 
 <style>
+	.exterieurs {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+	}
+
+	.exterieur {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.1rem;
+		padding: 0.05rem 0.35rem;
+		border-radius: 999px;
+		border: 1px dashed var(--couleur);
+		font-size: 0.75rem;
+	}
+
+	.exterieur .initiale {
+		font-weight: 700;
+		color: var(--couleur);
+	}
+
 	.creneau {
 		display: grid;
 		gap: 0.4rem;

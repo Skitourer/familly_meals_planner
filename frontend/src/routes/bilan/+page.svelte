@@ -73,14 +73,25 @@
 	);
 	const proteinesTotal = $derived.by(() => {
 		const total: Record<string, number> = {};
+		// Les repas pris dehors de catégorie connue (un par membre) s'ajoutent à ceux de la maison.
 		for (const s of semaines)
-			for (const [cle, n] of Object.entries(s.proteines)) total[cle] = (total[cle] ?? 0) + n;
+			for (const [cle, n] of [
+				...Object.entries(s.proteines),
+				...Object.entries(s.proteines_exterieur ?? {})
+			])
+				total[cle] = (total[cle] ?? 0) + n;
 		const somme = Object.values(total).reduce((a, b) => a + b, 0) || 1;
 		return Object.entries(total)
 			.sort((a, b) => b[1] - a[1])
 			.map(([cle, n]) => ({ libelle: PROTEINES[cle] ?? cle, pourcentage: (100 * n) / somme }));
 	});
 	const nbRepas = $derived(semaines.reduce((n, s) => n + s.nb_repas, 0));
+	const nbRepasDehors = $derived(
+		semaines.reduce(
+			(n, s) => n + Object.values(s.proteines_exterieur ?? {}).reduce((a, b) => a + b, 0),
+			0
+		)
+	);
 </script>
 
 <div class="entete">
@@ -281,6 +292,11 @@
 		</div>
 
 		<h3>Sources de protéines</h3>
+		{#if nbRepasDehors}
+			<p class="doux">
+				Y compris {nbRepasDehors} repas pris dehors dont la catégorie a été indiquée.
+			</p>
+		{/if}
 		<ul class="repartition">
 			{#each proteinesTotal as p (p.libelle)}
 				<li>

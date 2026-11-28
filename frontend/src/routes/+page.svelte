@@ -13,6 +13,7 @@
 	import Modale from '#lib/composants/Modale.svelte';
 	import { ajouterJours, dateCourte, depuisIso, JOURS } from '#lib/dates.ts';
 	import { donnees } from '#lib/donnees.svelte.ts';
+	import type { CategorieExterieur } from '#lib/repas-exterieur.ts';
 	import { lundiDepuisUrl } from '#lib/semaine.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import type { Bilan, Creneau, Semaine } from '#lib/types.ts';
@@ -83,6 +84,21 @@
 				modification
 			);
 			await chargerBilan();
+		} catch (e) {
+			erreur = messageErreur(e);
+		}
+	}
+
+	async function indiquerExterieur(
+		creneau: Creneau,
+		membreId: number,
+		categorie: CategorieExterieur | null
+	) {
+		try {
+			semaine = await api.modifier<Semaine>(
+				`/semaines/${lundi}/creneaux/${creneau.jour}/${creneau.moment}/exterieurs/${membreId}`,
+				{ categorie }
+			);
 		} catch (e) {
 			erreur = messageErreur(e);
 		}
@@ -168,6 +184,7 @@
 						lectureSeule={!session.estAdulte}
 						onmodifier={(m) => modifier(creneau, m)}
 						onchanger={() => ouvrirChoix(creneau)}
+						onexterieur={(membreId, categorie) => indiquerExterieur(creneau, membreId, categorie)}
 					/>
 				{/each}
 			</section>

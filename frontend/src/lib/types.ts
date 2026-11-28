@@ -1,3 +1,5 @@
+import type { RepasExterieur } from '#lib/repas-exterieur.ts';
+
 // Types des réponses de l'API (voir backend/src/repas/api/). Documentation : /api/docs
 
 export type Moment = 'midi' | 'soir';
@@ -33,6 +35,7 @@ export interface Creneau {
 	restes_de: string | null;
 	raisons: string[];
 	infos: InfosRepas | null;
+	exterieurs: RepasExterieur[]; // catégorie du repas des membres absents, si connue
 }
 
 export type LettreNutriScore = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -319,6 +322,7 @@ export interface BilanHebdo {
 	part_vegetarien: number;
 	legumes_differents: number;
 	proteines: Record<string, number>;
+	proteines_exterieur: Record<string, number>; // repas pris dehors (un par membre)
 }
 
 export interface BilanMembre {
