@@ -34,7 +34,7 @@ def test_entetes_de_securite_sur_l_api(client: TestClient) -> None:
 
 def test_documentation_openapi_garde_ses_scripts(client: TestClient) -> None:
     reponse = client.get("/api/docs")
-    assert "cdn.jsdelivr.net" in reponse.headers["Content-Security-Policy"]
+    assert reponse.headers["Content-Security-Policy"] == protections.CSP_DOCUMENTATION
 
 
 def test_cookie_de_session_http_only_et_same_site(client: TestClient) -> None:
@@ -116,7 +116,7 @@ def test_erreur_interne_sans_detail() -> None:
 
 
 def test_empreintes_des_scripts_en_ligne() -> None:
-    html = '<script src="/a.js"></script><script>alert(1)</script><p>x</p>'
+    html = '<script src="/a.js"></script><SCRIPT>alert(1)</SCRIPT><p>x</p>'
     # Empreinte calculée par : printf 'alert(1)' | openssl dgst -sha256 -binary | base64
     assert empreintes_scripts_en_ligne(html) == [
         "sha256-bhHHL3z2vDgxUt0W3dWQOrprscmda2Y5pLsLg4GF+pI="

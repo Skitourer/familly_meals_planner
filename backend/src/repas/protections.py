@@ -13,8 +13,8 @@ Middlewares ASGI purs, appliqués à toutes les réponses (API et interface) :
 
 import base64
 import hashlib
-import re
 from collections.abc import Iterable
+from html.parser import HTMLParser
 from pathlib import Path
 
 from starlette.datastructures import Headers, MutableHeaders
@@ -54,11 +54,35 @@ def politique_contenu(empreintes_scripts: Iterable[str] = ()) -> str:
     )
 
 
+class _ScriptsEnLigne(HTMLParser):
+    """Collecte le contenu des balises ``<script>`` sans attribut ``src``."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.contenus: list[str] = []
+        self._dans_script = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._dans_script = tag == "script" and not any(nom == "src" for nom, _ in attrs)
+        if self._dans_script:
+            self.contenus.append("")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script":
+            self._dans_script = False
+
+    def handle_data(self, data: str) -> None:
+        if self._dans_script:
+            self.contenus[-1] += data
+
+
 def empreintes_scripts_en_ligne(html: str) -> list[str]:
     """Empreintes CSP (``sha256-…``) des balises ``<script>`` sans ``src`` d'une page."""
-    contenus = re.findall(r"<script>(.*?)</script>", html, flags=re.DOTALL)
+    analyseur = _ScriptsEnLigne()
+    analyseur.feed(html)
     return [
-        "sha256-" + base64.b64encode(hashlib.sha256(c.encode()).digest()).decode() for c in contenus
+        "sha256-" + base64.b64encode(hashlib.sha256(c.encode()).digest()).decode()
+        for c in analyseur.contenus
     ]
 
 
