@@ -13,7 +13,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from repas.api import bilan, catalogue, comptes, famille, produits, semaines, session, suivi
 from repas.base import moteur
 from repas.catalogue import catalogue as charger_catalogue
-from repas.config import parametres
+from repas.config import CLE_DEVELOPPEMENT, parametres
+from repas.protections import (
+    EntetesSecurite,
+    ProtectionCsrf,
+    TailleMaximale,
+    empreintes_interface,
+    politique_contenu,
+)
 
 VERSION = "1.8.0"  # x-release-please-version
 
@@ -29,6 +36,9 @@ async def demarrage(_: FastAPI) -> AsyncIterator[None]:
 
 def creer_application() -> FastAPI:
     reglages = parametres()
+    if reglages.dossier_interface and reglages.cle_secrete == CLE_DEVELOPPEMENT:
+        # Avec la clé publique du dépôt, n'importe qui pourrait signer un cookie de session.
+        raise RuntimeError("REPAS_CLE_SECRETE doit être changée avant la mise en production")
     app = FastAPI(
         lifespan=demarrage,
         title="Menu Famille",
@@ -44,6 +54,15 @@ def creer_application() -> FastAPI:
         max_age=60 * 60 * 24 * 90,  # 90 jours : on ne se reconnecte pas tous les jours
         same_site="lax",
         https_only=reglages.cookie_securise,
+    )
+    # Ajoutés après la session, donc exécutés avant elle : les refus (403, 413) portent
+    # eux aussi les en-têtes de sécurité.
+    app.add_middleware(ProtectionCsrf)
+    app.add_middleware(TailleMaximale)
+    app.add_middleware(
+        EntetesSecurite,
+        csp=politique_contenu(empreintes_interface(reglages.dossier_interface)),
+        hsts=reglages.cookie_securise,
     )
 
     api = APIRouter(prefix="/api")

@@ -12,6 +12,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Racine du dépôt : backend/src/repas/config.py -> remonte de 4 niveaux.
 RACINE_DEPOT = Path(__file__).resolve().parents[3]
 
+# Clé de développement : connue de tous (dépôt public), refusée en production.
+CLE_DEVELOPPEMENT = "a-changer-en-production"
+
 
 class Parametres(BaseSettings):
     """Paramètres d'exécution. Les valeurs par défaut conviennent au développement local."""
@@ -23,7 +26,7 @@ class Parametres(BaseSettings):
         description="Mot de passe unique partagé par la famille.",
     )
     cle_secrete: str = Field(
-        default="a-changer-en-production",
+        default=CLE_DEVELOPPEMENT,
         description="Clé de signature des cookies de session.",
     )
     dossier_donnees: Path = Field(

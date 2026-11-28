@@ -5,6 +5,9 @@ Toutes les routes, sauf `/api/session` et `/api/sante`, exigent d'être connect�
 enfant n'a accès qu'à la lecture du menu (`GET /api/semaines/{lundi}`, `menu.pdf`), des
 membres et des plats, et aux avis ; les autres routes répondent 403.
 
+Les requêtes `POST`, `PUT`, `PATCH` et `DELETE` doivent porter l'en-tête
+`X-Menu-Famille: 1` (protection CSRF, 403 sinon) et un corps de 3 Mo au plus (413 sinon).
+
 | Méthode | Route | Rôle |
 |---|---|---|
 | `GET` / `POST` / `DELETE` | `/api/session` | État, connexion (`{"identifiant": "...", "mot_de_passe": "..."}`), déconnexion |

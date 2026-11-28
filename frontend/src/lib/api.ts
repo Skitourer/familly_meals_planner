@@ -12,12 +12,15 @@ export class ErreurApi extends Error {
 }
 
 async function requete<T>(methode: string, chemin: string, corps?: unknown): Promise<T> {
-	const options: RequestInit = { method: methode, credentials: 'same-origin', headers: {} };
+	// En-tête exigé par l'API sur les requêtes modifiantes (protection CSRF) : un site
+	// tiers ne peut pas l'ajouter.
+	const entetes: Record<string, string> = { 'X-Menu-Famille': '1' };
+	const options: RequestInit = { method: methode, credentials: 'same-origin', headers: entetes };
 	if (corps instanceof FormData) {
 		options.body = corps;
 	} else if (corps !== undefined) {
 		options.body = JSON.stringify(corps);
-		options.headers = { 'Content-Type': 'application/json' };
+		entetes['Content-Type'] = 'application/json';
 	}
 	const reponse = await fetch(`/api${chemin}`, options);
 	if (reponse.status === 401 && !chemin.startsWith('/session')) {

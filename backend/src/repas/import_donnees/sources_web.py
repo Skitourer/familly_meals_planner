@@ -47,7 +47,9 @@ class ClientCache:
         self._http = httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=60)
 
     def obtenir(self, source: str, url: str, params: dict[str, Any]) -> Any:
-        cle = hashlib.sha1(f"{url}?{sorted(params.items())}".encode()).hexdigest()[:16]
+        # Simple clé de cache (pas un usage cryptographique) : sha1 garde les fichiers existants.
+        requete = f"{url}?{sorted(params.items())}".encode()
+        cle = hashlib.sha1(requete, usedforsecurity=False).hexdigest()[:16]
         fichier = self.dossier / source / f"{cle}.json"
         if fichier.exists():
             return json.loads(fichier.read_text(encoding="utf-8"))
