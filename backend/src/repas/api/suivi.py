@@ -8,13 +8,15 @@ from sqlmodel import Session, col, select
 
 from repas import services
 from repas.api.produits import FicheEntree
+from repas.api.produits import Note as LettreNote
 from repas.api.session import compte_connecte, exiger_adulte
 from repas.base import session
 from repas.catalogue import catalogue
 from repas.catalogue.schemas import LIBELLES_RAYONS, Rayon
+from repas.domaine.nutriscore import nutriscore_ingredient
 from repas.domaine.placard import a_vider
 from repas.domaine.produits import CATEGORIES
-from repas.modeles import Compte, Creneau, Note, Semaine, Stock, maintenant
+from repas.modeles import Compte, Creneau, Note, NotesStock, Semaine, Stock, maintenant
 
 router = APIRouter(tags=["suivi"])
 ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
@@ -134,29 +136,53 @@ class StockSortie(BaseModel):
     bientot_perime: bool  # à vider : à consommer dans les 7 jours
     rayon: str  # libellé, pour regrouper le placard comme la liste de courses
     rang_rayon: int  # ordre du rayon dans le parcours du magasin
+    # Notes du dernier produit scanné ; sans scan, Nutri-Score calculé depuis CIQUAL.
+    nutriscore: LettreNote | None
+    nutriscore_calcule: bool
+    nova: int | None
+    green_score: LettreNote | None
 
 
 class StockEntree(BaseModel):
     quantite_g: float = Field(ge=0)
     peremption: date | None = None
+    # Notes Open Food Facts du produit scanné (absentes en saisie manuelle : on garde
+    # celles déjà connues).
+    nutriscore: LettreNote | None = None
+    nova: int | None = Field(default=None, ge=1, le=4)
+    green_score: LettreNote | None = None
+
+
+def _sortie_stock(st: Stock, notes: NotesStock | None, aujourd_hui: date) -> StockSortie:
+    cat = catalogue()
+    ingredient = cat.ingredients[st.ingredient_id]
+    nutriscore = notes.nutriscore if notes else None
+    calcule = nutriscore is None and st.ingredient_id in cat.aliments
+    if calcule:
+        nutriments = cat.aliments[st.ingredient_id].nutriments_100g
+        nutriscore = nutriscore_ingredient(nutriments, ingredient.famille).lower()
+    return StockSortie(
+        ingredient_id=st.ingredient_id,
+        nom=ingredient.nom,
+        quantite_g=st.quantite_g,
+        unite=ingredient.unite,
+        peremption=st.peremption,
+        bientot_perime=a_vider(st.peremption, aujourd_hui),
+        rayon=LIBELLES_RAYONS[ingredient.rayon],
+        rang_rayon=list(Rayon).index(ingredient.rayon),
+        nutriscore=nutriscore,  # pyright: ignore[reportArgumentType]
+        nutriscore_calcule=calcule,
+        nova=notes.nova if notes else None,
+        green_score=notes.green_score if notes else None,  # pyright: ignore[reportArgumentType]
+    )
 
 
 @router.get("/placard", dependencies=ADULTE)
 def placard(s: Session = Depends(session)) -> list[StockSortie]:
     cat = catalogue()
-    aujourd_hui = date.today()
-    rangs = {rayon: rang for rang, rayon in enumerate(Rayon)}
+    notes = {n.ingredient_id: n for n in s.exec(select(NotesStock)).all()}
     return [
-        StockSortie(
-            ingredient_id=st.ingredient_id,
-            nom=cat.ingredients[st.ingredient_id].nom,
-            quantite_g=st.quantite_g,
-            unite=cat.ingredients[st.ingredient_id].unite,
-            peremption=st.peremption,
-            bientot_perime=a_vider(st.peremption, aujourd_hui),
-            rayon=LIBELLES_RAYONS[cat.ingredients[st.ingredient_id].rayon],
-            rang_rayon=rangs[cat.ingredients[st.ingredient_id].rayon],
-        )
+        _sortie_stock(st, notes.get(st.ingredient_id), date.today())
         for st in s.exec(select(Stock).order_by(col(Stock.peremption))).all()
         if st.ingredient_id in cat.ingredients
     ]
@@ -191,11 +217,19 @@ def ajuster(ingredient_id: str, entree: StockEntree, s: Session = Depends(sessio
     if ingredient_id not in cat.ingredients:
         raise HTTPException(404, "Ingrédient inconnu")
     stock = s.get(Stock, ingredient_id)
+    notes = s.get(NotesStock, ingredient_id)
     if entree.quantite_g == 0:
-        if stock:
-            s.delete(stock)
-            s.commit()
+        for ligne in (stock, notes):
+            if ligne:
+                s.delete(ligne)
+        s.commit()
         return
+    if entree.nutriscore or entree.nova or entree.green_score:
+        notes = notes or NotesStock(ingredient_id=ingredient_id)
+        notes.nutriscore, notes.nova, notes.green_score = (
+            entree.nutriscore, entree.nova, entree.green_score,
+        )  # fmt: skip
+        s.add(notes)
     peremption = entree.peremption or date.today() + timedelta(
         days=cat.ingredients[ingredient_id].conservation_jours
     )

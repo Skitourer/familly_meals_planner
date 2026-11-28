@@ -264,3 +264,29 @@ def test_infos_du_repas_et_bilan(client: TestClient):
     apres = client.get("/api/bilan", params={"semaines": 4}).json()
     assert not apres["semaines"][0]["budget_estime"]
     assert apres["gaspillage"]["semaines_validees"] == 1
+
+
+def test_placard_notes_du_produit_scanne(client: TestClient):
+    # Saisie manuelle : Nutri-Score calculé depuis CIQUAL, NOVA et Green-Score inconnus.
+    client.put("/api/placard/riz", json={"quantite_g": 400})
+    riz = client.get("/api/placard").json()[0]
+    assert riz["nutriscore"] in ("a", "b", "c", "d", "e")
+    assert riz["nutriscore_calcule"] is True
+    assert (riz["nova"], riz["green_score"]) == (None, None)
+
+    # Produit scanné : les notes d'Open Food Facts sont gardées avec l'ingrédient...
+    notes = {"nutriscore": "b", "nova": 3, "green_score": "c"}
+    client.put("/api/placard/riz", json={"quantite_g": 900, **notes})
+    riz = client.get("/api/placard").json()[0]
+    assert {cle: riz[cle] for cle in notes} == notes
+    assert riz["nutriscore_calcule"] is False
+
+    # ... même après un ajout manuel, puis disparaissent avec le stock.
+    client.put("/api/placard/riz", json={"quantite_g": 1000})
+    assert client.get("/api/placard").json()[0]["nova"] == 3
+    client.put("/api/placard/riz", json={"quantite_g": 0})
+    client.put("/api/placard/riz", json={"quantite_g": 100})
+    assert client.get("/api/placard").json()[0]["nova"] is None
+
+    reponse = client.put("/api/placard/riz", json={"quantite_g": 1, "nova": 7})
+    assert reponse.status_code == 422

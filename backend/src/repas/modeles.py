@@ -200,6 +200,19 @@ class Stock(SQLModel, table=True):
     mis_a_jour_le: datetime = Field(default_factory=maintenant)
 
 
+class NotesStock(SQLModel, table=True):
+    """Notes Open Food Facts du dernier produit scanné pour un ingrédient du placard.
+
+    Table à part plutôt que colonnes de ``Stock`` : ``create_all`` crée les tables
+    manquantes mais n'ajoute pas de colonne aux bases existantes.
+    """
+
+    ingredient_id: str = Field(primary_key=True)
+    nutriscore: str | None = Field(default=None, max_length=1)
+    nova: int | None = Field(default=None, ge=1, le=4)
+    green_score: str | None = Field(default=None, max_length=1)
+
+
 class Reglages(SQLModel, table=True):
     """Préférences de la famille pour l'algorithme (une seule ligne, id = 1)."""
 
