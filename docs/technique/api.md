@@ -15,8 +15,8 @@ Les requêtes `POST`, `PUT`, `PATCH` et `DELETE` doivent porter l'en-tête
 | `GET` / `POST` | `/api/comptes` | Lister, créer un compte (adulte) |
 | `PUT` / `DELETE` | `/api/comptes/{id}` | Modifier, supprimer un compte (adulte) |
 | `GET` | `/api/sante` | Santé et version |
-| `GET` / `POST` | `/api/membres` | Lister, ajouter un membre |
-| `PUT` / `DELETE` | `/api/membres/{id}` | Modifier ; supprimer définitivement (avec ses notes) |
+| `GET` / `POST` | `/api/membres` | Lister, ajouter un membre (actif : ajouté aux repas à venir des semaines déjà créées) |
+| `PUT` / `DELETE` | `/api/membres/{id}` | Modifier (de retour à la maison : ajouté aux repas à venir) ; supprimer définitivement (avec ses notes) |
 | `GET` / `PUT` | `/api/reglages` | Réglages de l'algorithme |
 | `GET` | `/api/recettes` | Catalogue avec profils (nutrition, CO₂, prix, saison, notes) |
 | `DELETE` | `/api/recettes/{id}` | Supprimer une recette importée |

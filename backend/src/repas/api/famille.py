@@ -67,6 +67,9 @@ def lister(s: Session = Depends(session)) -> list[MembreSortie]:
 def creer(entree: MembreEntree, s: Session = Depends(session)) -> MembreSortie:
     membre = Membre(**entree.model_dump())
     s.add(membre)
+    s.flush()
+    if membre.actif and membre.id is not None:
+        services.ajouter_aux_repas_a_venir(s, membre.id, date.today())
     s.commit()
     s.refresh(membre)
     return _sortie(membre)
@@ -77,8 +80,11 @@ def modifier(membre_id: int, entree: MembreEntree, s: Session = Depends(session)
     membre = s.get(Membre, membre_id)
     if membre is None:
         raise HTTPException(404, "Membre introuvable")
+    de_retour = not membre.actif and entree.actif
     membre.sqlmodel_update(entree.model_dump())
     s.add(membre)
+    if de_retour:
+        services.ajouter_aux_repas_a_venir(s, membre_id, date.today())
     s.commit()
     s.refresh(membre)
     return _sortie(membre)
