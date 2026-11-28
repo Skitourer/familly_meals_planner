@@ -166,6 +166,14 @@ def date_la_plus_proche(a: date | None, b: date | None) -> date | None:
     return min(dates) if dates else None
 
 
+def regrouper[Quantite: (int, float)](
+    deja_range: tuple[Quantite, date | None], ajout: tuple[Quantite, date | None]
+) -> tuple[Quantite, date | None]:
+    """Article rangé avec le même article déjà au placard : quantités additionnées, date la
+    plus proche (le paquet à finir en premier)."""
+    return deja_range[0] + ajout[0], date_la_plus_proche(deja_range[1], ajout[1])
+
+
 # --- Produits à racheter (liste de courses) -----------------------------------------------
 
 PREFIXE_COCHE_RACHETER = "racheter-"

@@ -7,6 +7,7 @@ entrées puis appellent les fonctions de ce module.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -39,8 +40,8 @@ from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_lim
 from repas.domaine.produits import (
     a_ranger_a_la_validation,
     cle_coche_racheter,
-    date_la_plus_proche,
     meme_produit,
+    regrouper,
 )
 from repas.domaine.reperes import REPERES
 from repas.modeles import (
@@ -57,6 +58,7 @@ from repas.modeles import (
     IngredientARacheter,
     Membre,
     Note,
+    NotesStock,
     PrixProduit,
     ProduitARacheter,
     ProduitPlacard,
@@ -656,8 +658,9 @@ def ranger_produit(
     if existant is None:
         champs = fiche.model_dump(include=set(FicheProduitMixin.model_fields))
         existant = ProduitPlacard.model_validate({**champs, "paquets": 0, "peremption": peremption})
-    existant.paquets += paquets
-    existant.peremption = date_la_plus_proche(existant.peremption, peremption)
+    existant.paquets, existant.peremption = regrouper(
+        (existant.paquets, existant.peremption), (paquets, peremption)
+    )
     existant.mis_a_jour_le = datetime.now(UTC)
     cree = existant.id is None
     s.add(existant)
@@ -685,6 +688,113 @@ def modifier_produit(
         produit.mis_a_jour_le = datetime.now(UTC)
         s.add(produit)
     s.commit()
+
+
+@dataclass(frozen=True)
+class CibleIngredient:
+    """Article modifié en ingrédient du placard (en grammes comestibles)."""
+
+    ingredient_id: str
+    quantite_g: float
+    peremption: date | None
+
+
+@dataclass(frozen=True)
+class CibleProduit:
+    """Article modifié en autre produit du placard (hors repas, en paquets)."""
+
+    nom: str
+    categorie: str
+    paquets: int
+    peremption: date | None
+
+
+type Notes = tuple[str | None, int | None, str | None]  # Nutri-Score, NOVA, Green-Score
+
+
+def modifier_article(
+    s: Session, cat: Catalogue, source: str | int, cible: CibleIngredient | CibleProduit
+) -> None:
+    """Corrige un article du placard, en une seule transaction.
+
+    ``source`` est l'identifiant d'un ingrédient (texte) ou d'un autre produit (entier).
+    Rester le même article remplace ses valeurs ; changer d'ingrédient, ou passer
+    d'ingrédient à autre produit et inversement, le range comme un ajout (regroupé avec le
+    même article déjà au placard). Les notes Open Food Facts suivent l'article.
+    """
+    if isinstance(source, str):
+        notes = _retirer_ingredient(s, source, cible)
+    else:
+        notes = _retirer_produit(s, source, cible)
+    if notes is not None:  # article retiré : on le range sous sa nouvelle forme
+        s.flush()
+        if isinstance(cible, CibleIngredient):
+            _ranger_ingredient(s, cat, cible, notes)
+        else:
+            fiche = FicheProduitMixin(nom=cible.nom, categorie=cible.categorie, nutriscore=notes[0],
+                                      nova=notes[1], green_score=notes[2])  # fmt: skip
+            ranger_produit(s, fiche, cible.paquets, cible.peremption)
+    s.commit()
+
+
+def _retirer_ingredient(
+    s: Session, ingredient_id: str, cible: CibleIngredient | CibleProduit
+) -> Notes | None:
+    """Modifie l'ingrédient sur place s'il reste le même ; sinon le retire et rend ses notes."""
+    stock = s.get(Stock, ingredient_id)
+    if stock is None:
+        raise ErreurMetier("Ingrédient absent du placard")
+    if isinstance(cible, CibleIngredient) and cible.ingredient_id == ingredient_id:
+        stock.quantite_g = cible.quantite_g
+        stock.peremption = cible.peremption or stock.peremption
+        stock.mis_a_jour_le = datetime.now(UTC)
+        s.add(stock)
+        return None
+    notes_stock = s.get(NotesStock, ingredient_id)
+    s.delete(stock)
+    if notes_stock is None:
+        return (None, None, None)
+    s.delete(notes_stock)
+    return (notes_stock.nutriscore, notes_stock.nova, notes_stock.green_score)
+
+
+def _retirer_produit(
+    s: Session, produit_id: int, cible: CibleIngredient | CibleProduit
+) -> Notes | None:
+    """Modifie l'autre produit sur place s'il le reste ; sinon le retire et rend ses notes."""
+    produit = s.get(ProduitPlacard, produit_id)
+    if produit is None:
+        raise ErreurMetier("Produit introuvable dans le placard")
+    if isinstance(cible, CibleProduit):
+        produit.nom, produit.categorie = cible.nom, cible.categorie
+        produit.paquets, produit.peremption = cible.paquets, cible.peremption
+        produit.mis_a_jour_le = datetime.now(UTC)
+        s.add(produit)
+        return None
+    s.delete(produit)
+    return (produit.nutriscore, produit.nova, produit.green_score)
+
+
+def _ranger_ingredient(s: Session, cat: Catalogue, cible: CibleIngredient, notes: Notes) -> None:
+    """Range un ingrédient, regroupé avec celui déjà au placard ; ses notes remplacent les
+    anciennes quand il en a."""
+    peremption = cible.peremption or date.today() + timedelta(
+        days=cat.ingredients[cible.ingredient_id].conservation_jours
+    )
+    stock = s.get(Stock, cible.ingredient_id)
+    if stock is None:
+        stock = Stock(ingredient_id=cible.ingredient_id, quantite_g=cible.quantite_g,
+                      peremption=peremption)  # fmt: skip
+    else:
+        quantite, plus_proche = regrouper(
+            (stock.quantite_g, stock.peremption), (cible.quantite_g, peremption)
+        )
+        stock.quantite_g, stock.peremption = quantite, plus_proche or peremption
+    stock.mis_a_jour_le = datetime.now(UTC)
+    s.add(stock)
+    if any(note is not None for note in notes):
+        s.merge(NotesStock(ingredient_id=cible.ingredient_id, nutriscore=notes[0],
+                           nova=notes[1], green_score=notes[2]))  # fmt: skip
 
 
 def annuler_achat(s: Session, semaine: Semaine, ingredient_id: str) -> None:

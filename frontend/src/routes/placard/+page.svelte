@@ -10,16 +10,22 @@
 	import { api, messageErreur } from '#lib/api.ts';
 	import { iso, libelleSemaine, lundiDe, lundiSuivant } from '#lib/dates.ts';
 	import AutresProduits from '#lib/composants/AutresProduits.svelte';
+	import FormulaireArticle from '#lib/composants/FormulaireArticle.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
 	import NotesProduit from '#lib/composants/NotesProduit.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
 	import {
 		articlesAffiches,
+		corpsModification,
 		ecrireChoix,
 		lireChoix,
 		normaliser,
 		parRayon,
-		type Tri
+		valeursDuProduit,
+		valeursDuStock,
+		type SourceArticle,
+		type Tri,
+		type ValeursArticle
 	} from '#lib/placard.ts';
 	import type { IdeeFrigo, Ingredient, ProduitPlacard, ProduitScanne, Stock } from '#lib/types.ts';
 
@@ -39,21 +45,27 @@
 	let produit = $state<ProduitScanne | null>(null);
 	let rechercheEnCours = $state(false);
 	let messageScan = $state('');
-	let ingredientScanne = $state('');
-	let quantiteScannee = $state(100);
-	let peremptionScannee = $state('');
-	let nomProduit = $state('');
-	let categorieProduit = $state('');
-	let paquetsScannes = $state(1);
+	let scan = $state<ValeursArticle>({
+		ingredient_id: '',
+		quantite_g: 100,
+		nom: '',
+		categorie: '',
+		paquets: 1,
+		peremption: ''
+	});
+
+	// Modification d'un article déjà au placard : même formulaire que le scan, pré-rempli.
+	let edition = $state<{ source: SourceArticle; titre: string; valeurs: ValeursArticle } | null>(
+		null
+	);
+	let editionOuverte = $state(false);
+	let messageEdition = $state('');
 
 	const aVider = $derived([
 		...stock.filter((s) => s.bientot_perime),
 		...autres.filter((p) => p.bientot_perime)
 	]);
 	const suivis = $derived(ingredients.filter((i) => !i.basique));
-	const autresIngredients = $derived(
-		suivis.filter((i) => !produit?.propositions.some((p) => p.ingredient_id === i.id))
-	);
 
 	// Recherche et filtre : pour cette visite ; tri et regroupement : gardés sur l'appareil.
 	let recherche = $state('');
@@ -191,11 +203,15 @@
 		try {
 			produit = await api.lire<ProduitScanne>(`/produits/${code}`);
 			// Sans ingrédient correspondant, c'est sans doute un produit hors repas (Nutella...).
-			choisirIngredient(produit.propositions[0]?.ingredient_id ?? AUTRE_PRODUIT);
-			peremptionScannee = '';
-			nomProduit = produit.nom || 'Produit sans nom';
-			categorieProduit = produit.categorie;
-			paquetsScannes = 1;
+			const ingredientId = produit.propositions[0]?.ingredient_id ?? AUTRE_PRODUIT;
+			scan = {
+				ingredient_id: ingredientId,
+				quantite_g: quantitePour(ingredientId),
+				nom: produit.nom || 'Produit sans nom',
+				categorie: produit.categorie,
+				paquets: 1,
+				peremption: ''
+			};
 		} catch (e) {
 			messageScan = messageErreur(e);
 		} finally {
@@ -204,46 +220,63 @@
 	}
 
 	/** Quantité pré-remplie : part comestible du paquet pour cet ingrédient, sinon contenu du paquet. */
-	function choisirIngredient(id: string) {
-		ingredientScanne = id;
+	function quantitePour(id: string): number {
 		const proposition = produit?.propositions.find((p) => p.ingredient_id === id);
-		quantiteScannee = Math.round(proposition?.quantite_g ?? produit?.quantite_g ?? 100);
+		return Math.round(proposition?.quantite_g ?? produit?.quantite_g ?? 100);
 	}
 
-	async function ajouterProduitScanne(event: SubmitEvent) {
-		event.preventDefault();
-		if (!ingredientScanne || !produit) return;
-		if (ingredientScanne === AUTRE_PRODUIT) {
+	async function ajouterProduitScanne(valeurs: ValeursArticle) {
+		if (!produit) return;
+		if (valeurs.ingredient_id === AUTRE_PRODUIT) {
 			try {
 				await api.creer('/placard/produits', {
-					...ficheDuProduit(produit, nomProduit, categorieProduit),
-					paquets: paquetsScannes,
-					peremption: peremptionScannee || null
+					...ficheDuProduit(produit, valeurs.nom, valeurs.categorie),
+					paquets: valeurs.paquets,
+					peremption: valeurs.peremption || null
 				});
 				await charger();
 			} catch (e) {
 				messageScan = messageErreur(e);
 				return;
 			}
-			messageScan = `Ajouté au placard : ${nomProduit.trim()}, ${paquetsScannes} paquet(s). Scannez le produit suivant.`;
+			messageScan = `Ajouté au placard : ${valeurs.nom.trim()}, ${valeurs.paquets} paquet(s). Scannez le produit suivant.`;
 			produit = null;
 			return;
 		}
-		const existant = stock.find((s) => s.ingredient_id === ingredientScanne);
+		const existant = stock.find((s) => s.ingredient_id === valeurs.ingredient_id);
 		// Sans date saisie, on garde celle du produit déjà rangé : le plus ancien d'abord.
 		const ajoute = await ajuster(
-			ingredientScanne,
-			(existant?.quantite_g ?? 0) + quantiteScannee,
-			peremptionScannee || existant?.peremption,
+			valeurs.ingredient_id,
+			(existant?.quantite_g ?? 0) + valeurs.quantite_g,
+			valeurs.peremption || existant?.peremption,
 			produit
 		);
 		if (!ajoute) {
 			messageScan = erreur;
 			return;
 		}
-		const nom = ingredients.find((i) => i.id === ingredientScanne)?.nom ?? ingredientScanne;
-		messageScan = `Ajouté au placard : ${nom}, ${quantiteScannee} g. Scannez le produit suivant.`;
+		const nom =
+			ingredients.find((i) => i.id === valeurs.ingredient_id)?.nom ?? valeurs.ingredient_id;
+		messageScan = `Ajouté au placard : ${nom}, ${valeurs.quantite_g} g. Scannez le produit suivant.`;
 		produit = null;
+	}
+
+	function editer(source: SourceArticle, titre: string, valeurs: ValeursArticle) {
+		edition = { source, titre, valeurs };
+		messageEdition = '';
+		editionOuverte = true;
+	}
+
+	async function enregistrerModification(valeurs: ValeursArticle) {
+		if (!edition) return;
+		try {
+			await api.creer('/placard/modification', corpsModification(edition.source, valeurs));
+			editionOuverte = false;
+			ingredientRetire = null;
+			await charger();
+		} catch (e) {
+			messageEdition = messageErreur(e);
+		}
 	}
 
 	/** Régénère les repas non verrouillés de la semaine en cours, d'aujourd'hui à dimanche. */
@@ -401,6 +434,18 @@
 							<td class="actions">
 								<button
 									class="discret"
+									onclick={() =>
+										editer(
+											{ ingredient_id: article.ingredient_id },
+											article.nom,
+											valeursDuStock(article)
+										)}
+									aria-label={`Modifier ${article.nom}`}
+								>
+									✏️
+								</button>
+								<button
+									class="discret"
 									onclick={() => racheter(article)}
 									title="Mettre sur la liste de courses de la semaine suivante"
 									aria-label={`À racheter : ${article.nom}`}
@@ -444,7 +489,13 @@
 	</form>
 </div>
 
-<AutresProduits produits={autresAffiches} {filtrage} {categories} onModifie={charger} />
+<AutresProduits
+	produits={autresAffiches}
+	{filtrage}
+	{categories}
+	onModifie={charger}
+	onEditer={(p) => editer({ produit_id: p.id }, p.nom, valeursDuProduit(p))}
+/>
 
 <Modale titre="Scanner un produit" bind:ouverte={scanOuvert}>
 	{#if messageScan}<p class:erreur={!messageScan.startsWith('Ajouté')}>{messageScan}</p>{/if}
@@ -456,95 +507,44 @@
 			{#if produit.marque}<span class="doux">— {produit.marque}</span>{/if}
 			{#if produit.quantite_g}<span class="doux">({produit.quantite_g} g)</span>{/if}
 		</p>
-		{#if ingredientScanne === AUTRE_PRODUIT}
-			<p class="doux">
-				Produit hors repas : rangé parmi les autres produits, compté en paquets. Choisissez un
-				ingrédient si les repas peuvent l'utiliser.
-			</p>
-		{/if}
-		<form class="formulaire-scan" onsubmit={ajouterProduitScanne}>
-			<label>
-				Ingrédient
-				<select
-					value={ingredientScanne}
-					onchange={(e) => choisirIngredient((e.target as HTMLSelectElement).value)}
-				>
-					<option value="">Choisir…</option>
-					{#if produit.propositions.length}
-						<optgroup label="Correspondances">
-							{#each produit.propositions as p (p.ingredient_id)}
-								<option value={p.ingredient_id}>{p.nom}</option>
-							{/each}
-						</optgroup>
-					{/if}
-					<optgroup label="Autres ingrédients">
-						{#each autresIngredients as ing (ing.id)}
-							<option value={ing.id}>{ing.nom}</option>
-						{/each}
-					</optgroup>
-					<option value={AUTRE_PRODUIT}>Autre produit (hors repas)</option>
-				</select>
-			</label>
-			{#if ingredientScanne === AUTRE_PRODUIT}
-				<label>
-					Nom
-					<input type="text" maxlength="120" bind:value={nomProduit} />
-				</label>
-				<label>
-					Catégorie
-					<select bind:value={categorieProduit}>
-						{#each categories as c (c)}<option value={c}>{c}</option>{/each}
-					</select>
-				</label>
-				<label>
-					Paquets
-					<input type="number" min="1" max="99" bind:value={paquetsScannes} />
-				</label>
-			{:else}
-				<label>
-					Quantité (g, part comestible)
-					<input type="number" min="1" step="any" bind:value={quantiteScannee} />
-				</label>
-			{/if}
-			<label>
-				À utiliser avant (facultatif)
-				<input type="date" bind:value={peremptionScannee} />
-			</label>
-			<div class="ligne">
-				<button
-					class="principal"
-					disabled={!ingredientScanne ||
-						(ingredientScanne === AUTRE_PRODUIT && (!nomProduit.trim() || paquetsScannes < 1))}
-				>
-					Ajouter au placard
-				</button>
+		<FormulaireArticle
+			bind:valeurs={scan}
+			ingredients={suivis}
+			{categories}
+			propositions={produit.propositions}
+			{quantitePour}
+			libelleValider="Ajouter au placard"
+			onValider={ajouterProduitScanne}
+		>
+			{#snippet actions()}
 				<button type="button" onclick={() => (produit = null)}>Scanner un autre produit</button>
-			</div>
-		</form>
+			{/snippet}
+		</FormulaireArticle>
 	{:else}
 		<ScannerCodeBarres onCode={rechercherProduit} />
+	{/if}
+</Modale>
+
+<Modale titre={`Modifier : ${edition?.titre ?? ''}`} bind:ouverte={editionOuverte}>
+	{#if edition}
+		{#if messageEdition}<p class="erreur">{messageEdition}</p>{/if}
+		<FormulaireArticle
+			bind:valeurs={edition.valeurs}
+			{ingredients}
+			{categories}
+			libelleValider="Enregistrer"
+			onValider={enregistrerModification}
+		>
+			{#snippet actions()}
+				<button type="button" onclick={() => (editionOuverte = false)}>Annuler</button>
+			{/snippet}
+		</FormulaireArticle>
 	{/if}
 </Modale>
 
 <style>
 	.entete {
 		margin-bottom: 1rem;
-	}
-
-	/* minmax(0, 1fr) : une longue option de liste ne doit pas élargir la fenêtre. */
-	.formulaire-scan,
-	.formulaire-scan label {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: 0.8rem;
-	}
-
-	.formulaire-scan label {
-		gap: 0.3rem;
-	}
-
-	.formulaire-scan :is(input, select) {
-		width: 100%;
 	}
 
 	table {

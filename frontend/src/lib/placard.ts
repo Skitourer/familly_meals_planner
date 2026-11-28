@@ -1,6 +1,10 @@
 // Affichage du placard : recherche, filtre « à vider », tri et regroupement par rayon.
 // Les choix de tri et de regroupement sont gardés sur l'appareil (pas sur le serveur : ce sont
 // des préférences d'affichage, différentes d'un téléphone à un ordinateur).
+// Aussi : valeurs du formulaire d'un article, commun au scan et à la modification.
+
+import { AUTRE_PRODUIT } from './achats';
+import type { ProduitPlacard, Stock } from './types';
 
 /** Ce que la recherche, le filtre et le tri ont besoin de connaître d'un article. */
 export interface ArticlePlacard {
@@ -96,4 +100,71 @@ export function ecrireChoix(stockage: Storage, choix: ChoixAffichage): void {
 	} catch {
 		// Stockage plein ou interdit : le choix vaut pour cette visite seulement.
 	}
+}
+
+// --- Formulaire d'un article (scan et modification) ---------------------------------------
+
+/** Champs du formulaire : ingrédient (en grammes) ou autre produit (en paquets). */
+export interface ValeursArticle {
+	ingredient_id: string; // AUTRE_PRODUIT pour un produit hors repas, '' tant que rien n'est choisi
+	quantite_g: number;
+	nom: string;
+	categorie: string;
+	paquets: number;
+	peremption: string; // ISO, '' sans date
+}
+
+/** Article à corriger : un ingrédient du placard ou un autre produit. */
+export type SourceArticle = { ingredient_id: string } | { produit_id: number };
+
+const CATEGORIE_PAR_DEFAUT = 'Épicerie';
+
+export function valeursDuStock(stock: Stock): ValeursArticle {
+	return {
+		ingredient_id: stock.ingredient_id,
+		quantite_g: stock.quantite_g,
+		nom: stock.nom, // proposé si l'ingrédient devient un autre produit
+		categorie: CATEGORIE_PAR_DEFAUT,
+		paquets: 1,
+		peremption: stock.peremption
+	};
+}
+
+export function valeursDuProduit(produit: ProduitPlacard): ValeursArticle {
+	return {
+		ingredient_id: AUTRE_PRODUIT,
+		quantite_g: 100,
+		nom: produit.nom,
+		categorie: produit.categorie,
+		paquets: produit.paquets,
+		peremption: produit.peremption ?? ''
+	};
+}
+
+export function articleValide(valeurs: ValeursArticle): boolean {
+	if (!valeurs.ingredient_id) return false;
+	if (valeurs.ingredient_id === AUTRE_PRODUIT)
+		return valeurs.nom.trim() !== '' && valeurs.paquets >= 1 && valeurs.paquets <= 99;
+	return valeurs.quantite_g > 0;
+}
+
+/** Corps de la requête de modification (POST /placard/modification). */
+export function corpsModification(source: SourceArticle, valeurs: ValeursArticle) {
+	const peremption = valeurs.peremption || null;
+	const cible =
+		valeurs.ingredient_id === AUTRE_PRODUIT
+			? {
+					type: 'produit' as const,
+					nom: valeurs.nom.trim(),
+					categorie: valeurs.categorie,
+					paquets: valeurs.paquets,
+					peremption
+				}
+			: {
+					type: 'ingredient' as const,
+					ingredient_id: valeurs.ingredient_id,
+					quantite_g: valeurs.quantite_g,
+					peremption
+				};
+	return { ...source, cible };
 }

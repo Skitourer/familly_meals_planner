@@ -1,6 +1,7 @@
 """Suivi après les repas : notes de la famille et placard."""
 
 from datetime import date, timedelta
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -302,5 +303,59 @@ def modifier_produit(
         services.modifier_produit(
             s, produit_id, entree.paquets, entree.peremption, entree.categorie
         )
+    except services.ErreurMetier as erreur:
+        raise HTTPException(404, str(erreur)) from erreur
+
+
+class CibleIngredientEntree(BaseModel):
+    type: Literal["ingredient"]
+    ingredient_id: str
+    quantite_g: float = Field(gt=0, le=100_000)
+    peremption: date | None = None
+
+
+class CibleProduitEntree(BaseModel):
+    type: Literal["produit"]
+    nom: str = Field(min_length=1, max_length=120)
+    categorie: str
+    paquets: int = Field(ge=1, le=99)
+    peremption: date | None = None
+
+
+class ArticleModification(BaseModel):
+    """Article à corriger (un ingrédient ou un autre produit) et ce qu'il devient."""
+
+    ingredient_id: str | None = None
+    produit_id: int | None = None
+    cible: Annotated[CibleIngredientEntree | CibleProduitEntree, Field(discriminator="type")]
+
+
+@router.post("/placard/modification", status_code=204, dependencies=ADULTE)
+def modifier_article(entree: ArticleModification, s: Session = Depends(session)) -> None:
+    """Corrige un article du placard : valeurs, ingrédient, passage ingrédient ⇄ autre produit."""
+    source: str | int
+    match entree.ingredient_id, entree.produit_id:
+        case str() as ingredient_id, None:
+            source = ingredient_id
+        case None, int() as produit_id:
+            source = produit_id
+        case _:
+            raise HTTPException(422, "Indiquer ingredient_id ou produit_id, pas les deux")
+    cat = catalogue()
+    cible = entree.cible
+    if isinstance(cible, CibleIngredientEntree):
+        if cible.ingredient_id not in cat.ingredients:
+            raise HTTPException(422, "Ingrédient inconnu")
+        nouvelle: services.CibleIngredient | services.CibleProduit = services.CibleIngredient(
+            cible.ingredient_id, cible.quantite_g, cible.peremption
+        )
+    else:
+        if cible.categorie not in CATEGORIES:
+            raise HTTPException(422, "Catégorie inconnue")
+        nouvelle = services.CibleProduit(
+            cible.nom.strip(), cible.categorie, cible.paquets, cible.peremption
+        )
+    try:
+        services.modifier_article(s, cat, source, nouvelle)
     except services.ErreurMetier as erreur:
         raise HTTPException(404, str(erreur)) from erreur

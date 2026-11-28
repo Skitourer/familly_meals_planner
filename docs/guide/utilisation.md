@@ -201,6 +201,21 @@ le plus petit conditionnement vendu (un paquet de beurre, une boîte de 6 œufs�
 ce que demandent les repas, rangé au placard à la validation. Il est aussi proposé quand on
 retire un ingrédient avec 🗑.
 
+### Modifier un article
+
+Le bouton **✏️** d'un ingrédient ou d'un autre produit ouvre le même formulaire que le scan,
+pré-rempli, pour corriger une erreur sans retirer puis rajouter l'article :
+
+- un ingrédient : changer l'ingrédient (le « lait » était de la crème), la quantité ou la
+  date limite ; s'il rejoint un ingrédient déjà au placard, les quantités s'additionnent et
+  la date la plus proche est gardée ;
+- un autre produit : changer le nom, la catégorie, le nombre de paquets ou la date limite ;
+- passer d'ingrédient à **Autre produit (hors repas)**, ou l'inverse (des céréales rangées
+  comme ingrédient alors que les repas ne s'en servent pas).
+
+Les notes du produit (Nutri-Score, NOVA, Green-Score) le suivent. La catégorie d'un
+ingrédient est celle du catalogue et ne se change pas ici.
+
 ### Notes des produits
 
 À côté du nom de chaque ingrédient et de chaque autre produit, trois pastilles résument :
