@@ -37,6 +37,7 @@ from repas.domaine.courses import (
 )
 from repas.domaine.notes import NoteDonnee, Preferences
 from repas.domaine.placard import IdeePlat, a_vider, idees_pour_vider, jours_limites
+from repas.domaine.presences import convives_avec, creneau_a_venir
 from repas.domaine.produits import (
     a_ranger_a_la_validation,
     cle_coche_racheter,
@@ -122,6 +123,34 @@ def creneaux_de(s: Session, semaine: Semaine) -> list[Creneau]:
 
 def membres_actifs(s: Session) -> list[Membre]:
     return list(s.exec(select(Membre).where(Membre.actif).order_by(col(Membre.id))).all())
+
+
+def ajouter_aux_repas_a_venir(s: Session, membre_id: int, aujourd_hui: date) -> None:
+    """Ajoute un membre (nouveau ou de retour) aux convives des repas à venir des semaines
+    déjà créées, sauf là où il est noté « repas à l'extérieur » (issue #72).
+
+    Une semaine reçoit ses convives à sa création : sans cela, un membre créé ensuite serait
+    ignoré par la génération et les courses de ces semaines.
+    """
+    dehors = set(
+        s.exec(
+            select(CategorieRepasExterieur.creneau_id).where(
+                CategorieRepasExterieur.membre_id == membre_id
+            )
+        ).all()
+    )
+    repas = s.exec(
+        select(Creneau, Semaine)
+        .join(Semaine, col(Creneau.semaine_id) == col(Semaine.id))
+        .where(Semaine.lundi >= lundi_de(aujourd_hui))
+    ).all()
+    for creneau, semaine in repas:
+        if creneau.id in dehors or not creneau_a_venir(semaine.lundi, creneau.jour, aujourd_hui):
+            continue
+        convives = convives_avec(creneau.convives, membre_id)
+        if convives != creneau.convives:
+            creneau.convives = convives
+            s.add(creneau)
 
 
 def coefficients(s: Session, le: date) -> dict[int, float]:

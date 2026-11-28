@@ -32,6 +32,11 @@ Un membre qui ne mange plus à la maison (études...) peut être marqué « ne m
 maison » : ses notes restent dans l'historique. Le bouton **Supprimer** du formulaire efface
 au contraire définitivement le membre, ses notes et sa présence aux repas planifiés.
 
+Un membre ajouté, ou de nouveau marqué comme mangeant à la maison, rejoint aussi les repas
+d'aujourd'hui et des jours suivants des semaines déjà ouvertes (sauf ceux où il est noté
+« repas à l'extérieur ») : les portions et la liste de courses en tiennent compte. Les jours
+passés ne changent pas.
+
 ### Réglages de l'algorithme
 
 - **Budget** : favorise les plats économiques (prix médians Open Prices).
