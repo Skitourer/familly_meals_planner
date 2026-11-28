@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.8.0...v1.9.0) (2026-11-28)
+
+
+### Nouveautés
+
+* catégorie des repas pris à l'extérieur en un clic ([#69](https://github.com/Skitourer/familly_meals_planner/issues/69)) ([a6ee4ec](https://github.com/Skitourer/familly_meals_planner/commit/a6ee4ecb30c32ed47b2f7ce44e55e7e48ffedb18))
+* lecture des codes-barres par la caméra sur Firefox ([#70](https://github.com/Skitourer/familly_meals_planner/issues/70)) ([29f6667](https://github.com/Skitourer/familly_meals_planner/commit/29f666724346799beae9ab04f0d561374c74d429))
+* Nutri-Score, NOVA et Green-Score des produits du placard ([#68](https://github.com/Skitourer/familly_meals_planner/issues/68)) ([ecf3d17](https://github.com/Skitourer/familly_meals_planner/commit/ecf3d17239f8d2bfc1e467a004d8be0f56dc5a0e))
+
+
+### Corrections
+
+* audit de sécurité OWASP ASVS niveau 1 ([#65](https://github.com/Skitourer/familly_meals_planner/issues/65)) ([3211297](https://github.com/Skitourer/familly_meals_planner/commit/321129797ecc947c8421c82dfb12a3fe5c4ec54c))
+
 ## [1.8.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.7.0...v1.8.0) (2026-11-27)
 
 
