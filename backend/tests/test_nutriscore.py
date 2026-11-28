@@ -3,7 +3,7 @@ import pytest
 from repas.catalogue import Catalogue
 from repas.catalogue.schemas import Nutriments
 from repas.domaine.bilan import infos_repas
-from repas.domaine.nutriscore import lettre, nutriscore
+from repas.domaine.nutriscore import lettre, nutriscore, nutriscore_ingredient
 
 
 @pytest.mark.parametrize(
@@ -48,3 +48,11 @@ def test_repas_du_catalogue(cat: Catalogue):
     assert plaisir.nutriscore_points > equilibre.nutriscore_points
     assert equilibre.co2_kg == pytest.approx(equilibre.co2_kg_portion * 3, abs=0.02)
     assert equilibre.vegetarien and not plaisir.vegetarien
+
+
+def test_nutriscore_ingredient_brut(cat: Catalogue):
+    lentilles = cat.ingredients["lentilles-vertes"]
+    assert nutriscore_ingredient(cat.aliments["lentilles-vertes"].nutriments_100g,
+                                 lentilles.famille) == "A"  # fmt: skip
+    beurre = cat.ingredients["beurre"]
+    assert nutriscore_ingredient(cat.aliments["beurre"].nutriments_100g, beurre.famille) == "E"

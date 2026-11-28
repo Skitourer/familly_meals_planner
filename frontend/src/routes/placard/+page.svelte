@@ -11,6 +11,7 @@
 	import { iso, libelleSemaine, lundiDe, lundiSuivant } from '#lib/dates.ts';
 	import AutresProduits from '#lib/composants/AutresProduits.svelte';
 	import Modale from '#lib/composants/Modale.svelte';
+	import NotesProduit from '#lib/composants/NotesProduit.svelte';
 	import ScannerCodeBarres from '#lib/composants/ScannerCodeBarres.svelte';
 	import {
 		articlesAffiches,
@@ -145,11 +146,21 @@
 	}
 
 	/** Enregistre la quantité d'un ingrédient ; renvoie false (erreur affichée) en cas d'échec. */
-	async function ajuster(id: string, quantite: number, peremption?: string): Promise<boolean> {
+	async function ajuster(
+		id: string,
+		quantite: number,
+		peremption?: string,
+		notes?: Pick<ProduitScanne, 'nutriscore' | 'nova' | 'green_score'>
+	): Promise<boolean> {
 		try {
 			await api.modifier(`/placard/${id}`, {
 				quantite_g: Math.max(0, quantite),
-				peremption: peremption || null
+				peremption: peremption || null,
+				...(notes && {
+					nutriscore: notes.nutriscore,
+					nova: notes.nova,
+					green_score: notes.green_score
+				})
 			});
 			await charger();
 			return true;
@@ -223,7 +234,8 @@
 		const ajoute = await ajuster(
 			ingredientScanne,
 			(existant?.quantite_g ?? 0) + quantiteScannee,
-			peremptionScannee || existant?.peremption
+			peremptionScannee || existant?.peremption,
+			produit
 		);
 		if (!ajoute) {
 			messageScan = erreur;
@@ -359,7 +371,7 @@
 					{/if}
 					{#each articles as article (article.ingredient_id)}
 						<tr>
-							<td class="nom">{article.nom}</td>
+							<td class="nom">{article.nom} <NotesProduit notes={article} /></td>
 							<td>
 								<input
 									type="number"

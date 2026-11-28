@@ -9,6 +9,7 @@
 	import { ficheARacheter } from '#lib/achats.ts';
 	import { api, messageErreur } from '#lib/api.ts';
 	import { libelleSemaine, lundiSuivant } from '#lib/dates.ts';
+	import NotesProduit from '#lib/composants/NotesProduit.svelte';
 	import type { ProduitPlacard } from '#lib/types.ts';
 
 	let {
@@ -118,6 +119,7 @@
 				<li>
 					<div class="nom">
 						<span class="produit">{produit.nom}</span>
+						<NotesProduit notes={produit} />
 						{#if details(produit)}<span class="doux">{details(produit)}</span>{/if}
 						{#if produit.bientot_perime}<span class="badge alerte">à vider</span>{/if}
 					</div>

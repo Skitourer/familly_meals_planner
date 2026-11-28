@@ -220,6 +220,10 @@ export interface Stock {
 	bientot_perime: boolean;
 	rayon: string;
 	rang_rayon: number; // ordre du rayon dans la liste de courses
+	nutriscore: Note | null; // du dernier produit scanné, sinon calculé depuis CIQUAL
+	nutriscore_calcule: boolean;
+	nova: number | null;
+	green_score: Note | null;
 }
 
 /** Plat qui consomme les produits du placard à vider (frigo à vider). */

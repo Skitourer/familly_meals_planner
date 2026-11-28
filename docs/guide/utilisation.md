@@ -194,6 +194,19 @@ le plus petit conditionnement vendu (un paquet de beurre, une boîte de 6 œufs�
 ce que demandent les repas, rangé au placard à la validation. Il est aussi proposé quand on
 retire un ingrédient avec 🗑.
 
+### Notes des produits
+
+À côté du nom de chaque ingrédient et de chaque autre produit, trois pastilles résument :
+
+- le **Nutri-Score** (A à E, qualité nutritionnelle) ;
+- le groupe **NOVA** (1 à 4, du produit brut à l'ultra-transformé) ;
+- le **Green-Score** (A à E, impact environnemental).
+
+Pour un produit scanné, ce sont les notes d'Open Food Facts, enregistrées au scan : ouvrir le
+placard ne consulte pas Internet. Pour un ingrédient ajouté à la main, le Nutri-Score est
+calculé à partir de sa composition CIQUAL (ingrédient brut) et les deux autres notes restent
+inconnues. **?** signale une note inconnue. Survolez ou touchez les pastilles pour le détail.
+
 ### Retrouver un produit
 
 Au-dessus de la liste :

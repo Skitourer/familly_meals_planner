@@ -26,9 +26,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from repas.catalogue.schemas import Nutriments
+from repas.catalogue.schemas import Famille, Nutriments
 
 type Lettre = Literal["A", "B", "C", "D", "E"]
+
+# Familles comptées en « fruits, légumes et légumineuses » (Nutri-Score 2023).
+FAMILLES_FRUITS_LEGUMES = frozenset({Famille.FRUIT, Famille.LEGUME, Famille.LEGUMINEUSE})
 
 # Seuils : un point par seuil strictement dépassé.
 SEUILS_ENERGIE_KJ = [335, 670, 1005, 1340, 1675, 2010, 2345, 2680, 3015, 3350]
@@ -90,3 +93,13 @@ def nutriscore(nutriments: Nutriments, poids_g: float, fruits_legumes_g: float) 
     positifs = fruits_legumes + fibres + proteines
     score = negatifs - positifs
     return NutriScore(lettre(score), score, negatifs, positifs)
+
+
+def nutriscore_ingredient(nutriments_100g: Nutriments, famille: Famille) -> Lettre:
+    """Nutri-Score indicatif d'un ingrédient brut (CIQUAL), pour 100 g.
+
+    Utilisé au placard quand aucun produit précis n'a été scanné : un ingrédient de la
+    famille fruits, légumes ou légumineuses en contient 100 %.
+    """
+    fruits_legumes_g = 100.0 if famille in FAMILLES_FRUITS_LEGUMES else 0.0
+    return nutriscore(nutriments_100g, 100, fruits_legumes_g).lettre
