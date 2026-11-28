@@ -46,7 +46,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     application.dependency_overrides[verificateur_lien] = lambda: (
         lambda url: "introuvable" if url.endswith("/introuvable") else "ok"
     )
-    with TestClient(application) as c:
+    with TestClient(application, headers={"X-Menu-Famille": "1"}) as c:
         assert c.post("/api/session", json={"mot_de_passe": "secret"}).status_code == 200
         yield c
 

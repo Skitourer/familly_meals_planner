@@ -1,6 +1,6 @@
 # Image de production : une seule image contenant l'API Python et l'interface compilée.
 #   docker build -t menu-famille .
-#   docker run -p 8000:8000 -v menu-famille:/app/donnees/local -e REPAS_MOT_DE_PASSE=... menu-famille
+#   docker run -p 8000:8000 -v menu-famille:/app/donnees/local -e REPAS_MOT_DE_PASSE=... -e REPAS_CLE_SECRETE=... menu-famille
 
 # --- Étape 1 : compilation de l'interface SvelteKit -----------------------------------
 FROM node:26-alpine AS interface

@@ -64,4 +64,5 @@ nav:
       - 6. Hors ligne: adr/0006-hors-ligne.md
       - 7. Thème bol rigolo: adr/0007-theme-bol-rigolo.md
       - 8. Open Food Facts à l'exécution: adr/0008-open-food-facts-a-l-execution.md
+      - 9. Protections HTTP: adr/0009-securite-http-sans-double-authentification.md
   - Instructions pour IA (fichier): ia/instructions-ia.md

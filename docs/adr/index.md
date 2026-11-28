@@ -13,3 +13,4 @@ conséquences. Une décision remplacée n'est pas supprimée mais marquée « re
 | 6 | [Liste de courses hors ligne (service worker)](0006-hors-ligne.md) | Acceptée |
 | 7 | [Thème « bol rigolo » et polices hébergées](0007-theme-bol-rigolo.md) | Acceptée |
 | 8 | [Open Food Facts consulté à l'exécution pour les produits scannés](0008-open-food-facts-a-l-execution.md) | Acceptée |
+| 9 | [Protections HTTP, sans double authentification](0009-securite-http-sans-double-authentification.md) | Acceptée |

@@ -47,8 +47,9 @@ target-version = "py313"
 
 [tool.ruff.lint]
 # E/F : erreurs de base, I : tri des imports, B : bugs probables,
-# UP : syntaxe moderne, SIM : simplifications, N : nommage, RUF : divers.
-select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF"]
+# UP : syntaxe moderne, SIM : simplifications, N : nommage, RUF : divers,
+# S : sécurité (règles bandit).
+select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF", "S"]
 ignore = [
     "RUF001", # caractères ambigus : le code et les textes sont en français
     "RUF002",
@@ -56,6 +57,9 @@ ignore = [
     "B008",   # FastAPI utilise Depends() dans les valeurs par défaut
     "N818",   # exceptions nommées en français (ErreurXxx)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"] # assert est la façon d'écrire un test pytest
 
 [tool.pyright]
 include = ["src", "tests"]
