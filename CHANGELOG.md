@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.9.0...v1.10.0) (2026-11-28)
+
+
+### Nouveautés
+
+* modifier un article du placard avec le formulaire du scan ([#75](https://github.com/Skitourer/familly_meals_planner/issues/75)) ([23b690b](https://github.com/Skitourer/familly_meals_planner/commit/23b690bde593dfb71558de3243a63af69b836ac0))
+
+
+### Documentation
+
+* matériel conseillé et préparation du Raspberry Pi ([#71](https://github.com/Skitourer/familly_meals_planner/issues/71)) ([6209169](https://github.com/Skitourer/familly_meals_planner/commit/62091698239e3138245eb4df0b7c36b30bf15159))
+
 ## [1.9.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.8.0...v1.9.0) (2026-11-28)
 
 
