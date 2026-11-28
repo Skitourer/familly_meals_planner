@@ -29,8 +29,13 @@ gitGraph
    `uvx pre-commit install` font une partie de ces contrôles à chaque commit, et
    [gitleaks](https://github.com/gitleaks/gitleaks) y refuse tout commit contenant un
    secret (jeton, clé privée, mot de passe).
+   Pour une modification de l'interface, lancer aussi les **parcours de bout en bout**
+   (connexion et ajout d'un membre, génération d'une semaine et fiche d'un plat, liste de
+   courses et export PDF) : `cd frontend && npx playwright install chromium` une fois,
+   puis `npm run e2e`. L'interface est compilée puis servie par l'API sur le port 8020,
+   avec une base neuve, une date figée et tout site externe bloqué.
 4. Ouvrir une **pull request** : la CI doit passer (style, types, tests, couverture ≥ 90 %,
-   compilation de l'interface, de la documentation et de l'image Docker, absence de
+   parcours de bout en bout, audit des dépendances, compilation de l'interface, de la documentation et de l'image Docker, absence de
    secret dans tout l'historique).
 5. **Fusion en squash** : le titre de la PR devient le message de commit sur `main`.
 
