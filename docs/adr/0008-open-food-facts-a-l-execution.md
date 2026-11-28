@@ -1,6 +1,6 @@
 # 8. Open Food Facts consulté à l'exécution pour les produits scannés
 
-*Date : 2026-11-25 — Statut : acceptée*
+*Date : 2026-11-25, mise à jour le 2026-11-28 — Statut : acceptée*
 
 ## Contexte
 
@@ -20,16 +20,23 @@ ouvertes n'étaient lues qu'à l'import (`repas-import`), jamais par l'applicati
 - Aux courses, la quantité et le prix payés sont enregistrés par article ; le dernier prix
   payé pour chaque code-barres est gardé **dans la base de la famille** pour être proposé
   au scan suivant. Rien n'est envoyé à Open Prices.
-- Lecture par la caméra avec l'API **BarcodeDetector** du navigateur, sans bibliothèque ;
-  la saisie des chiffres reste toujours possible.
+- Lecture par la caméra avec l'API **BarcodeDetector** du navigateur quand elle existe
+  (Chrome sur Android) ; sinon (Firefox), lecteur de secours **barcode-detector**
+  (polyfill MIT de la même API, basé sur zxing-cpp compilé en WebAssembly). La saisie des
+  chiffres reste toujours possible.
 
 ## Conséquences
 
 - Le scan exige le réseau ; sans réseau ou si Open Food Facts ne répond pas en 6 s, un
   message invite à saisir le produit à la main. Le reste de l'application n'en dépend pas.
-- BarcodeDetector n'existe pas partout (Safari sur iPhone, Firefox) : ces navigateurs n'ont
-  que la saisie des chiffres. Une bibliothèque de lecture (ZXing) pourra être ajoutée si
-  le besoin est confirmé.
+- Le lecteur de secours (#41) n'est chargé qu'à l'ouverture du scanner, et seulement sans
+  BarcodeDetector natif. Son fichier `.wasm` (~1 Mo, 415 Ko compressé) est servi par
+  l'application, jamais par un CDN ; il n'est pas gardé hors ligne (le scan demande le
+  réseau). La CSP autorise `'wasm-unsafe-eval'` (compilation WebAssembly), pas `eval`.
+- Dépendance retenue : maintenue activement, licence MIT, même API que le navigateur (le
+  code du scanner ne change presque pas). Écartée : `@zxing/library` (JavaScript pur, plus
+  lent et peu maintenu). Safari (iPhone) emprunte le même chemin mais n'est pas encore
+  vérifié.
 
 ## Alternatives écartées
 

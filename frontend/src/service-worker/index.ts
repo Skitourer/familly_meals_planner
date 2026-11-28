@@ -14,9 +14,11 @@ import {
 } from '#lib/hors-ligne.ts';
 
 const cacheApplication = nomCacheApplication(version);
-const fichiersApplication = [...immutable, ...assets].map(
-	({ path }) => new URL(path, self.registration.scope).pathname
-);
+// Le lecteur de codes-barres de secours (.wasm, ~1 Mo) n'est pas gardé hors ligne : il ne
+// sert qu'au scan, qui demande de toute façon le réseau (Open Food Facts).
+const fichiersApplication = [...immutable, ...assets]
+	.filter(({ path }) => !path.endsWith('.wasm'))
+	.map(({ path }) => new URL(path, self.registration.scope).pathname);
 const fichiersConnus = new Set(fichiersApplication);
 
 self.addEventListener('install', (evenement) => {

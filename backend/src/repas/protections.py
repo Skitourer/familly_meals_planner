@@ -45,8 +45,10 @@ def politique_contenu(empreintes_scripts: Iterable[str] = ()) -> str:
 
     ``style-src 'unsafe-inline'`` : Svelte écrit des attributs ``style`` dynamiques.
     Les scripts en ligne ne sont acceptés que par leur empreinte (``index.html``).
+    ``'wasm-unsafe-eval'`` : compilation du lecteur de codes-barres de secours (WebAssembly,
+    servi par l'application), sans autoriser ``eval`` en JavaScript.
     """
-    scripts = " ".join(["'self'", *(f"'{e}'" for e in empreintes_scripts)])
+    scripts = " ".join(["'self'", "'wasm-unsafe-eval'", *(f"'{e}'" for e in empreintes_scripts)])
     return (
         f"default-src 'self'; script-src {scripts}; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; "

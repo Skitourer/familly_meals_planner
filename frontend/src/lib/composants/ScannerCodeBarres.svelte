@@ -1,6 +1,7 @@
 <!--
 	Lecture d'un code-barres de produit : caméra arrière avec l'API BarcodeDetector du navigateur
-	quand elle existe, saisie des chiffres sous le code-barres sinon (toujours proposée).
+	quand elle existe, sinon avec le lecteur de secours ZXing (Firefox), chargé à la demande ;
+	la saisie des chiffres sous le code-barres est toujours proposée.
 	La caméra exige HTTPS (ou localhost) ; elle est coupée dès qu'un code est lu.
 -->
 <script lang="ts">
@@ -16,7 +17,7 @@
 	}
 	interface ClasseDetecteur {
 		new (options: { formats: string[] }): Detecteur;
-		getSupportedFormats(): Promise<string[]>;
+		getSupportedFormats(): Promise<readonly string[]>;
 	}
 
 	let { onCode }: { onCode: (code: string) => void } = $props();
@@ -33,9 +34,24 @@
 		let minuteur: ReturnType<typeof setInterval> | undefined;
 		let actif = true;
 
+		/** Détecteur du navigateur, sinon lecteur de secours (null s'il ne se charge pas). */
+		async function classeDetecteur(): Promise<ClasseDetecteur | null> {
+			const natif = (window as unknown as { BarcodeDetector?: ClasseDetecteur }).BarcodeDetector;
+			if (natif) return natif;
+			try {
+				return (await import('#lib/detecteur-secours.ts')).BarcodeDetector as ClasseDetecteur;
+			} catch {
+				return null;
+			}
+		}
+
 		async function demarrer() {
-			const Classe = (window as unknown as { BarcodeDetector?: ClasseDetecteur }).BarcodeDetector;
-			if (!Classe || !navigator.mediaDevices?.getUserMedia) {
+			if (!navigator.mediaDevices?.getUserMedia) {
+				etat = 'indisponible';
+				return;
+			}
+			const Classe = await classeDetecteur();
+			if (!Classe || !actif) {
 				etat = 'indisponible';
 				return;
 			}
