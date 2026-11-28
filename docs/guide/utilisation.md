@@ -107,7 +107,9 @@ Onglet **Courses** :
   même après « Courses faites » ; un libellé déjà prévu là-bas n'est pas doublé.
 
 Les cases cochées sont **partagées entre appareils** : à deux au magasin, chacun voit ce que
-l'autre a déjà pris (en rechargeant la page ou en revenant sur l'application). Sans réseau, les
+l'autre a déjà pris : tant que la liste est affichée, ses coches apparaissent en quelques
+secondes, brièvement surlignées, sans recharger la page (rien ne tourne quand l'écran est
+éteint ou l'application en arrière-plan). Sans réseau, les
 coches restent sur le téléphone, un bandeau indique combien sont en attente, et elles partent
 dès le retour de la connexion ; pour un même article, la plus récente l'emporte. **Courses
 faites** demande le réseau. Le bouton **Imprimer (PDF)** produit une liste à cocher. Le **Menu PDF** (onglet Semaine) s'affiche

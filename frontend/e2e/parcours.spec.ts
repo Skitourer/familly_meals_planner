@@ -80,3 +80,27 @@ test('modification d’un article du placard', async ({ page }) => {
 	await expect(page.getByText('Aucun ingrédient au placard.')).toBeVisible();
 	await expect(page.getByText('Riz au lait')).toBeVisible();
 });
+
+test('coches d’un autre appareil visibles sans recharger', async ({ browser }) => {
+	const [moi, conjoint] = await Promise.all([browser.newPage(), browser.newPage()]);
+	for (const page of [moi, conjoint]) {
+		await preparer(page, '2026-10-14');
+		await seConnecter(page);
+	}
+	await ajouterMembre(moi, 'Alex');
+	await moi.goto('/');
+	await moi.getByRole('button', { name: /Générer les repas|Autre proposition/ }).click();
+	await expect(moi.locator('a[href^="/plats/"]').first()).toBeVisible({ timeout: 30_000 });
+
+	const lien = moi.getByRole('link', { name: /Liste de courses/ });
+	const adresse = (await lien.getAttribute('href')) ?? '/courses';
+	await Promise.all([moi.goto(adresse), conjoint.goto(adresse)]);
+	const premiere = (page: typeof moi) => page.locator('li input[type=checkbox]').first();
+	await expect(premiere(conjoint)).not.toBeChecked();
+
+	await premiere(moi).check();
+	// Relue toutes les 5 s par la liste ouverte, sans action sur l'autre appareil.
+	await expect(premiere(conjoint)).toBeChecked({ timeout: 10_000 });
+	await expect(conjoint.locator('li.recente')).toHaveCount(1);
+	await Promise.all([moi.context().close(), conjoint.context().close()]);
+});

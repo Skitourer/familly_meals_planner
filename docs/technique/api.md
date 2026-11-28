@@ -30,6 +30,7 @@ Les requêtes `POST`, `PUT`, `PATCH` et `DELETE` doivent porter l'en-tête
 | `GET` | `/api/semaines/{lundi}/creneaux/{jour}/{moment}/alternatives` | Meilleurs plats de remplacement |
 | `GET` | `/api/semaines/{lundi}/bilan` | Bilan nutritionnel et carbone |
 | `GET` | `/api/semaines/{lundi}/courses` | Liste de courses |
+| `GET` | `/api/semaines/{lundi}/courses/coches` | Articles cochés (relus toutes les 5 s par la liste affichée) |
 | `PUT` | `/api/semaines/{lundi}/courses/coches` | Envoyer des coches (liste de `{ingredient_id, cochee, modifiee_le}`, 500 au plus ; un produit à racheter a pour clé `racheter-{id}`, un article libre `libre-{id}` ; la coche d'un tel article retiré entre-temps est ignorée) ; la plus récente gagne ; renvoie les articles cochés |
 | `POST` | `/api/semaines/{lundi}/courses/achats` | Produit acheté (`{ingredient_id, quantite_g, prix_eur, code?}`), prévu sur la liste ou non (hors liste : au placard à la validation) ; s'ajoute aux précédents |
 | `DELETE` | `/api/semaines/{lundi}/courses/achats/{ingredient}` | Oublier les achats d'un article |

@@ -1,7 +1,8 @@
 <!--
 	Liste de courses de la semaine : par rayon, arrondie aux conditionnements du magasin.
 	Les coches sont partagées entre appareils ; sans réseau, elles attendent sur l'appareil
-	et partent au retour de la connexion (voir lib/coches.ts).
+	et partent au retour de la connexion (voir lib/coches.ts). Tant que la liste est affichée,
+	les coches des autres appareils sont relues toutes les 5 s et brièvement mises en évidence.
 	Un produit scanné au magasin coche son article et enregistre la quantité et le prix payés ;
 	hors liste, il rejoint le placard à la validation ; un autre produit (hors repas) est rangé
 	parmi les autres produits du placard, sauf s'il est marqué « ne pas ranger ».
@@ -24,7 +25,9 @@
 	import { api, ErreurApi, messageErreur } from '#lib/api.ts';
 	import {
 		ajouterAFile,
+		cocheesAilleurs,
 		cochesAffichees,
+		INTERVALLE_RELECTURE_MS,
 		ecrireFile,
 		lireFile,
 		retirerEnvoyees,
@@ -49,6 +52,10 @@
 	let file = $state<FileCoches>({});
 	let enLigne = $state(true);
 	let envoiEnCours = false;
+	// Change à chaque envoi ou rechargement : une relecture partie avant est alors périmée.
+	let versionCoches = 0;
+	// Articles cochés depuis un autre appareil, mis en évidence quelques secondes.
+	let recentes = $state<Set<string>>(new Set());
 
 	// Scan au magasin : produit lu, puis article de la liste, quantité et prix payés.
 	let scanOuvert = $state(false);
@@ -106,8 +113,41 @@
 		};
 	});
 
+	// Coches des autres appareils (ticket #11) : relues tant que la liste est affichée et en
+	// ligne ; rien ne tourne quand l'écran est éteint ou l'application en arrière-plan.
+	$effect(() => {
+		const minuterie = setInterval(() => {
+			if (document.visibilityState === 'visible' && navigator.onLine) relireCoches(lundi);
+		}, INTERVALLE_RELECTURE_MS);
+		return () => clearInterval(minuterie);
+	});
+
+	async function relireCoches(date: string) {
+		if (!courses || envoiEnCours) return;
+		const version = versionCoches;
+		try {
+			const cochees = await api.lire<string[]>(`/semaines/${date}/courses/coches`);
+			if (version !== versionCoches || !courses || date !== lundi) return;
+			const ailleurs = cocheesAilleurs(courses.coches, cochees, file);
+			courses.coches = cochees;
+			enLigne = true;
+			if (ailleurs.length) mettreEnEvidence(ailleurs);
+		} catch (e) {
+			if (e instanceof ErreurApi) erreur = messageErreur(e);
+			else enLigne = false; // réseau coupé au magasin : nouvel essai à la relecture suivante
+		}
+	}
+
+	function mettreEnEvidence(ids: string[]) {
+		recentes = new Set([...recentes, ...ids]);
+		setTimeout(() => {
+			recentes = new Set([...recentes].filter((id) => !ids.includes(id)));
+		}, 3000);
+	}
+
 	async function charger(date: string) {
 		erreur = '';
+		versionCoches++;
 		file = lireFile(localStorage, date);
 		await envoyer(date);
 		try {
@@ -128,6 +168,7 @@
 		const lot = Object.values(file);
 		if (!lot.length || envoiEnCours) return;
 		envoiEnCours = true;
+		versionCoches++;
 		try {
 			const cochees = await api.modifier<string[]>(`/semaines/${date}/courses/coches`, lot);
 			if (courses) courses.coches = cochees;
@@ -417,7 +458,10 @@
 					<h2>{rayon}</h2>
 					<ul>
 						{#each lignes as ligne (ligne.ingredient_id)}
-							<li class:coche={coches.has(ligne.ingredient_id)}>
+							<li
+								class:coche={coches.has(ligne.ingredient_id)}
+								class:recente={recentes.has(ligne.ingredient_id)}
+							>
 								<label>
 									<input
 										type="checkbox"
@@ -475,7 +519,10 @@
 					<h2>À racheter</h2>
 					<ul>
 						{#each courses.a_racheter as rachat (rachat.id)}
-							<li class:coche={coches.has(rachat.cle) || rachat.scanne}>
+							<li
+								class:coche={coches.has(rachat.cle) || rachat.scanne}
+								class:recente={recentes.has(rachat.cle)}
+							>
 								<label>
 									<input
 										type="checkbox"
@@ -568,7 +615,7 @@
 			<ul>
 				{#each courses.articles_libres as article (article.id)}
 					{@const cochee = coches.has(article.cle)}
-					<li class:coche={cochee}>
+					<li class:coche={cochee} class:recente={recentes.has(article.cle)}>
 						<label>
 							<input
 								type="checkbox"
@@ -763,6 +810,20 @@
 </Modale>
 
 <style>
+	/* Coché depuis un autre appareil : bref surlignage pour le remarquer (ticket #11). */
+	li.recente {
+		animation: coche-recente 3s ease-out;
+	}
+
+	@keyframes coche-recente {
+		from {
+			background: var(--accent-doux);
+		}
+		to {
+			background: transparent;
+		}
+	}
+
 	.reel {
 		color: var(--texte);
 	}
