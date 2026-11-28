@@ -22,7 +22,7 @@ from repas.protections import (
     politique_contenu,
 )
 
-VERSION = "1.10.0"  # x-release-please-version
+VERSION = "1.11.0"  # x-release-please-version
 
 
 @asynccontextmanager

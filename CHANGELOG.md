@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.10.0...v1.11.0) (2026-11-28)
+
+
+### Nouveautés
+
+* coches des autres appareils visibles en direct sur la liste de courses ([#78](https://github.com/Skitourer/familly_meals_planner/issues/78)) ([f1fdac0](https://github.com/Skitourer/familly_meals_planner/commit/f1fdac0e3ffe1361501a008ce9017bbf6110a710))
+* un nouveau membre rejoint les repas à venir des semaines existantes ([#76](https://github.com/Skitourer/familly_meals_planner/issues/76)) ([fcccfa9](https://github.com/Skitourer/familly_meals_planner/commit/fcccfa90c116157009f7b847248d901d8fc9cae5))
+
 ## [1.10.0](https://github.com/Skitourer/familly_meals_planner/compare/v1.9.0...v1.10.0) (2026-11-28)
 
 
