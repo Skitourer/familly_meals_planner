@@ -133,6 +133,7 @@ def test_coches_partagees_entre_appareils(client: TestClient):
         {"ingredient_id": "riz", "cochee": False, "modifiee_le": "2026-01-05T09:10:00Z"},
     ])  # fmt: skip
     assert client.get(f"/api/semaines/{LUNDI}/courses").json()["coches"] == ["pates"]
+    assert client.get(url).json() == ["pates"]  # relu régulièrement par la liste ouverte
 
     inconnu = [{"ingredient_id": "licorne", "cochee": True, "modifiee_le": "2026-01-05T09:00:00Z"}]
     assert client.put(url, json=inconnu).status_code == 400

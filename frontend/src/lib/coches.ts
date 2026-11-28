@@ -82,3 +82,14 @@ export function ecrireFile(stockage: Storage, lundi: string, file: FileCoches): 
 		/* stockage indisponible : la coche reste en mémoire jusqu'à l'envoi */
 	}
 }
+
+/** Intervalle de relecture des coches quand la liste est affichée (ticket #11) : assez court
+ * pour éviter de prendre deux fois le même article au magasin, assez long pour le Pi. */
+export const INTERVALLE_RELECTURE_MS = 5000;
+
+/** Articles cochés depuis un autre appareil entre deux relectures (à mettre en évidence) :
+ * nouveaux côté serveur, sans modification locale en attente pour eux. */
+export function cocheesAilleurs(avant: string[], apres: string[], file: FileCoches): string[] {
+	const deja = new Set(avant);
+	return apres.filter((id) => !deja.has(id) && !(id in file));
+}

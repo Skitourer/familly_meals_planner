@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	ajouterAFile,
+	cocheesAilleurs,
 	cleAncienStockage,
 	cleFile,
 	cochesAffichees,
@@ -62,5 +63,17 @@ describe('file des coches', () => {
 		ecrireFile(stockage, LUNDI, {});
 		expect(stockage.getItem(cleFile(LUNDI))).toBeNull();
 		expect(lireFile(stockageMemoire({ [cleFile(LUNDI)]: '{pas du json' }), LUNDI)).toEqual({});
+	});
+});
+
+describe('coches venues d’un autre appareil', () => {
+	it('met en évidence les nouvelles coches du serveur seulement', () => {
+		expect(cocheesAilleurs(['riz'], ['riz', 'pates', 'lait'], {})).toEqual(['pates', 'lait']);
+		expect(cocheesAilleurs(['riz'], [], {})).toEqual([]);
+	});
+
+	it('ignore un article modifié sur cet appareil et pas encore envoyé', () => {
+		const file = ajouterAFile({}, 'pates', true, new Date('2026-11-28T10:00:00Z'));
+		expect(cocheesAilleurs([], ['pates', 'lait'], file)).toEqual(['lait']);
 	});
 });

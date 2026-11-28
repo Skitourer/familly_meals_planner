@@ -588,6 +588,12 @@ def _cle_retirable(cle: str) -> bool:
     return cle.startswith((PREFIXE_COCHE_RACHETER, PREFIXE_COCHE_LIBRE))
 
 
+@router.get("/{lundi}/courses/coches", dependencies=ADULTE)
+def lire_coches(lundi: date, s: Session = Depends(session)) -> list[str]:
+    """Articles cochés, relus régulièrement par la liste ouverte (coches des autres appareils)."""
+    return services.coches(s, _semaine(s, lundi))
+
+
 @router.put("/{lundi}/courses/coches", dependencies=ADULTE)
 def cocher(
     lundi: date,
