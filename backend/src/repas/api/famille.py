@@ -16,7 +16,7 @@ from repas.domaine.besoins import (
     besoin_energetique_kcal,
     coefficient_portion,
 )
-from repas.modeles import Compte, Creneau, Membre, Note, Reglages
+from repas.modeles import CategorieRepasExterieur, Compte, Creneau, Membre, Note, Reglages
 
 router = APIRouter(tags=["famille"])
 ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
@@ -96,6 +96,11 @@ def supprimer(membre_id: int, s: Session = Depends(session)) -> None:
         raise HTTPException(404, "Membre introuvable")
     for note in s.exec(select(Note).where(Note.membre_id == membre_id)).all():
         s.delete(note)
+    exterieurs = select(CategorieRepasExterieur).where(
+        CategorieRepasExterieur.membre_id == membre_id
+    )
+    for repas in s.exec(exterieurs).all():
+        s.delete(repas)
     for creneau in s.exec(select(Creneau)).all():
         if membre_id in creneau.convives:
             creneau.convives = [m for m in creneau.convives if m != membre_id]

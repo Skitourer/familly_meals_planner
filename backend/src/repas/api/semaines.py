@@ -33,7 +33,14 @@ from repas.domaine.produits import (
     code_barres_valide,
     est_scanne,
 )
-from repas.modeles import AchatProduit, ArticleLibre, Creneau, ProduitARacheter, Semaine
+from repas.modeles import (
+    AchatProduit,
+    ArticleLibre,
+    Creneau,
+    Membre,
+    ProduitARacheter,
+    Semaine,
+)
 from repas.pdf import pdf_liste_courses, pdf_menu
 
 router = APIRouter(prefix="/semaines", tags=["semaines"])
@@ -41,6 +48,15 @@ ADULTE = [Depends(exiger_adulte)]  # routes réservées aux comptes adultes
 
 
 # --- Schémas -------------------------------------------------------------------------
+
+
+class RepasExterieurSortie(BaseModel):
+    membre_id: int
+    categorie: Literal["poisson", "viande", "vegetarien"]
+
+
+class RepasExterieurEntree(BaseModel):
+    categorie: Literal["poisson", "viande", "vegetarien"] | None  # None : inconnu
 
 
 class CreneauSortie(BaseModel):
@@ -57,6 +73,7 @@ class CreneauSortie(BaseModel):
     restes_de: str | None
     raisons: list[str]
     infos: InfosRepas | None = None
+    exterieurs: list[RepasExterieurSortie] = []  # catégorie du repas des membres absents
 
 
 class SemaineSortie(BaseModel):
@@ -186,6 +203,7 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
     cat = catalogue()
     ctx = services.contexte(s, semaine, cat)
     coefs = services.coefficients(s, semaine.lundi)
+    exterieurs = services.categories_exterieur(s, semaine)
     creneaux = []
     for c in services.creneaux_de(s, semaine):
         explications = []
@@ -208,7 +226,14 @@ def _sortie(s: Session, semaine: Semaine) -> SemaineSortie:
             )
         creneaux.append(
             CreneauSortie(
-                **c.model_dump(exclude={"semaine_id"}), cle=c.cle, raisons=explications, infos=infos
+                **c.model_dump(exclude={"semaine_id"}),
+                cle=c.cle,
+                raisons=explications,
+                infos=infos,
+                exterieurs=[
+                    RepasExterieurSortie(membre_id=m, categorie=categorie)  # type: ignore[arg-type]
+                    for m, categorie in exterieurs.get(c.id or 0, {}).items()
+                ],
             )
         )
     return SemaineSortie(
@@ -324,8 +349,30 @@ def modifier_creneau(
         valeurs.setdefault("verrouille", True)
     creneau.sqlmodel_update(valeurs)
     s.add(creneau)
+    services.oublier_repas_exterieurs_des_presents(s, creneau)
     s.commit()
     services.recalculer_restes(s, semaine, cat)
+    return _sortie(s, semaine)
+
+
+@router.put("/{lundi}/creneaux/{jour}/{moment}/exterieurs/{membre_id}", dependencies=ADULTE)
+def indiquer_repas_exterieur(
+    lundi: date,
+    jour: int,
+    moment: Literal["midi", "soir"],
+    membre_id: int,
+    entree: RepasExterieurEntree,
+    s: Session = Depends(session),
+) -> SemaineSortie:
+    """Catégorie du repas pris dehors par un membre absent (poisson, viande, végétarien)."""
+    semaine = _semaine(s, lundi)
+    creneau = _creneau(s, semaine, jour, moment)
+    if s.get(Membre, membre_id) is None:
+        raise HTTPException(404, "Membre introuvable")
+    if membre_id in creneau.convives:
+        raise HTTPException(400, "Ce membre mange à la maison à ce repas")
+    services.indiquer_repas_exterieur(s, creneau, membre_id, entree.categorie)
+    s.commit()
     return _sortie(s, semaine)
 
 
