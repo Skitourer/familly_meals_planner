@@ -8,6 +8,8 @@ from repas.domaine.planificateur import (
     ContextePlanification,
     CreneauAPlanifier,
     ErreurPlanification,
+    RepasExterieur,
+    _Modele,  # pyright: ignore[reportPrivateUsage]
     alternatives,
     attribuer_restes,
     planifier,
@@ -147,3 +149,60 @@ def test_attribuer_restes_au_dela_de_la_conservation(cat: Catalogue):
     dahl = "dahl-lentilles-corail"
     restes = attribuer_restes([("0-soir", 0, dahl), ("5-soir", 5, dahl)], cat)
     assert restes["5-soir"] is None  # 5 jours > 4 jours de conservation : on recuisine
+
+
+def test_pas_de_second_poisson_le_jour_d_un_poisson_a_la_cantine(cat: Catalogue):
+    # Les enfants (3 et 4) mangent à la cantine en semaine : poisson chaque midi.
+    creneaux = [
+        CreneauAPlanifier(
+            cle=f"{j}-{m}",
+            jour=j,
+            moment=m,
+            convives=(1, 2) if m == "midi" and j < 5 else FAMILLE,
+        )
+        for j in range(7)
+        for m in ("midi", "soir")
+    ]
+    cantine = tuple(
+        RepasExterieur(membre_id=enfant, jour=j, moment="midi", categorie="poisson")
+        for j in range(5)
+        for enfant in (3, 4)
+    )
+    resultat = planifier(creneaux, cat, ContextePlanification(mois=3, repas_exterieurs=cantine))
+    for j in range(5):
+        assert not cat.profils[resultat.repas[f"{j}-soir"].plat].est_poisson, j
+
+
+def test_viande_a_la_cantine_evitee_le_soir(cat: Catalogue):
+    creneaux = [
+        CreneauAPlanifier(
+            cle=f"{j}-{m}", jour=j, moment=m, convives=(1, 2, 4) if m == "midi" else FAMILLE
+        )
+        for j in range(7)
+        for m in ("midi", "soir")
+    ]
+    cantine = tuple(
+        RepasExterieur(membre_id=3, jour=j, moment="midi", categorie="viande") for j in range(7)
+    )
+    resultat = planifier(creneaux, cat, ContextePlanification(mois=3, repas_exterieurs=cantine))
+    for j in range(7):
+        profil = cat.profils[resultat.repas[f"{j}-soir"].plat]
+        assert profil.proteine_principale not in ("viande", "volaille"), j
+
+
+def test_poisson_dehors_compte_dans_le_repere_de_la_famille(cat: Catalogue):
+    # 4 poissons mangés dehors pour 2 membres : 2 repas de poisson pour la famille.
+    creneaux = [
+        CreneauAPlanifier(cle=f"{j}-soir", jour=j, moment="soir", convives=(1, 2)) for j in range(7)
+    ]
+    dehors = tuple(
+        RepasExterieur(membre_id=m, jour=j, moment="midi", categorie="poisson")
+        for j in (0, 1)
+        for m in (1, 2)
+    )
+    modele = _Modele(creneaux, cat, ContextePlanification(mois=3, repas_exterieurs=dehors), {})
+    assert modele._poissons_manges_dehors(modele.creneaux) == 2
+    # Un membre absent toute la semaine ne compte pas.
+    autre = (RepasExterieur(membre_id=9, jour=0, moment="midi", categorie="poisson"),)
+    modele = _Modele(creneaux, cat, ContextePlanification(mois=3, repas_exterieurs=autre), {})
+    assert modele._poissons_manges_dehors(modele.creneaux) == 0

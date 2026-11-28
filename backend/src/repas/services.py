@@ -6,6 +6,7 @@ entrées puis appellent les fonctions de ce module.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -47,6 +48,7 @@ from repas.modeles import (
     AchatReel,
     ArticleLibre,
     BilanCourses,
+    CategorieRepasExterieur,
     Coche,
     Creneau,
     EcartPlacard,
@@ -170,6 +172,63 @@ def contexte(
         poids=poids,
         graine=semaine.graine,
         restes_max=reglages.restes_max,
+        repas_exterieurs=repas_exterieurs(s, semaine),
+    )
+
+
+def categories_exterieur(s: Session, semaine: Semaine) -> dict[int, dict[int, str]]:
+    """Créneau -> membre -> catégorie du repas pris dehors (membres absents seulement)."""
+    creneaux = {c.id: c for c in creneaux_de(s, semaine)}
+    resultat: dict[int, dict[int, str]] = defaultdict(dict)
+    lignes = s.exec(
+        select(CategorieRepasExterieur).where(
+            col(CategorieRepasExterieur.creneau_id).in_(list(creneaux))
+        )
+    ).all()
+    for ligne in lignes:
+        if ligne.membre_id not in creneaux[ligne.creneau_id].convives:
+            resultat[ligne.creneau_id][ligne.membre_id] = ligne.categorie
+    return resultat
+
+
+def indiquer_repas_exterieur(
+    s: Session, creneau: Creneau, membre_id: int, categorie: str | None
+) -> None:
+    """Enregistre (ou efface, si ``None``) la catégorie du repas pris dehors."""
+    ligne = s.get(CategorieRepasExterieur, (creneau.id, membre_id))
+    if categorie is None:
+        if ligne:
+            s.delete(ligne)
+        return
+    ligne = ligne or CategorieRepasExterieur(
+        creneau_id=creneau.id or 0, membre_id=membre_id, categorie=categorie
+    )
+    ligne.categorie = categorie
+    s.add(ligne)
+
+
+def oublier_repas_exterieurs_des_presents(s: Session, creneau: Creneau) -> None:
+    """Un membre revenu manger à la maison n'a plus de repas pris dehors à ce créneau."""
+    lignes = s.exec(
+        select(CategorieRepasExterieur).where(CategorieRepasExterieur.creneau_id == creneau.id)
+    ).all()
+    for ligne in lignes:
+        if ligne.membre_id in creneau.convives:
+            s.delete(ligne)
+
+
+def repas_exterieurs(s: Session, semaine: Semaine) -> tuple[plan.RepasExterieur, ...]:
+    """Repas pris dehors de la semaine dont la catégorie est connue, pour l'algorithme."""
+    creneaux = {c.id: c for c in creneaux_de(s, semaine)}
+    return tuple(
+        plan.RepasExterieur(
+            membre_id=membre_id,
+            jour=creneaux[creneau_id].jour,
+            moment=creneaux[creneau_id].moment,  # type: ignore[arg-type]
+            categorie=categorie,  # type: ignore[arg-type]
+        )
+        for creneau_id, membres in categories_exterieur(s, semaine).items()
+        for membre_id, categorie in membres.items()
     )
 
 

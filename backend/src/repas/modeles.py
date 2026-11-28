@@ -72,6 +72,17 @@ class Creneau(SQLModel, table=True):
         return f"{self.jour}-{self.moment}"
 
 
+class CategorieRepasExterieur(SQLModel, table=True):
+    """Catégorie du repas pris dehors par un membre absent d'un créneau (cantine...).
+
+    Facultative : sans ligne, le repas est « inconnu » et supposé équilibré.
+    """
+
+    creneau_id: int = Field(foreign_key="creneau.id", primary_key=True)
+    membre_id: int = Field(foreign_key="membre.id", primary_key=True)
+    categorie: str = Field(regex="^(poisson|viande|vegetarien)$")
+
+
 class Note(SQLModel, table=True):
     """Note (1 à 5) donnée par un membre à un plat servi lors d'un repas."""
 

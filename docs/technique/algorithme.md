@@ -78,6 +78,12 @@ journée, le petit-déjeuner et le goûter apportant le reste.
 Les repères hebdomadaires sont **ramenés au nombre de repas pris à la maison** (avec 10
 repas sur 14, on vise 1 poisson au lieu de 2, et ≤ 357 g de viande).
 
+**Repas pris à l'extérieur** : quand la famille indique qu'un membre absent a mangé du
+poisson dehors (cantine...), ces poissons sont ramenés à des repas de toute la famille et
+déduits du repère poisson : $\lfloor \text{poissons dehors} / \text{membres à la maison}
+\rfloor$ (deux enfants sur quatre qui mangent deux fois du poisson à la cantine valent un
+repas de poisson de moins à la maison).
+
 Chaque repère est une contrainte **souple** : un écart $e \ge 0$ est autorisé mais pénalisé
 par $1000 \times e / \text{cible}$ dans l'objectif. Ce poids, très supérieur aux préférences,
 garantit que **la nutrition prime** : le solveur ne sacrifie un repère que s'il est impossible
@@ -99,6 +105,7 @@ Pour chaque plat ou dessert servi à un créneau, un **intérêt** est ajouté �
 | Restes d'un plat en lot | + 6 par repas sans cuisine (réglable) |
 | Placard | + 20 par produit du placard entièrement consommé, au prorata (voir ci-dessous) |
 | Joker | + 80 pour un plat ou dessert plaisir sur un joker |
+| Repas pris à l'extérieur | − 60 par convive ayant déjà mangé du poisson (ou de la viande, volaille comprise) dehors le même jour, pour un plat de la même catégorie |
 | Temps en semaine | − 0,5 par minute au-delà de 45 min, du lundi au vendredi |
 | Hasard | + 0 à 6, déterministe pour une « graine » donnée |
 
