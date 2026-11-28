@@ -66,6 +66,39 @@ jobs:
       - name: Compilation
         run: npm run build
 
+  bout-en-bout:
+    name: Parcours de bout en bout (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Dépendances Python
+        working-directory: backend
+        run: uv sync --locked
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Dépendances de l'interface
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Parcours critiques
+        working-directory: frontend
+        run: npm run e2e
+      - name: Captures et traces en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: parcours-bout-en-bout
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          retention-days: 7
+
   secrets:
     name: Secrets (gitleaks)
     runs-on: ubuntu-latest

@@ -1,0 +1,57 @@
+// Parcours critiques de l'interface (#28) : chacun sur sa propre semaine pour rester
+// indépendant des autres, avec une date figée et sans accès réseau externe.
+import { expect, test } from '@playwright/test';
+import { ajouterMembre, preparer, seConnecter } from './outils.ts';
+
+test('connexion puis ajout d’un membre', async ({ page }) => {
+	await preparer(page, '2026-03-04');
+	await seConnecter(page);
+
+	await page.goto('/famille');
+	await page.getByRole('button', { name: /Ajouter un membre/ }).click();
+	await page.getByLabel('Prénom').fill('Camille');
+	await page.getByLabel('Date de naissance').fill('2015-06-20');
+	await page.getByLabel('Poids (kg)').fill('35');
+	await page.getByRole('button', { name: 'Enregistrer' }).click();
+
+	await expect(page.getByText('Camille').first()).toBeVisible();
+	await page.reload();
+	await expect(page.getByText('Camille').first()).toBeVisible();
+});
+
+test('génération d’une semaine puis fiche d’un plat', async ({ page }) => {
+	await preparer(page, '2026-05-13');
+	await seConnecter(page);
+	await ajouterMembre(page, 'Alex');
+
+	await page.goto('/');
+	await page.getByRole('button', { name: /Générer les repas|Autre proposition/ }).click();
+	const plat = page.locator('a[href^="/plats/"]').first();
+	await expect(plat).toBeVisible({ timeout: 30_000 });
+
+	const cible = (await plat.getAttribute('href'))?.split('?')[0] ?? '';
+	await plat.click();
+	await expect(page).toHaveURL((url) => url.pathname === cible);
+	await expect(page.getByRole('heading', { level: 1 })).not.toBeEmpty();
+	await expect(page.getByText(/Ingrédients/).first()).toBeVisible();
+});
+
+test('liste de courses puis export PDF', async ({ page }) => {
+	await preparer(page, '2026-09-16');
+	await seConnecter(page);
+	await ajouterMembre(page, 'Sam');
+
+	await page.goto('/');
+	await page.getByRole('button', { name: /Générer les repas|Autre proposition/ }).click();
+	await expect(page.locator('a[href^="/plats/"]').first()).toBeVisible({ timeout: 30_000 });
+
+	await page.getByRole('link', { name: /Liste de courses/ }).click();
+	await expect(page.getByRole('heading', { name: 'Liste de courses' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
+
+	const lien = page.locator('a[href$="/courses.pdf"]');
+	const pdf = await page.request.get((await lien.getAttribute('href')) ?? '');
+	expect(pdf.status()).toBe(200);
+	expect(pdf.headers()['content-type']).toBe('application/pdf');
+	expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+});
